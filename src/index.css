@@ -24,6 +24,10 @@
   padding: 0;
 }
 
+html, body {
+  overflow: hidden;
+}
+
 .pl-6 {
   padding-left: calc(var(--spacing) * 6) /* 1.5rem = 24px */;
 }
@@ -38,4 +42,20 @@
 
 .mt-4\.5 {
   margin-top: calc(var(--spacing) * 4.5) /* 1.125rem = 18px */;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #D6D6D6;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333333;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #222222;
 }

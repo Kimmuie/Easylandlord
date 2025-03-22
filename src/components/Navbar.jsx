@@ -12,7 +12,7 @@ const Navbar = () => {
   const location = useLocation();
   
   return (
-    <div className="relative flex w-full h-20 bg-ellWhite items-center drop-shadow-md">
+    <div className="relative flex w-full h-20 bg-ellWhite items-center border-b border-b-ellGray">
       <div className="flex w-full items-center justify-between pl-6 pr-6">
         <div className="flex flex-row items-center gap-2">
           <img src="./img/bHome.svg" width="40" height="40" alt="logoEasylandlord" />
@@ -27,7 +27,7 @@ const Navbar = () => {
               to={item.paths[0]}
               className={({ isActive }) =>
                 `relative text-lg font-prompt font-semibold ${
-                  item.paths.includes(location.pathname) ? "text-ellBlack" : "text-ellBlack hover:text-ellRed"
+                  item.paths.includes(location.pathname) ? "text-ellBlack cursor-default pointer-events-none" : "hover:text-ellRed"
                 }`
               }
             >
