@@ -12,7 +12,7 @@ const Navbar = () => {
   const location = useLocation();
   
   return (
-    <div className="relative flex w-full h-20 bg-ellWhite items-center border-b border-b-ellGray">
+    <div className="relative flex w-full h-20 bg-ellWhite items-center border-b border-b-ellDarkGray">
       <div className="flex w-full items-center justify-between pl-6 pr-6">
         <div className="flex flex-row items-center gap-2">
           <img src="./img/bHome.svg" width="40" height="40" alt="logoEasylandlord" />
@@ -42,7 +42,7 @@ const Navbar = () => {
         </div>
         {/* Notification */}
         <div>
-          <button>
+          <button className="hover:animate-wiggle cursor-pointer">
           <img src="./img/notification.svg" width="40" height="40" alt="notifications" />
           <div className="bg"></div>
           </button>
