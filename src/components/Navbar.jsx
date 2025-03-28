@@ -14,7 +14,7 @@ const Navbar = () => {
   
   return (
     <>
-    <div className="relative flex w-full h-20 bg-ellWhite items-center border-b border-b-ellDarkGray z-50">
+    <div className="relative flex w-full h-20 bg-ellWhite items-center border-b border-b-ellDarkGray z-40">
       <div className="flex w-full items-center justify-between pl-6 pr-6">
         <div className="hidden md:flex flex-row items-center gap-2">
           <img src="./img/bHome.svg" width="40" height="40" alt="logoEasylandlord" />
@@ -65,13 +65,13 @@ const Navbar = () => {
     {/* Gray Overlay When Mobile Menu is Open */}
     {menuOpen && (
         <div
-          className="fixed inset-0 bg-ellDarkGray opacity-50 z-40"
+          className="fixed inset-0 bg-ellDarkGray opacity-50 z-30"
           onClick={() => setMenuOpen(false)}
         ></div>
       )}
       {/* Mobile Navigation */}
       {menuOpen && (
-        <div className="fixed top-20 left-0 w-full bg-white flex flex-col items-center md:hidden z-50">
+        <div className="fixed top-20 left-0 w-full bg-white flex flex-col items-center md:hidden z-40">
           {menuItems.map((item) => (
             <NavLink
               key={item.name}
