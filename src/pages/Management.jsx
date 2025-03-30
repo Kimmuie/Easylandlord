@@ -1,12 +1,16 @@
 import React from 'react'
+import RentalCards from '../components/rentalCards'
+import ManagementBar from '../components/managementBar'
 
 const Management = () => {
   return (
     <>
-      <div className="absolute w-full h-full bg-ellWhite overflow-x-scroll">
-        <div className="flex items-start p-4">Management</div>
-        <div className="h-[200vh]">
-          Scroll down to see the effect.
+      <div className="w-full h-screen bg-ellWhite flex items-center flex-col overflow-x-scroll">
+        <ManagementBar/>
+        <div className="h-[300vh]">
+          <RentalCards/>
+          <RentalCards/>
+          <RentalCards/>
         </div>
       </div>
     </>

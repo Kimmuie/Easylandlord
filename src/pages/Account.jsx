@@ -38,7 +38,6 @@ const Account = () => {
           name,
           number,
         });
-        alert("Profile updated successfully!");
         console.log(name)
         setIsEditing(false);
       } catch (error) {
@@ -51,7 +50,7 @@ const Account = () => {
 
   return (
     <>
-    <div className="w-full h-full bg-ellWhite flex items-center flex-col">
+    <div className="w-full h-screen bg-ellWhite flex items-center flex-col">
       {/* Profile */}
       <div className=" items-center justify-center flex-col w-full px-4 md:w-3xl border-b border-b-ellDarkGray">
         <div className="flex justify-end w-full md:w-3xl pt-6">
@@ -99,8 +98,17 @@ const Account = () => {
           </div>
         )}
       </div>
+      {/* Theme */}
+      <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer">
+        <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
+        <img src="./img/theme.svg" width="40" height="40" alt="notifications" />
+          <div className="flex-row flex items-center pl-6">
+            <div className="font-prompt font-semibold text-ellBlack text-lg pl-2">ธีมสี</div>
+          </div>
+        </div>
+      </div>
       {/* Notification */}
-      <div className=" items-center justify-center w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer">
+      <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer">
         <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
         <img src="./img/help.svg" width="40" height="40" alt="notifications" />
           <div className="flex-row flex items-center pl-6">
@@ -110,7 +118,7 @@ const Account = () => {
       </div>
       {user ? (
         // Logout Button
-        <div className="items-center justify-center w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer">
+        <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer">
           <div className="flex-row flex items-center justify-start w-3xl py-6 pl-7 hover:pl-12 duration-300 ease-in-out">
             <img src="./img/logout.svg" width="35" height="35" alt="Logout" />
             <div className="flex-row flex items-center pl-6">
@@ -133,6 +141,10 @@ const Account = () => {
           </div>
         </div>
       )}
+    </div>
+    
+    <div className="fixed bottom-0 w-full bg-ellBlack py-3 border-t border-ellDarkGray text-center font-prompt text-ellWhite text-sm z-10">
+      © {new Date().getFullYear()} Easylandlord. All Rights Reserved.
     </div>
     </>
   )
