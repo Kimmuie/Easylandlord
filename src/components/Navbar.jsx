@@ -28,7 +28,7 @@ const Navbar = () => {
               key={item.name}
               to={item.paths[0]}
               className={({ isActive }) =>
-                `relative text-lg font-prompt font-semibold ${
+                `relative text-lg font-prompt text-ellBlack font-semibold ${
                   item.paths.includes(location.pathname) ? "text-ellBlack cursor-default pointer-events-none" : "hover:text-ellRed"
                 }`
               }
