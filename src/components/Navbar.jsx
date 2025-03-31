@@ -1,23 +1,50 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../components/firebase";
+import ThemeContext from "../contexts/ThemeContext";
 
 const Navbar = () => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { theme } = useContext(ThemeContext);
+  const location = useLocation();
+
+  const themeIcons = {
+    light: {
+      logo: "./img/bHome.svg",
+      notification: "./img/notification-light.svg",
+      menuClose: "./img/menuClose-light.svg",
+      menuOpen: "./img/menuOpen-light.svg",
+    },
+    dark: {
+      logo: "./img/wHome.svg",
+      notification: "./img/notification-dark.svg",
+      menuClose: "./img/menuClose-dark.svg",
+      menuOpen: "./img/menuOpen-dark.svg",
+    },
+    blue: {
+      logo: "./img/wHome.svg",
+      notification: "./img/notification-dark.svg",
+      menuClose: "./img/menuClose-dark.svg",
+      menuOpen: "./img/menuOpen-dark  .svg",
+    },
+  };
+
+  const icons = themeIcons[theme] || themeIcons.light;
+
   const menuItems = [
     { name: "บริหาร", paths: ["/management", "/"] },
     { name: "การเงิน", paths: ["/financial"] },
     { name: "บ้านเช่า", paths: ["/rental"] },
     { name: "บัญชี", paths: ["/account"] },
   ];
-  
-  const [menuOpen, setMenuOpen] = useState(false);
-  const location = useLocation();
-  
+
   return (
     <>
     <div className="relative flex w-full h-20 bg-ellWhite items-center border-b border-b-ellDarkGray z-40">
       <div className="flex w-full items-center justify-between pl-6 pr-6">
         <div className="hidden md:flex flex-row items-center gap-2">
-          <img src="./img/bHome.svg" width="40" height="40" alt="logoEasylandlord" />
+          <img src={icons.logo} width="40" height="40" alt="logoEasylandlord" />
           <div className="text-ellBlack text-lg font-inter font-semibold">Easylandlord</div>
         </div>
 
@@ -45,7 +72,7 @@ const Navbar = () => {
         {/* Notification */}
         <div>
           <button className="hover:animate-wiggle cursor-pointer">
-          <img src="./img/notification.svg" width="40" height="40" alt="notifications" />
+          <img src={icons.notification} width="40" height="40" alt="notifications" />
           <div className="bg"></div>
           </button>
         </div>
@@ -53,7 +80,7 @@ const Navbar = () => {
         <div className="md:hidden flex items-center">
           <button onClick={() => setMenuOpen(!menuOpen)}>
             <img
-              src={menuOpen ? "./img/menuOpen.svg" : "./img/menuClose.svg"}
+              src={menuOpen ? icons.menuOpen : icons.menu}
               width="40"
               height="40"
               alt="menu icon"

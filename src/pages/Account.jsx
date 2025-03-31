@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
 import SignIn from '../components/signIn';
 import SignOut from '../components/signout';
 import { setDoc, doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../components/firebase';
+import ThemeContext from '../contexts/ThemeContext';
 
 const Account = () => {
   const navigate = useNavigate();
@@ -14,11 +15,30 @@ const Account = () => {
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
   const [currentTheme, setCurrentTheme] = useState('light'); // Default theme
+  const { setTheme } = useContext(ThemeContext);
+
   const themes = {
     light: { background: '#F7F7F7', text: '#333333' },
     dark: { background: '#333333', text: '#F7F7F7' },
     blue: { background: '#2D336B', text: '#F7F7F7' }
   };
+  const themeIcons = {
+    light: {
+      theme: "./img/theme-light.svg",
+      help: "./img/help-light.svg",
+    },
+    dark: {
+      theme: "./img/theme-dark.svg",
+      help: "./img/help-dark.svg",
+    },
+    blue: {
+      theme: "./img/theme-dark.svg",
+      help: "./img/help-dark.svg",
+    }
+  };
+
+  // Initialize with light theme icons (our default)
+  const [icons, setIcons] = useState(themeIcons.light);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -34,6 +54,7 @@ const Account = () => {
             if (data.theme) {
               setCurrentTheme(data.theme);
               applyTheme(data.theme);
+              updateIcons(data.theme);
             }
           }
         } catch (error) {
@@ -49,8 +70,14 @@ const Account = () => {
     if (savedTheme) {
       setCurrentTheme(savedTheme);
       applyTheme(savedTheme);
+      updateIcons(savedTheme);
     }
   }, [user]);
+
+  const updateIcons = (themeName) => {
+    // Update all icons based on the selected theme
+    setIcons(themeIcons[themeName]);
+  };
 
   const applyTheme = (themeName) => {
     const theme = themes[themeName];
@@ -69,6 +96,7 @@ const Account = () => {
   const changeTheme = async (themeName) => {
     applyTheme(themeName);
     setCurrentTheme(themeName);
+    updateIcons(themeName);
     
     // Save to Firestore if user is logged in
     if (user) {
@@ -163,7 +191,7 @@ const Account = () => {
         <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
              onClick={toggleThemeDropdown}>
           <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
-            <img src="./img/theme.svg" width="40" height="40" alt="theme" />
+            <img src={icons.theme} width="40" height="40" alt="theme" />
             <div className="flex-row flex items-center pl-8 font-prompt font-semibold text-ellBlack text-lg">ธีมสี</div>
           </div>
           <div className={`transition-all duration-500 ease-in-out overflow-hidden 
@@ -174,6 +202,7 @@ const Account = () => {
                 onClick={(e) => {
                   e.stopPropagation();
                   changeTheme('light');
+                  setTheme("light")
                 }}
               ></button>
               <button 
@@ -181,6 +210,7 @@ const Account = () => {
                 onClick={(e) => {
                   e.stopPropagation();
                   changeTheme('dark');
+                  setTheme("dark")
                 }}
               ></button>
               <button 
@@ -188,6 +218,7 @@ const Account = () => {
                 onClick={(e) => {
                   e.stopPropagation();
                   changeTheme('blue');
+                  setTheme("blue")
                 }}
               ></button>
             </div>
@@ -196,7 +227,7 @@ const Account = () => {
         {/* Help */}
         <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer">
           <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
-            <img src="./img/help.svg" width="40" height="40" alt="help" />
+            <img src={icons.help} width="40" height="40" alt="help" />
             <div className="flex-row flex items-center pl-8 font-prompt font-semibold text-ellBlack text-lg">ช่วยเหลือ</div>
           </div>
         </div>
