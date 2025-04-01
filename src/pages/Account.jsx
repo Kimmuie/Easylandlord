@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { GoogleLogin } from '@react-oauth/google';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SignIn from '../components/signIn';
 import SignOut from '../components/signout';
 import { setDoc, doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../components/firebase';
-import ThemeContext from '../contexts/ThemeContext';
+import { db } from '../components/firebase';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Account = () => {
   const navigate = useNavigate();
@@ -14,31 +13,9 @@ const Account = () => {
   const [user, setUser] = useState(localStorage.getItem("email") || null);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
-  const [currentTheme, setCurrentTheme] = useState('light'); // Default theme
-  const { setTheme } = useContext(ThemeContext);
-
-  const themes = {
-    light: { background: '#F7F7F7', text: '#333333' },
-    dark: { background: '#333333', text: '#F7F7F7' },
-    blue: { background: '#2D336B', text: '#F7F7F7' }
-  };
-  const themeIcons = {
-    light: {
-      theme: "./img/theme-light.svg",
-      help: "./img/help-light.svg",
-    },
-    dark: {
-      theme: "./img/theme-dark.svg",
-      help: "./img/help-dark.svg",
-    },
-    blue: {
-      theme: "./img/theme-dark.svg",
-      help: "./img/help-dark.svg",
-    }
-  };
-
-  // Initialize with light theme icons (our default)
-  const [icons, setIcons] = useState(themeIcons.light);
+  
+  // Use the theme context
+  const { theme: currentTheme, changeTheme, icons } = useTheme();
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -52,9 +29,7 @@ const Account = () => {
             setName(data.name || '');
             setNumber(data.number || '');
             if (data.theme) {
-              setCurrentTheme(data.theme);
-              applyTheme(data.theme);
-              updateIcons(data.theme);
+              changeTheme(data.theme);
             }
           }
         } catch (error) {
@@ -64,60 +39,14 @@ const Account = () => {
     };
     
     loadUserData();
-    
-    // Check local storage for theme (fallback if not logged in)
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setCurrentTheme(savedTheme);
-      applyTheme(savedTheme);
-      updateIcons(savedTheme);
-    }
-  }, [user]);
-
-  const updateIcons = (themeName) => {
-    // Update all icons based on the selected theme
-    setIcons(themeIcons[themeName]);
-  };
-
-  const applyTheme = (themeName) => {
-    const theme = themes[themeName];
-    if (!theme) return;
-    
-    document.documentElement.style.setProperty('--color-ellWhite', themeName === 'dark' ? '#333333' : '#F7F7F7');
-    document.documentElement.style.setProperty('--color-ellBlack', themeName === 'dark' ? '#F7F7F7' : '#333333');
-    
-    if (themeName === 'blue') {
-      document.documentElement.style.setProperty('--color-ellWhite', '#2D336B');
-      document.documentElement.style.setProperty('--color-ellBlack', '#F7F7F7');
-    }
-    localStorage.setItem('theme', themeName);
-  };
-
-  const changeTheme = async (themeName) => {
-    applyTheme(themeName);
-    setCurrentTheme(themeName);
-    updateIcons(themeName);
-    
-    // Save to Firestore if user is logged in
-    if (user) {
-      try {
-        await setDoc(doc(db, "users", user), {
-          name: name,
-          number: number,
-          theme: themeName
-        }, { merge: true });
-      } catch (error) {
-        console.error("Error saving theme preference:", error);
-      }
-    }
-  };
+  }, [user, changeTheme]);
 
   // Toggle theme dropdown
   const toggleThemeDropdown = () => {
     setIsTheme(prev => !prev);
   };
 
-  // Save profile function
+  // Save profile function with theme integration
   const handleSave = async () => {
     if (user) {
       try {
@@ -134,6 +63,24 @@ const Account = () => {
       }
     } else {
       alert("Please sign in first.");
+    }
+  };
+
+  // Handle theme change with user data persistence
+  const handleThemeChange = async (themeName) => {
+    changeTheme(themeName);
+    
+    // Save to Firestore if user is logged in
+    if (user) {
+      try {
+        await setDoc(doc(db, "users", user), {
+          name: name,
+          number: number,
+          theme: themeName
+        }, { merge: true });
+      } catch (error) {
+        console.error("Error saving theme preference:", error);
+      }
     }
   };
 
@@ -178,7 +125,7 @@ const Account = () => {
             <div className="flex items-center w-3xl pt-4 pb-6">
               <img src="./img/iconSubstitute.png" width="87" height="87" alt="icon" className="border-2 border-ellBlack rounded-full" />
               <div className="pl-6">
-                <div className="font-prompt text-ellBlack text-lg font-semibold">{name || "ชื่อผู้ใช้"}</div>
+                <div className="font-prompt text-ellPrimary text-lg font-semibold">{name || "ชื่อผู้ใช้"}</div>
                 <div className="flex items-center">
                   <img src="./img/phone.svg" width="25" height="25" alt="phone" />
                   <div className="font-prompt text-ellDarkGray text-sm pl-2">{number || "เบอร์โทรศัพท์"}</div>
@@ -192,33 +139,30 @@ const Account = () => {
              onClick={toggleThemeDropdown}>
           <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
             <img src={icons.theme} width="40" height="40" alt="theme" />
-            <div className="flex-row flex items-center pl-8 font-prompt font-semibold text-ellBlack text-lg">ธีมสี</div>
+            <div className="flex-row flex items-center pl-8 font-prompt font-semibold text-ellPrimary text-lg">ธีมสี</div>
           </div>
           <div className={`transition-all duration-500 ease-in-out overflow-hidden 
                       ${isTheme ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'}`}>
             <div className="flex flex-row justify-center mt-4">
               <button 
-                className={`ml-4.5 mb-4.5 rounded-full border-2 ${currentTheme === 'light' ? 'border-ellRed' : 'border-ellGray hover:border-ellRed'} h-16 w-16 bg-[#F7F7F7]`}
+                className={`ml-4.5 mb-4.5 rounded-full border-2 cursor-pointer ${currentTheme === 'light' ? 'border-ellGreen' : 'border-ellRed hover:border-ellGreen'} h-16 w-16 bg-[#F7F7F7]`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  changeTheme('light');
-                  setTheme("light")
+                  handleThemeChange('light');
                 }}
               ></button>
               <button 
-                className={`ml-4.5 mb-4.5 rounded-full border-2 ${currentTheme === 'dark' ? 'border-ellRed' : 'border-ellGray hover:border-ellRed'} h-16 w-16 bg-[#333333]`}
+                className={`ml-4.5 mb-4.5 rounded-full border-2 cursor-pointer ${currentTheme === 'dark' ? 'border-ellGreen' : 'border-ellRed hover:border-ellGreen'} h-16 w-16 bg-[#333333]`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  changeTheme('dark');
-                  setTheme("dark")
+                  handleThemeChange('dark');
                 }}
               ></button>
               <button 
-                className={`ml-4.5 mb-4.5 rounded-full border-2 ${currentTheme === 'blue' ? 'border-ellRed' : 'border-ellGray hover:border-ellRed'} h-16 w-16 bg-[#2D336B]`}
+                className={`ml-4.5 mb-4.5 rounded-full border-2 cursor-pointer ${currentTheme === 'blue' ? 'border-ellGreen' : 'border-ellRed hover:border-ellGreen'} h-16 w-16 bg-[#2B334E]`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  changeTheme('blue');
-                  setTheme("blue")
+                  handleThemeChange('blue');
                 }}
               ></button>
             </div>
@@ -228,7 +172,7 @@ const Account = () => {
         <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer">
           <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
             <img src={icons.help} width="40" height="40" alt="help" />
-            <div className="flex-row flex items-center pl-8 font-prompt font-semibold text-ellBlack text-lg">ช่วยเหลือ</div>
+            <div className="flex-row flex items-center pl-8 font-prompt font-semibold text-ellPrimary text-lg">ช่วยเหลือ</div>
           </div>
         </div>
         {user ? (
@@ -250,7 +194,7 @@ const Account = () => {
         )}
       </div>
 
-      <div className="fixed bottom-0 w-full bg-ellBlack py-3 border-t border-ellDarkGray text-center font-prompt text-ellWhite text-sm z-10">
+      <div className="fixed bottom-0 w-full bg-ellBlack py-3 text-center font-prompt text-ellSecondary text-sm z-10">
         © {new Date().getFullYear()} Easylandlord. All Rights Reserved.
       </div>
     </>

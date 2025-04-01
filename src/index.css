@@ -10,6 +10,8 @@
 @theme {
   --font-prompt: "prompt", sans-serif;
   --font-inter: "inter", sans-serif;
+  --color-ellPrimary: #F7F7F7;
+  --color-ellSecondary: #F7F7F7;
   --color-ellWhite: #F7F7F7;
   --color-ellBlack: #333333;
   --color-ellGray: #D6D6D6;
@@ -46,6 +48,15 @@ html, body {
           padding-left: calc(var(--spacing) * 0) /* 0rem = 0px */;
       }
   }
+}
+
+.p-1 {
+  padding: calc(var(--spacing) * 1) /* 0.25rem = 4px */;
+}
+
+
+.p-2 {
+  padding: calc(var(--spacing) * 2) /* 0.5rem = 8px */;
 }
 
 .pl-2 {
@@ -150,6 +161,14 @@ html, body {
 
 .mr-2 {
   margin-right: calc(var(--spacing) * 2) /* 0.5rem = 8px */;
+}
+
+.mr-2\.5 {
+  margin-right: calc(var(--spacing) * 2.5) /* 0.625rem = 10px */;
+}
+
+.mr-3 {
+  margin-right: calc(var(--spacing) * 3) /* 0.75rem = 12px */;
 }
 
 .ml-4\.5 {
