@@ -15,7 +15,7 @@ const RentalCards = () => {
                 <div className="flex items-center pl-6 font-prompt font-semibold text-ellSecondary text-xl w-184">
                     Rental Name
                 </div>  
-                <div className="flex items-start mr-3">
+                <div className="flex items-start mr-3 active:scale-98">
                     <img src={icons.dot} width="35" height="35" alt="info" className="hover:bg-ellDarkGray rounded-full p-1"/>    
                 </div>
             </div>
@@ -38,7 +38,7 @@ const RentalCards = () => {
                         
                     </div>
                     {/* Rental Description */}
-                    <button className="flex flex-row bg-ellBlack rounded-full items-center justify-center font-prompt text-ellSecondary h-8 w-48 text-lg cursor-pointer">
+                    <button className="flex flex-row bg-ellBlack rounded-full items-center justify-center font-prompt text-ellSecondary h-8 w-48 text-lg cursor-pointer hover:scale-101 active:scale-98">
                         <img src={icons.info} width="25" height="25" alt="info" className="m-1"/>
                         ดูรายละเอียด
                     </button>

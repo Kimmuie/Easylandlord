@@ -5,13 +5,11 @@ import ManagementBar from '../components/managementBar'
 const Management = () => {
   return (
     <>
-      <div className="w-full h-screen bg-ellWhite flex items-center flex-col overflow-x-scroll">
+      <div className="w-full h-fit bg-ellWhite flex items-center flex-col">
         <ManagementBar/>
-        <div className="h-[300vh]">
           <RentalCards/>
           <RentalCards/>
           <RentalCards/>
-        </div>
       </div>
     </>
   )

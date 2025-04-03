@@ -1,6 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 
-// Theme configurations
 const themes = {
   light: { 
     ellPrimary: "#333333", 
@@ -9,6 +8,8 @@ const themes = {
     ellGray: "#D6D6D6",
     ellDarkGray: "#8E8E8E",
     ellSecondary: "#F7F7F7",
+    ellScrollbar1: "#D6D6D6",
+    ellScrollbar2: "#333333",
     background: "#F7F7F7", 
     text: "#333333" 
   },
@@ -16,9 +17,11 @@ const themes = {
     ellPrimary: "#F7F7F7", 
     ellWhite: "#333333", 
     ellBlack: "#F7F7F7",
-    ellGray: "#F7F7F7",
+    ellGray: "#D6D6D6",
     ellDarkGray: "#8E8E8E", 
     ellSecondary: "#333333",
+    ellScrollbar1: "#F7F7F7",
+    ellScrollbar2: "#8E8E8E",
     background: "#333333", 
     text: "#F7F7F7" 
   },
@@ -29,6 +32,8 @@ const themes = {
     ellGray: "#2B334E",
     ellDarkGray: "#8E8E8E", 
     ellSecondary: "#F7F7F7",
+    ellScrollbar1: "#D6D6D6",
+    ellScrollbar2: "#2B334E",
     background: "#2D336B", 
     text: "#F7F7F7" 
   },
@@ -112,7 +117,8 @@ export const ThemeProvider = ({ children }) => {
     document.documentElement.style.setProperty("--color-ellGray", theme.ellGray);
     document.documentElement.style.setProperty("--color-ellDarkGray", theme.ellDarkGray);
     document.documentElement.style.setProperty("--color-ellSecondary", theme.ellSecondary);
-    
+    document.documentElement.style.setProperty("--color-ellScrollbar1", theme.ellScrollbar1);
+    document.documentElement.style.setProperty("--color-ellScrollbar2", theme.ellScrollbar2);
     localStorage.setItem("theme", themeName);
   };
 

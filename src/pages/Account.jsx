@@ -7,13 +7,15 @@ import { db } from '../components/firebase';
 import { useTheme } from '../contexts/ThemeContext';
 
 const Account = () => {
+  const HelpCenterAPI = import.meta.env.VITE_HELPCENTER_RECEIVER_2;
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isTheme, setIsTheme] = useState(false);
+  const [isHelp, setIsHelp] = useState(false);
   const [user, setUser] = useState(localStorage.getItem("email") || null);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
-  
+
   // Use the theme context
   const { theme: currentTheme, changeTheme, icons } = useTheme();
 
@@ -41,12 +43,6 @@ const Account = () => {
     loadUserData();
   }, [user, changeTheme]);
 
-  // Toggle theme dropdown
-  const toggleThemeDropdown = () => {
-    setIsTheme(prev => !prev);
-  };
-
-  // Save profile function with theme integration
   const handleSave = async () => {
     if (user) {
       try {
@@ -86,7 +82,7 @@ const Account = () => {
 
   return (
     <>
-      <div className="w-full h-screen bg-ellWhite flex items-center flex-col">
+      <div className="w-full h-full bg-ellWhite flex items-center flex-col">
         {/* Profile */}
         <div className=" items-center justify-center flex-col w-full px-4 md:w-3xl border-b border-b-ellDarkGray">
           <div className="flex justify-end w-full md:w-3xl pt-6">
@@ -100,7 +96,7 @@ const Account = () => {
           </div>
           {isEditing ? (
             // Editing
-            <div className="flex justify-center flex-col items-center w-full md:w-3xl pt-4 pb-6">
+            <div className="flex justify-center flex-col items-center w-full md:w-3xl pt-4 pb-6 animate-fadeDown">
               <img src="./img/iconSubstitute.png" width="87" height="87" alt="icon" className="border-2 border-ellBlack rounded-full" />
               <input
                 type="text"
@@ -108,7 +104,8 @@ const Account = () => {
                 maxLength={32}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="border-2 border-ellGray rounded-md px-4 py-2 m-2 w-80 font-prompt text-ellBlack text-lg"
+                className="border-2 border-ellGray rounded-md px-4 py-2 m-2 w-80 font-prompt text-ellPrimary text-lg"
+                required
               />
               <input
                 type="text"
@@ -116,7 +113,7 @@ const Account = () => {
                 maxLength={15}
                 value={number}
                 onChange={(e) => setNumber(e.target.value)}
-                className="border-2 border-ellGray rounded-md px-4 py-2 m-2 mb-6 w-80 font-prompt text-ellBlack text-lg"
+                className="border-2 border-ellGray rounded-md px-4 py-2 m-2 mb-6 w-80 font-prompt text-ellPrimary text-lg"
               />
               {!user ? <SignIn setUser={setUser} /> : <SignOut setUser={setUser} />}
             </div>
@@ -136,7 +133,7 @@ const Account = () => {
         </div>
         {/* Theme */}
         <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
-             onClick={toggleThemeDropdown}>
+             onClick={() => setIsTheme(prev => !prev)}>
           <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
             <img src={icons.theme} width="40" height="40" alt="theme" />
             <div className="flex-row flex items-center pl-8 font-prompt font-semibold text-ellPrimary text-lg">ธีมสี</div>
@@ -169,10 +166,53 @@ const Account = () => {
           </div>
         </div>
         {/* Help */}
-        <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer">
+        <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
+            onClick={() => setIsHelp(prev => !prev)}>
           <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
             <img src={icons.help} width="40" height="40" alt="help" />
             <div className="flex-row flex items-center pl-8 font-prompt font-semibold text-ellPrimary text-lg">ช่วยเหลือ</div>
+          </div>
+          <div className={`transition-all duration-500 ease-in-out overflow-hidden 
+                      ${isHelp ? 'max-h-88 md:max-h-64 opacity-100' : 'max-h-0 opacity-0'}`}>
+            <form action="https://api.web3forms.com/submit" method="POST">
+              <div className="flex flex-col justify-center items-center">
+                <div className='flex flex-col md:flex-row gap-2 items-center w-full'>
+                <input type="hidden" name="access_key" value={HelpCenterAPI}/>
+                <input
+                    type="text"
+                    name="subject"
+                    placeholder="หัวข้อ"
+                    maxLength={40}
+                    className="focus:outline-none focus:border-ellPrimary border-2 border-ellGray rounded-md px-4 py-2 w-full font-prompt text-ellPrimary text-lg"
+                    onClick={(e) => { e.stopPropagation();}}
+                  />
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="อีเมล"
+                    maxLength={40}
+                    className="focus:outline-none focus:border-ellPrimary border-2 border-ellGray rounded-md px-4 py-2 w-full font-prompt text-ellPrimary text-lg"
+                    onClick={(e) => { e.stopPropagation();}}
+                  />
+                  </div>
+                  <div className='flex w-full flex-col items-center'>
+                    <textarea
+                      name="message"
+                      placeholder="ข้อความ"
+                      maxLength={228}
+                      className="focus:outline-none focus:border-ellPrimary focus:ring-0 border-2 border-ellGray rounded-md px-4 py-2 my-2 w-full h-28 font-prompt text-ellPrimary text-lg placeholder:absolute placeholder:top-2 placeholder:left-4 resize-none overflow-hidden"
+                      onClick={(e) => { e.stopPropagation(); }}
+                    ></textarea>
+                    <button 
+                    type="submit"
+                    className={`mb-2 rounded-2xl cursor-pointer h-14 w-48 bg-ellBlack font-prompt text-ellSecondary text-sm hover:scale-101 active:scale-98 font-semibold`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >Submit</button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
         {user ? (
@@ -194,7 +234,7 @@ const Account = () => {
         )}
       </div>
 
-      <div className="fixed bottom-0 w-full bg-ellBlack py-3 text-center font-prompt text-ellSecondary text-sm z-10">
+      <div className="fixed bottom-0 w-full bg-ellBlack py-3 text-center font-promp text-ellSecondary text-sm z-10">
         © {new Date().getFullYear()} Easylandlord. All Rights Reserved.
       </div>
     </>
