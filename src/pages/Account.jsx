@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SignIn from '../components/signIn';
 import SignOut from '../components/signout';
+import Alert from '../components/Alert';
 import { setDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../components/firebase';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext'
+import { auth } from '../components/firebase';
+import { signOut } from "firebase/auth";
 
 const Account = () => {
   const HelpCenterAPI = import.meta.env.VITE_HELPCENTER_RECEIVER_2;
@@ -15,6 +18,7 @@ const Account = () => {
   const [user, setUser] = useState(localStorage.getItem("email") || null);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
+  const [showAlert, setShowAlert] = useState(false);
 
   // Use the theme context
   const { theme: currentTheme, changeTheme, icons } = useTheme();
@@ -42,6 +46,21 @@ const Account = () => {
     
     loadUserData();
   }, [user, changeTheme]);
+
+  const handleSignout = () => {
+    setShowAlert(true);
+  };
+  
+  const confirmSignout = () => {
+    signOut(auth)
+      .then(() => {
+        localStorage.removeItem("email");
+        setUser(null);
+        console.log("Log Out Success");
+        setShowAlert(false);
+      })
+      .catch((error) => console.error("Logout Failed", error));
+  };
 
   const handleSave = async () => {
     if (user) {
@@ -82,7 +101,7 @@ const Account = () => {
 
   return (
     <>
-      <div className="w-full h-full bg-ellWhite flex items-center flex-col">
+      <div className="w-full h-max bg-ellWhite flex items-center flex-col">
         {/* Profile */}
         <div className=" items-center justify-center flex-col w-full px-4 md:w-3xl border-b border-b-ellDarkGray">
           <div className="flex justify-end w-full md:w-3xl pt-6">
@@ -132,7 +151,7 @@ const Account = () => {
           )}
         </div>
         {/* Theme */}
-        <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
+        <button className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
              onClick={() => setIsTheme(prev => !prev)}>
           <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
             <img src={icons.theme} width="40" height="40" alt="theme" />
@@ -164,9 +183,9 @@ const Account = () => {
               ></button>
             </div>
           </div>
-        </div>
+        </button>
         {/* Help */}
-        <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
+        <button className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
             onClick={() => setIsHelp(prev => !prev)}>
           <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
             <img src={icons.help} width="40" height="40" alt="help" />
@@ -214,29 +233,37 @@ const Account = () => {
               </div>
             </form>
           </div>
-        </div>
+        </button>
         {user ? (
           // Logout Button
-          <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer">
+          <button className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
+            onClick={handleSignout}>
             <div className="flex-row flex items-center justify-start w-3xl py-6 pl-7 hover:pl-12 duration-300 ease-in-out">
               <img src="./img/logout.svg" width="35" height="35" alt="Logout" />
               <div className="flex-row flex items-center pl-8 font-prompt font-semibold text-ellRed text-lg">ออกจากระบบ</div>
             </div>
-          </div>
+          </button>
         ) : (
           // Login Button
-          <div className="items-center justify-center w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer">
+          <button className="items-center justify-center w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
+            onClick={() => setIsEditing(true)}>
             <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
               <img src="./img/login.svg" width="40" height="40" alt="Login" />
               <div className="flex-row flex items-center pl-8 font-prompt font-semibold text-ellGreen text-lg">เข้าสู่ระบบ</div>
             </div>
-          </div>
+          </button>
         )}
       </div>
 
       <div className="fixed bottom-0 w-full bg-ellBlack py-3 text-center font-promp text-ellSecondary text-sm z-10">
         © {new Date().getFullYear()} Easylandlord. All Rights Reserved.
       </div>
+      {showAlert && (
+        <Alert
+        onConfirm={confirmSignout} 
+        onCancel={() => setShowAlert(false)} 
+        />
+      )}
     </>
   );
 };

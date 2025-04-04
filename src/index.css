@@ -60,6 +60,7 @@ html, body, #root {
 }
 
 .navbar-container {
+  background: var(--color-ellWhite);
   height: calc(100% - 64px);
   overflow-y: auto;
 }
@@ -92,9 +93,16 @@ html, body, #root {
   padding: calc(var(--spacing) * 1) /* 0.25rem = 4px */;
 }
 
-
 .p-2 {
   padding: calc(var(--spacing) * 2) /* 0.5rem = 8px */;
+}
+
+.p-4 {
+  padding: calc(var(--spacing) * 4) /* 1rem = 16px */;
+}
+
+.p-6 {
+  padding: calc(var(--spacing) * 6) /* 1.5rem = 24px */;
 }
 
 .pl-2 {
