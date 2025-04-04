@@ -3,7 +3,7 @@ import React from "react";
 
 const Alert = ({ onConfirm, onCancel }) => {
   return (
-    <div className="fixed inset-0 bg-transparent flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-transparent flex items-center justify-center p-4 animate-fadeDown">
       <div className="border-2 border-ellBlack bg-ellPrimary rounded-lg shadow-lg p-4 max-w-sm w-full">
         <h3 className="text-lg font-medium text-ellWhite mb-4">Are you sure you want to sign out?</h3>
         

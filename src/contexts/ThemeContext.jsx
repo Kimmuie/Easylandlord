@@ -3,11 +3,12 @@ import React, { createContext, useState, useEffect, useContext } from "react";
 const themes = {
   light: { 
     ellPrimary: "#333333", 
+    ellSecondary: "#F7F7F7",
+    ellTertiary: "#F7F7F7",
     ellWhite: "#F7F7F7", 
     ellBlack: "#333333",
     ellGray: "#D6D6D6",
     ellDarkGray: "#8E8E8E",
-    ellSecondary: "#F7F7F7",
     ellScrollbar1: "#D6D6D6",
     ellScrollbar2: "#333333",
     background: "#F7F7F7", 
@@ -15,11 +16,12 @@ const themes = {
   },
   dark: { 
     ellPrimary: "#F7F7F7", 
+    ellSecondary: "#333333",
+    ellTertiary: "#333333",
     ellWhite: "#333333", 
     ellBlack: "#F7F7F7",
     ellGray: "#D6D6D6",
     ellDarkGray: "#8E8E8E", 
-    ellSecondary: "#333333",
     ellScrollbar1: "#F7F7F7",
     ellScrollbar2: "#8E8E8E",
     background: "#333333", 
@@ -27,11 +29,12 @@ const themes = {
   },
   blue: { 
     ellPrimary: "#F7F7F7", 
+    ellSecondary: "#F7F7F7",
+    ellTertiary: "#333333",
     ellWhite: "#202435", 
     ellBlack: "#2B334E",
     ellGray: "#2B334E",
     ellDarkGray: "#8E8E8E", 
-    ellSecondary: "#F7F7F7",
     ellScrollbar1: "#D6D6D6",
     ellScrollbar2: "#2B334E",
     background: "#2D336B", 
@@ -112,11 +115,12 @@ export const ThemeProvider = ({ children }) => {
     
     // For backward compatibility with your current setup
     document.documentElement.style.setProperty("--color-ellPrimary", theme.ellPrimary);
+    document.documentElement.style.setProperty("--color-ellSecondary", theme.ellSecondary);
+    document.documentElement.style.setProperty("--color-ellTertiary", theme.ellTertiary);
     document.documentElement.style.setProperty("--color-ellWhite", theme.ellWhite);
     document.documentElement.style.setProperty("--color-ellBlack", theme.ellBlack);
     document.documentElement.style.setProperty("--color-ellGray", theme.ellGray);
     document.documentElement.style.setProperty("--color-ellDarkGray", theme.ellDarkGray);
-    document.documentElement.style.setProperty("--color-ellSecondary", theme.ellSecondary);
     document.documentElement.style.setProperty("--color-ellScrollbar1", theme.ellScrollbar1);
     document.documentElement.style.setProperty("--color-ellScrollbar2", theme.ellScrollbar2);
     localStorage.setItem("theme", themeName);

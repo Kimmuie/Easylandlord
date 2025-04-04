@@ -72,18 +72,18 @@ const Navbar = () => {
 
       {/* Mobile Navigation */}
       {menuOpen && (
-        <div className="fixed top-20 left-0 w-full bg-white flex flex-col items-center md:hidden z-40">
+        <div className="fixed top-20 left-0 w-full bg-ellWhite flex flex-col items-center md:hidden z-40">
           {menuItems.map((item) => (
             <NavLink
               key={item.name}
               to={item.paths[0]}
-              className="w-full text-center py-2 text-lg font-prompt font-semibold border-b border-ellGray"
+              className="w-full text-center text-ellPrimary py-2 text-lg font-prompt font-semibold border-b border-ellGray"
               onClick={() => setMenuOpen(false)}
             >
               {item.name}
               <div className="flex justify-center">
                 {item.paths.includes(location.pathname) && (
-                  <div className="absolute w-15 h-1.5 mt-0.5 bg-ellBlack"></div>
+                  <div className="absolute w-15 h-1.5 mt-0.5 bg-ellPrimary"></div>
                 )}
               </div>
             </NavLink>
