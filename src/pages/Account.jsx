@@ -10,7 +10,8 @@ import { auth } from '../components/firebase';
 import { signOut } from "firebase/auth";
 
 const Account = () => {
-  const HelpCenterAPI = import.meta.env.VITE_HELPCENTER_RECEIVER_2;
+  const HelpCenterAPI1 = import.meta.env.VITE_HELPCENTER_RECEIVER_1;
+  const HelpCenterAPI2 = import.meta.env.VITE_HELPCENTER_RECEIVER_2;
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isTheme, setIsTheme] = useState(false);
@@ -196,7 +197,8 @@ const Account = () => {
             <form action="https://api.web3forms.com/submit" method="POST">
               <div className="flex flex-col justify-center items-center">
                 <div className='flex flex-col md:flex-row gap-2 items-center w-full'>
-                <input type="hidden" name="access_key" value={HelpCenterAPI}/>
+                <input type="hidden" name="access_key" value={HelpCenterAPI1}/>
+                <input type="hidden" name="access_key" value={HelpCenterAPI2}/>
                 <input
                     type="text"
                     name="subject"
