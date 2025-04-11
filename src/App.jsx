@@ -1,30 +1,43 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import LoadingScreen from './components/LoadingScreen'
 import Management from "./pages/Management";
 import Financial from "./pages/Financial";
-import Rental from "./pages/Rental";
+import Map from "./pages/Map";
 import Account from "./pages/Account";
+import RentalDetail from "./pages/RentalDetail";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
+const AppContent = () => {
+  const location = useLocation();
+  const isRentalDetailPage = /^\/management\/[^/]+$/.test(location.pathname);
+  
+  return (
+    <>
+      <LoadingScreen />
+      {!isRentalDetailPage && <Navbar />}
+      <div className={!isRentalDetailPage ? "navbar-container" : ""}>
+        <Routes>
+          <Route path="/" element={<Management />} />
+          <Route path="/management" element={<Management />} />
+          <Route path="/management/:rentalId" element={<RentalDetail />} />
+          <Route path="/financial" element={<Financial />} />
+          <Route path="/map" element={<Map />} />
+          <Route path="/account" element={<Account />} />
+        </Routes>
+      </div>
+    </>
+  );
+};
+
 function App() {
-    return (
-        <ThemeProvider>
-            <Router>
-                <LoadingScreen></LoadingScreen>
-                <Navbar />
-                <div div className="navbar-container">
-                    <Routes>
-                        <Route path="/" element={<Management />} />
-                        <Route path="/management" element={<Management />} />
-                        <Route path="/financial" element={<Financial />} />
-                        <Route path="/rental" element={<Rental />} />
-                        <Route path="/account" element={<Account />} />
-                    </Routes>
-                </div>
-            </Router>
-        </ThemeProvider>
-    );
+  return (
+    <ThemeProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </ThemeProvider>
+  );
 }
 
 export default App;

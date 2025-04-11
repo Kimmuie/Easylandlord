@@ -54,6 +54,8 @@ const themeIcons = {
     plus: "./img/plus-light.svg",
     info: "./img/info-light.svg",
     dot: "./img/dot-dark.svg",
+    filterOff: "./img/filter-off-dark.svg",
+    filterOn: "./img/filter-on-light.svg",
   },
   dark: {
     loading: "./img/Home-dark.svg",
@@ -66,6 +68,8 @@ const themeIcons = {
     plus: "./img/plus-dark.svg",
     info: "./img/info-dark.svg",
     dot: "./img/dot-light.svg",
+    filterOff: "./img/filter-off-light.svg",
+    filterOn: "./img/filter-on-dark.svg",
   },
   blue: {
     loading: "./img/Home-light.svg",
@@ -78,6 +82,8 @@ const themeIcons = {
     plus: "./img/plus-light.svg",
     info: "./img/info-light.svg",
     dot: "./img/dot-light.svg",
+    filterOff: "./img/filter-off-light.svg",
+    filterOn: "./img/filter-on-dark.svg",
   },
 };
 

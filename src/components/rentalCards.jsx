@@ -1,10 +1,16 @@
 import React, { useContext, useState } from "react";
 import ThemeContext from "../contexts/ThemeContext";
+import { useNavigate } from 'react-router-dom';
 
 const RentalCards = ({ rental, updateRental }) => {
+    const navigate = useNavigate();
     const { theme, icons } = useContext(ThemeContext);
     const [name, setName] = useState(rental.name);
     const [status, setStatus] = useState(rental.status);
+
+    const handleDetailClick = () => {
+        navigate(`/management/${rental.id}`);
+      };
 
     const handleSave = () => {
         updateRental(rental.id, { name, status, propertyDetails, rentFee, rentFrequency });
@@ -18,19 +24,23 @@ const RentalCards = ({ rental, updateRental }) => {
         {/* Main card */}
         <div className="relative h-56 w-full md:w-4xl rounded-2xl bg-ellWhite border-2 border-ellGray">
             <div className="flex-row flex py-3 pl-3">
-                <img src="./img/sampleImage.jpg" width="100" height="40" alt="image" className="border-2 border-ellGray rounded-md"/>
-                <div className="flex items-center pl-6 font-prompt font-semibold text-ellPrimary text-md md:text-xl md:w-184 w-56">
-                    {rental.name}
-                </div>  
-                <div className="flex items-center md:items-start mr-3 active:scale-98">
-                    <img src={icons.dot} alt="dot" className="hover:bg-ellDarkGray active:bg-ellDarkGray rounded-full p-0 md:p-1 w-6 md:w-9 h-6 md:h-9"/>    
+                <div className="flex flex-grow">
+                    <img src="./img/sampleImage.jpg" width="100" height="40" alt="image" className="border-2 border-ellGray rounded-md"/>
+                    <div className="flex items-center pl-6 font-prompt font-semibold text-ellPrimary text-md md:text-xl w-lg">
+                        {rental.name}
+                    </div>  
+                </div>
+                <div className="flex justify-end">
+                    <div className="flex justify-center rounded-sm mr-3 px-1 font-prompt text-ellSecondary text-md md:text-lg bg-ellBlack h-8">
+                        {rental.tag}
+                    </div>
                 </div>
             </div>
             <div className="flex flex-row">
                 <div className="flex flex-col flex-grow pl-3">
                     {/* Rental Location */}
-                    <div className="font-prompt text-ellPrimary text-sm md:text-lg min-h-22 w-full md:w-lg">
-                        {rental.propertyDetails}
+                    <div className="font-prompt text-ellPrimary text-sm md:text-lg min-h-22 w-full md:w-md">
+                        {rental.location}
                     </div>
                     {/* Rental Description */}
                     <div className="flex flex-row items-center font-prompt text-ellPrimary text-lg">
@@ -44,7 +54,8 @@ const RentalCards = ({ rental, updateRental }) => {
                         {rental.rentFee}/{rental.rentFrequency}
                     </div>
                     {/* Rental Description */}
-                    <button className="flex flex-row bg-ellBlack rounded-full items-center justify-center font-prompt text-ellSecondary h-8 w-30 md:w-48 text-sm md:text-lg cursor-pointer hover:scale-101 active:scale-98">
+                    <button className="flex flex-row bg-ellBlack rounded-full items-center justify-center font-prompt text-ellSecondary h-8 w-30 md:w-48 text-sm md:text-lg cursor-pointer hover:scale-101 active:scale-98"
+                        onClick={handleDetailClick}>
                         <img src={icons.info} alt="info" className="m-1 w-5 md:w-6 h-5 md:h-6"/>
                         ดูรายละเอียด
                     </button>

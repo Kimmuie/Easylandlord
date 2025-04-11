@@ -10,8 +10,7 @@ import { auth } from '../components/firebase';
 import { signOut } from "firebase/auth";
 
 const Account = () => {
-  const HelpCenterAPI1 = import.meta.env.VITE_HELPCENTER_RECEIVER_1;
-  const HelpCenterAPI2 = import.meta.env.VITE_HELPCENTER_RECEIVER_2;
+  const HelpCenterAPI = [import.meta.env.VITE_HELPCENTER_RECEIVER_1,import.meta.env.VITE_HELPCENTER_RECEIVER_2];
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isTheme, setIsTheme] = useState(false);
@@ -151,8 +150,8 @@ const Account = () => {
             </div>
           )}
         </div>
-        {/* Theme */}
-        <button className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
+        {/* Theme - Changed from button to div */}
+        <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
              onClick={() => setIsTheme(prev => !prev)}>
           <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
             <img src={icons.theme} width="40" height="40" alt="theme" />
@@ -184,9 +183,9 @@ const Account = () => {
               ></button>
             </div>
           </div>
-        </button>
-        {/* Help */}
-        <button className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
+        </div>
+        {/* Help - Changed from button to div */}
+        <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
             onClick={() => setIsHelp(prev => !prev)}>
           <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
             <img src={icons.help} width="40" height="40" alt="help" />
@@ -194,11 +193,10 @@ const Account = () => {
           </div>
           <div className={`transition-all duration-500 ease-in-out overflow-hidden 
                       ${isHelp ? 'max-h-88 md:max-h-64 opacity-100' : 'max-h-0 opacity-0'}`}>
-            <form action="https://api.web3forms.com/submit" method="POST">
+            <form action="https://api.web3forms.com/submit" method="POST" onClick={(e) => e.stopPropagation()}>
               <div className="flex flex-col justify-center items-center">
                 <div className='flex flex-col md:flex-row gap-2 items-center w-full'>
-                <input type="hidden" name="access_key" value={HelpCenterAPI1}/>
-                <input type="hidden" name="access_key" value={HelpCenterAPI2}/>
+                <input type="hidden" name="access_key" value={HelpCenterAPI}/>
                 <input
                     type="text"
                     name="subject"
@@ -235,25 +233,25 @@ const Account = () => {
               </div>
             </form>
           </div>
-        </button>
+        </div>
         {user ? (
-          // Logout Button
-          <button className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
+          // Logout Button - Changed from button to div
+          <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
             onClick={handleSignout}>
             <div className="flex-row flex items-center justify-start w-3xl py-6 pl-7 hover:pl-12 duration-300 ease-in-out">
               <img src="./img/logout.svg" width="35" height="35" alt="Logout" />
               <div className="flex-row flex items-center pl-8 font-prompt font-semibold text-ellRed text-lg">ออกจากระบบ</div>
             </div>
-          </button>
+          </div>
         ) : (
-          // Login Button
-          <button className="items-center justify-center w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
+          // Login Button - Changed from button to div
+          <div className="items-center justify-center w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
             onClick={() => setIsEditing(true)}>
             <div className="flex-row flex items-center justify-start w-3xl py-6 pl-6 hover:pl-12 duration-300 ease-in-out">
               <img src="./img/login.svg" width="40" height="40" alt="Login" />
               <div className="flex-row flex items-center pl-8 font-prompt font-semibold text-ellGreen text-lg">เข้าสู่ระบบ</div>
             </div>
-          </button>
+          </div>
         )}
       </div>
 

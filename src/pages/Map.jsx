@@ -1,13 +1,13 @@
 import React from 'react'
 
-const ManageRental = () => {
+const Map = () => {
   return (
     <>
     <div className="absolute w-full h-full bg-ellWhite">
-      <div className="flex items-start">ManageRental</div>
+      <div className="flex items-start">Map</div>
     </div>
     </>
   )
 }
 
-export default ManageRental
+export default Map

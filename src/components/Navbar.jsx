@@ -9,7 +9,7 @@ const Navbar = () => {
   const menuItems = [
     { name: "บริหาร", paths: ["/management", "/"] },
     { name: "การเงิน", paths: ["/financial"] },
-    { name: "บ้านเช่า", paths: ["/rental"] },
+    { name: "แผนที่", paths: ["/map"] },
     { name: "บัญชี", paths: ["/account"] },
   ];
 
