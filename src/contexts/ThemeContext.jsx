@@ -56,6 +56,12 @@ const themeIcons = {
     dot: "./img/dot-dark.svg",
     filterOff: "./img/filter-off-dark.svg",
     filterOn: "./img/filter-on-light.svg",
+    inbox: "./img/inbox-dark.svg",
+    error: "./img/error-dark.svg",
+    back: "./img/back-dark.svg",
+    trash: "./img/trash-dark.svg",
+    edit: "./img/edit-dark.svg",
+    save: "./img/save-light.svg",
   },
   dark: {
     loading: "./img/Home-dark.svg",
@@ -70,6 +76,12 @@ const themeIcons = {
     dot: "./img/dot-light.svg",
     filterOff: "./img/filter-off-light.svg",
     filterOn: "./img/filter-on-dark.svg",
+    inbox: "./img/inbox-light.svg",
+    error: "./img/error-light.svg",
+    back: "./img/back-light.svg",
+    trash: "./img/trash-light.svg",
+    edit: "./img/edit-dark.svg",
+    save: "./img/save-light.svg",
   },
   blue: {
     loading: "./img/Home-light.svg",
@@ -84,6 +96,12 @@ const themeIcons = {
     dot: "./img/dot-light.svg",
     filterOff: "./img/filter-off-light.svg",
     filterOn: "./img/filter-on-dark.svg",
+    inbox: "./img/inbox-light.svg",
+    error: "./img/error-light.svg",
+    back: "./img/back-light.svg",
+    trash: "./img/trash-light.svg",
+    edit: "./img/edit-light.svg",
+    save: "./img/save-light.svg",
   },
 };
 

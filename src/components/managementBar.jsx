@@ -3,22 +3,17 @@ import ThemeContext from "../contexts/ThemeContext";
 import { doc, getDoc, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
 import { db } from "../components/firebase";
 
-const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagFilterChange }) => {
+const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagFilterChange, handleSearch }) => {
     const { theme, icons } = useContext(ThemeContext);
     const [showFilterTag, setShowFilterTag] = useState(false);
     const [showFilterTagBox, setShowFilterTagBox] = useState(false);
     const filterTagBoxRef = useRef(null);
     const [tagFilters, setTagFilters] = useState({
         'บ้านเช่า': false,
-        'ที่ดิน': false,
-        'คอนโด': false,
-        'หอพัก': false,
-        'อพาร์ตเมนต์': false,
-        'ทาวน์เฮ้าส์': false,
-        'อาคารพาณิชย์': false,
-        'สำนักงาน': false,
         'โกดัง': false,
-        'โรงงาน': false
+        'ตึกเเถว': false,
+        'ที่ดิน': false,
+        'คอนโด': false
     });
 
     useEffect(() => {
@@ -112,6 +107,7 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                         type="text" 
                         placeholder="ค้นหาบ้านเช่าของคุณ"   
                         maxLength={32}
+                        onChange={(e) => handleSearch(e.target.value)}
                         className="border-2 border-ellGray rounded-2xl px-4 py-2 min-w-96 md:min-w-116 font-prompt text-ellPrimary text-lg mr-2"
                     />
                 </div>
@@ -135,8 +131,8 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                         </button>
                         {/* Filter TagBox */}
                         {showFilterTagBox && 
-                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-40 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl z-50">
-                            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-ellBlack" />
+                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-20 md:w-30 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl border-2 border-ellPrimary z-50">
+                            <div className="absolute -top-2.5 left-7 md:left-11.75 w-4 h-4 bg-ellBlack rotate-45 border-s-2 border-t-2 border-s-ellPrimary border-t-ellPrimary"></div>
                         {Object.keys(tagFilters).map((tag, index) => (
                         <label key={index} className="flex items-center gap-1 cursor-pointer">
                             <input
@@ -161,13 +157,13 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                         </div>
                         }
                     </div>
-                    <button className="md:flex hidden mt-0 bg-ellBlack rounded-b-full w-20  flex-row justify-center items-center cursor-pointer"
+                    <button className="md:flex hidden mt-0 bg-ellBlack rounded-b-full w-20  flex-row justify-center items-center cursor-pointer "
                             onClick={handleCreateRental}>
                         <img src={icons.plus} width="40" height="40" alt="add"/>
                     </button>
                     {/* Phone Rental Add */}
                     <div className="fixed bottom-4 right-4 z-100">
-                        <button className="md:hidden flex mt-4.5 bg-ellBlack rounded-full p-4  flex-row justify-center items-center cursor-pointer active:scale-98"
+                        <button className="md:hidden flex mt-4.5 bg-ellBlack rounded-full p-4  flex-row justify-center items-center cursor-pointer hover:scale-105 active:scale-98"
                                 onClick={handleCreateRental}>
                             <img src={icons.plus} width="40" height="40" alt="add"/>
                         </button>

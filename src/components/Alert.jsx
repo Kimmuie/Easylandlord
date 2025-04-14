@@ -1,18 +1,32 @@
 // Alert.jsx
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 const Alert = ({ onConfirm, onCancel }) => {
+  const alertBoxRef = useRef(null);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (alertBoxRef.current && !alertBoxRef.current.contains(event.target)) {
+              onCancel();
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
   return (
     <div className="fixed inset-0 bg-transparent flex items-center justify-center p-4 animate-fadeDown">
-      <div className="border-2 border-ellBlack bg-ellPrimary rounded-lg shadow-lg p-4 max-w-sm w-full">
-        <h3 className="text-lg font-medium text-ellWhite mb-4">Are you sure you want to sign out?</h3>
+      <div className="border-2 border-ellBlack border-dotted drop-shadow-lg bg-ellPrimary rounded-lg shadow-lg p-4 max-w-sm w-full" ref={alertBoxRef}>
+        <h3 className="text-lg font-medium text-ellWhite mb-4">Do you want to confirm this action?</h3>
         
         <div className="flex justify-end gap-2 mt-6">
           <button
             onClick={onCancel}
             className="bg-[#D6D6D6] text-[#333333] hover:scale-101 active:scale-98 font-medium py-2 px-4 rounded cursor-pointer"
           >
-            No
+            Cancel
           </button>
           <button
             onClick={onConfirm}
