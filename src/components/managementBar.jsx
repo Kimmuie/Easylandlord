@@ -100,7 +100,7 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
     };
     
     return (
-        <div className="flex w-xl md:w-4xl mb-4.5 justify-center">
+        <div className="flex w-xl xl:w-4xl md:w-3xl mb-4.5 justify-center">
             <div className="relative flex-col md:flex-row md:flex">
                 <div className="flex mt-4.5">
                     <input 
@@ -108,7 +108,7 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                         placeholder="ค้นหาบ้านเช่าของคุณ"   
                         maxLength={32}
                         onChange={(e) => handleSearch(e.target.value)}
-                        className="border-2 border-ellGray rounded-2xl px-4 py-2 min-w-96 md:min-w-116 font-prompt text-ellPrimary text-lg mr-2"
+                        className="border-2 border-ellGray rounded-2xl px-4 py-2 w-96 xl:min-w-116 md:w-83 font-prompt text-ellPrimary text-lg mr-2"
                     />
                 </div>
                 <div className="flex justify-center">

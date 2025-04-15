@@ -60,7 +60,7 @@ const themeIcons = {
     error: "./img/error-dark.svg",
     back: "./img/back-dark.svg",
     trash: "./img/trash-dark.svg",
-    edit: "./img/edit-dark.svg",
+    edit: "./img/edit-light.svg",
     save: "./img/save-light.svg",
   },
   dark: {

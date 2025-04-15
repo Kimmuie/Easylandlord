@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import ThemeContext from "../contexts/ThemeContext";
 import { useParams, useNavigate } from 'react-router-dom';
 import Alert from '../components/Alert';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../components/firebase';
 
 const RentalDetail = () => {
@@ -15,6 +15,23 @@ const RentalDetail = () => {
   const [user, setUser] = useState(localStorage.getItem("email") || null);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [showTagBox, setShowTagBox] = useState(false);
+  const filterTagBoxRef = useRef(null);
+  const [selectedTag, setSelectedTag] = useState('');
+  const tagOptions = ['ไม่ได้ระบุแท็ก', 'บ้านเช่า', 'โกดัง', 'ตึกเเถว', 'ที่ดิน', 'คอนโด'];
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (filterTagBoxRef.current && !filterTagBoxRef.current.contains(event.target)) {
+        setShowTagBox(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleBackClick = () => {
     navigate(`/`);
@@ -24,26 +41,92 @@ const RentalDetail = () => {
     setShowAlert(true);
   };
 
-    useEffect(() => {
-      const loadUserData = async () => {
-        if (user) {
-          try {
-            const docRef = doc(db, "users", user);
-            const docSnap = await getDoc(docRef);
-    
-            if (docSnap.exists()) {
-              const data = docSnap.data();
-              setName(data.name || '');
-              setNumber(data.number || '');
-            }
-          } catch (error) {
-            console.error("Error fetching user data:", error);
+  const handleTagSelect = async (tag) => {
+    console.log("handleTagSelect called with tag:", tag);
+    setSelectedTag(tag);
+    if (rental && user) {
+      try {
+        const userDocRef = doc(db, "users", user);
+        console.log("Fetching user document...");
+        const docSnap = await getDoc(userDocRef);
+
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          console.log("User data:", userData);
+
+          if (userData.rental) {
+            const updatedRentals = userData.rental.map(r =>
+              r.id === rentalId ? { ...r, tag: tag } : r
+            );
+            console.log("Updated rentals array:", updatedRentals);
+
+            console.log("Updating Firebase document...");
+            await updateDoc(userDocRef, {
+              rental: updatedRentals
+            });
+            console.log("Firebase document updated successfully.");
+            setRental(prevRental => ({
+              ...prevRental,
+              tag: tag
+            }));
+            console.log("Local rental state updated:", rental);
+          } else {
+            console.log("userData.rental is undefined or null.");
+          }
+        } else {
+          console.log("User document does not exist.");
+        }
+      } catch (error) {
+        console.error("Error updating rental tag:", error);
+      }
+    } else {
+      console.log("Rental or user is null, cannot update tag.");
+    }
+    setShowTagBox(false);
+  };
+
+  const handleSave = async () => {
+    if (isEditing && rental && user) {
+      try {
+        const userDocRef = doc(db, "users", user);
+        const docSnap = await getDoc(userDocRef);
+
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+
+          if (userData.rental) {
+            // No need to update tag here
+            console.log("Other rental details updated successfully");
           }
         }
-      };
-      
-      loadUserData();
-    }, [user]);
+      } catch (error) {
+        console.error("Error updating rental:", error);
+      }
+    }
+
+    setIsEditing(false);
+  }
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (user) {
+        try {
+          const docRef = doc(db, "users", user);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setName(data.name || '');
+            setNumber(data.number || '');
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      }
+    };
+
+    loadUserData();
+  }, [user]);
 
   useEffect(() => {
     const fetchRentalDetail = async () => {
@@ -59,8 +142,9 @@ const RentalDetail = () => {
           const userData = docSnap.data();
           if(userData.rental){
             const currentRental = userData.rental.find(r => r.id === rentalId);
-            if(currentRental){
+            if (currentRental){
               setRental(currentRental);
+              setSelectedTag(currentRental.tag);
             }
           }
         }
@@ -99,16 +183,16 @@ const RentalDetail = () => {
     { id: 11, squareMetre: 48 },
     { id: 12, squareMetre: 33 }
   ];
-  
+
   if (loading) {
     return <div className='bg-ellWhite h-screen w-screen text-ellPrimary text-lg font-prompt font-semibold'>Loading...</div>;
   }
-  
+
   if (!rental) {
-    return <div className='bg-ellWhite h-screen w-screen flex flex-col items-center justify-center text-ellPrimary text-lg font-prompt font-semibold'>      
-    <img src={iconError} width="55" height="40" alt="error"/>
-    Rental not found
-    <button onClick={handleBackClick} className="bg-[#D6D6D6] text-[#333333] hover:scale-101 active:scale-98 font-medium py-2 px-4 rounded-md cursor-pointer">กลับไปยังหน้าแรก</button>
+    return <div className='bg-ellWhite h-screen w-screen flex flex-col items-center justify-center text-ellPrimary text-lg font-prompt font-semibold'>
+      <img src={iconError} width="55" height="40" alt="error"/>
+      Rental not found
+      <button onClick={handleBackClick} className="bg-[#D6D6D6] text-[#333333] hover:scale-101 active:scale-98 font-medium py-2 px-4 rounded-md cursor-pointer">กลับไปยังหน้าแรก</button>
     </div>;
   }
 
@@ -116,13 +200,13 @@ const RentalDetail = () => {
     <>
     <div className="bg-ellWhite md:bg-transparent h-20 md:h-0 flex justify-between md:block items-center md:border-0 border-b border-b-ellDarkGray z-40 hiddenLandscapePhone">
       <img src={iconBack} width="55" height="40" alt="back"
-        className='md:top-2 left-2 md:absolute relative m-0 md:m-3 cursor-pointer border-1 border-transparent active:border-ellPrimary hover:border-ellPrimary p-2 rounded-full hiddenLandscapePhone z-20'
+        className='xl:top-2 md:top-0 xl:left-2 md:left-0 left-2 md:absolute relative m-0 xl:m-3 md:m-1 cursor-pointer border-1 border-transparent active:border-ellPrimary hover:border-ellPrimary p-2 rounded-full hiddenLandscapePhone z-20'
         onClick={handleBackClick}/>
         <div className='absolute md:hidden flex justify-center w-full z-10'>
           <span className='text-ellPrimary text-lg font-prompt font-semibold'>ดูรายละเอียด</span>
         </div>
         <img src={iconTrash} width="55" height="40" alt="trash"
-        className='md:top-2 right-2 md:absolute relative m-0 md:m-3 cursor-pointer border-1 border-transparent active:border-ellPrimary hover:border-ellPrimary p-2 rounded-full hiddenLandscapePhone z-20'
+        className='xl:top-2 md:top-0 xl:right-2 md:right-0 right-2 md:absolute relative m-0 xl:m-3 md:m-1 cursor-pointer border-1 border-transparent active:border-ellPrimary hover:border-ellPrimary p-2 rounded-full hiddenLandscapePhone z-20'
         onClick={handleDelete}/>
     </div>
     {showAlert && (
@@ -131,21 +215,59 @@ const RentalDetail = () => {
         onCancel={() => setShowAlert(false)} 
         />
       )}
-  <div className="TooltipMain fixed bottom-2 right-2 flex flex-col items-center justify-center z-50">
-    <div className="mb-2 flex text-center justify-center bg-ellBlack p-1 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">แก้ไข</div>
-    <div className="absolute mb-12 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
-    <img src={iconEdit} width="55" height="40" alt="edit"
-      className='relative m-0 md:m-3 cursor-pointer bg-ellBlack border-1 border-transparent active:scale-98 hover:scale-105 p-2 rounded-full z-20'
-      onClick={handleDelete}/>
+  {isEditing ? (
+    <div className="TooltipMain fixed bottom-2 right-2 flex flex-col items-center justify-center z-50">
+      <div className="flex text-center justify-center bg-ellGreen p-1 rounded-lg font-prompt text-[#F7F7F7] text-sm z-20 Tooltip">บันทึก</div>
+      <div className="absolute mb-14 w-4 h-4 bg-ellGreen rotate-45 z-10 Tooltip"></div>
+      <img src={iconSave} width="55" height="40" alt="edit"
+        className='relative m-0 md:m-3 cursor-pointer bg-ellGreen border-1 border-transparent active:scale-98 hover:scale-105 p-2 rounded-full z-20'
+        onClick={handleSave}/>
+    </div>
+  ):(
+    <div className="TooltipMain fixed bottom-2 right-2 flex flex-col items-center justify-center z-50">
+      <div className="flex text-center justify-center bg-ellBlack p-1 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">แก้ไข</div>
+      <div className="absolute mb-14 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
+      <img src={iconEdit} width="55" height="40" alt="edit"
+        className='relative m-0 md:m-3 cursor-pointer bg-ellBlack border-1 border-transparent active:scale-98 hover:scale-105 p-2 rounded-full z-20'
+        onClick={() => setIsEditing(true)}/>
   </div>
+  )}
     <div className="overflow-y-auto overflow-x-hidden flex flex-col items-center w-full min-h-screen bg-ellWhite">
-      <div className="flex flex-row justify-between md:w-4xl w-full my-4 md:mx-0 px-2">
+      <div className="flex flex-row justify-between xl:w-4xl md:w-2xl w-full my-4 md:mx-0 px-2">
         <div className="flex flex-row items-center font-prompt text-ellPrimary text-lg">
             <div className={`rounded-full border-2 border-ellGray h-5 w-5 mr-2 ${rental.status === "available" ? "bg-ellGreen" : "bg-ellRed"}`}></div>
             {rental.status === "available" ? "ว่าง" : "ไม่ว่าง"}
         </div>
-        <div className="flex justify-center rounded-sm px-1 font-prompt text-ellSecondary text-md md:text-lg bg-ellBlack h-8">
+      <div className="relative inline-block">
+        <button className="flex justify-center rounded-sm px-1 font-prompt text-ellSecondary text-md md:text-lg bg-ellBlack h-8 cursor-pointer"
+                onClick={() => setShowTagBox(prev => !prev)}>
           {rental.tag}
+        </button>
+        {/* TagBox */}
+        {showTagBox &&
+        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-20 md:w-30 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl border-2 border-ellPrimary z-50" 
+            ref={filterTagBoxRef}>
+            <div className="absolute -top-2.5 left-7 md:left-11.75 w-4 h-4 bg-ellBlack rotate-45 border-s-2 border-t-2 border-s-ellPrimary border-t-ellPrimary"></div>
+        {tagOptions.map((tag, index) => (
+        <label key={index} className="flex items-center gap-1 cursor-pointer">
+            <input
+            type="radio"
+            checked={selectedTag === tag}
+            onChange={() => handleTagSelect(tag)}
+            className="appearance-none w-3 h-3 rounded-full border-2 border-ellSecondary checked:bg-ellSecondary checked:border-transparent cursor-pointer"
+            />
+            <span className="font-prompt text-ellSecondary text-xs"
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleTagSelect(tag);
+                }}>
+                {tag}
+            </span>
+        </label>
+        ))}
+        </div>
+        }
         </div>
       </div>
       <div className='flex flex-row xl:pl-2 md:pl-4 pl-2 xl:pr-2 md:pr-4 pr-2'>
