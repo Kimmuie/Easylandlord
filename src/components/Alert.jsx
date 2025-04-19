@@ -17,7 +17,7 @@ const Alert = ({ onConfirm, onCancel }) => {
     }, []);
 
   return (
-    <div className="fixed inset-0 bg-transparent flex items-center justify-center p-4 animate-fadeDown">
+    <div className="fixed inset-0 bg-transparent flex items-center justify-center p-4 animate-fadeDown z-90">
       <div className="border-2 border-ellBlack border-dotted drop-shadow-lg bg-ellPrimary rounded-lg shadow-lg p-4 max-w-sm w-full" ref={alertBoxRef}>
         <h3 className="text-lg font-medium text-ellWhite mb-4">Do you want to confirm this action?</h3>
         

@@ -13,18 +13,52 @@ const RentalDetail = () => {
   const [ loading, setLoading ] = useState(true);
   const [showAlert, setShowAlert] = useState(false);
   const [user, setUser] = useState(localStorage.getItem("email") || null);
+  const [rentalName, setRentalName] = useState('');
+  const [rentalLocate, setRentalLocate] = useState('');
+  const [rentalFee, setRentalFee] = useState('');
+  const [rentalBedroom, setRentalBedroom] = useState(0);
+  const [rentalRestroom, setRentalRestroom] = useState(0);
+  const [rentalArea, setRentalArea] = useState('');
+  const [showInputTip, setShowInputTip] = useState(false);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [showTagBox, setShowTagBox] = useState(false);
+  const [showFrequencyBox, setShowFrequencyBox] = useState(false);
+  const [showDetailsBox, setShowDetailsBox] = useState(false);
   const filterTagBoxRef = useRef(null);
+  const filterFrequencyBoxRef = useRef(null);
+  const filterDetailsBoxRef = useRef(null);
   const [selectedTag, setSelectedTag] = useState('');
+  const [selectedFrequency, setSelectedFrequency] = useState('');
+  const [selectedDetails, setSelectedDetails] = useState('');
   const tagOptions = ['ไม่ได้ระบุแท็ก', 'บ้านเช่า', 'โกดัง', 'ตึกเเถว', 'ที่ดิน', 'คอนโด'];
+  const frequencyOptions = ['วัน', 'อาทิตย์', 'เดือน', 'ปี'];
+  const detailsOptions = {
+    'วันประกาศ':false,
+    'ตกแต่งครบ': false,
+    'เครื่องปรับอากาศ': false,
+    'เครื่องทำน้ำอุ่น':false,
+    'เครื่องซักผ้า':false,
+    'อ่างอาบน้ำ':false, 
+    'กล้องวงจรปิด':false, 
+    'ลิฟต์':false,
+    'ระเบียง':false, 
+    'สวน':false, 
+    'ลานจอดรถ':false, 
+    'สระว่ายน้ำ':false
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
       if (filterTagBoxRef.current && !filterTagBoxRef.current.contains(event.target)) {
         setShowTagBox(false);
+      }
+      if (filterFrequencyBoxRef.current && !filterFrequencyBoxRef.current.contains(event.target)) {
+        setShowFrequencyBox(false);
+      }
+      if (filterDetailsBoxRef.current && !filterDetailsBoxRef.current.contains(event.target)) {
+        setShowDetailsBox(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -32,6 +66,21 @@ const RentalDetail = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const handleChangeInput = (e, fieldType) => {
+    const input = e.target.value.replace(/,/g, '');
+    if (/^\d*$/.test(input)) {
+      const formatted = input ? Number(input).toLocaleString('en-US') : '';
+      if (fieldType === 'area') {
+        setRentalArea(formatted);
+      } else if (fieldType === 'fee') {
+        setRentalFee(formatted);
+      }
+      setShowInputTip(false);
+    } else {
+      setShowInputTip(true);
+    }
+  };
 
   const handleBackClick = () => {
     navigate(`/`);
@@ -41,47 +90,64 @@ const RentalDetail = () => {
     setShowAlert(true);
   };
 
-  const handleTagSelect = async (tag) => {
-    console.log("handleTagSelect called with tag:", tag);
-    setSelectedTag(tag);
-    if (rental && user) {
-      try {
-        const userDocRef = doc(db, "users", user);
-        console.log("Fetching user document...");
-        const docSnap = await getDoc(userDocRef);
-
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          console.log("User data:", userData);
-
-          if (userData.rental) {
-            const updatedRentals = userData.rental.map(r =>
-              r.id === rentalId ? { ...r, tag: tag } : r
-            );
-            console.log("Updated rentals array:", updatedRentals);
-
-            console.log("Updating Firebase document...");
-            await updateDoc(userDocRef, {
-              rental: updatedRentals
-            });
-            console.log("Firebase document updated successfully.");
-            setRental(prevRental => ({
-              ...prevRental,
-              tag: tag
-            }));
-            console.log("Local rental state updated:", rental);
-          } else {
-            console.log("userData.rental is undefined or null.");
-          }
-        } else {
-          console.log("User document does not exist.");
-        }
-      } catch (error) {
-        console.error("Error updating rental tag:", error);
-      }
-    } else {
-      console.log("Rental or user is null, cannot update tag.");
+  // Tag & Frequency
+  const handleTagSelect = async (value, type) => {
+    if (type === 'tag') {
+      setSelectedTag(value);
+      setShowTagBox(false);
+    } else if (type === 'frequency') {
+      setSelectedFrequency(value);
+      setShowFrequencyBox(false);
+    } else if (type === 'details') {
+      const updatedDetails = { ...selectedDetails };
+      updatedDetails[value] = !updatedDetails[value];
+      setSelectedDetails(updatedDetails);
     }
+    
+    if (!rental || !user) {
+      return;
+    }
+    
+    try {
+      const userDocRef = doc(db, "users", user);
+      const docSnap = await getDoc(userDocRef);
+      
+      if (docSnap.exists() && docSnap.data().rental) {
+        const updatedRentals = docSnap.data().rental.map(r => {
+          if (r.id === rentalId) {
+            if (type === 'tag') {
+              return { ...r, tag: value };
+            } else if (type === 'frequency') {
+              return { ...r, propertyDetails: value };
+            } else if (type === 'details') {
+              const updatedPropertyDetails = { ...r.propertyDetails };
+              updatedPropertyDetails[value] = !updatedPropertyDetails[value];
+              return { ...r, propertyDetails: updatedPropertyDetails  };
+            }
+            return r;
+          }
+          return r;
+        });
+  
+        await updateDoc(userDocRef, { rental: updatedRentals });
+        
+        setRental(prev => {
+          if (type === 'tag') {
+            return { ...prev, tag: value };
+          } else if (type === 'frequency') {
+            return { ...prev, rentFrequency: value };
+          } else if (type === 'details') {
+            const updatedPropertyDetails = { ...prev.propertyDetails };
+            updatedPropertyDetails[value] = !updatedPropertyDetails[value];
+            return { ...prev, propertyDetails: updatedPropertyDetails };
+          }
+          return prev;
+        }); 
+      }
+    } catch (error) {
+      console.error("Error updating tag:", error);
+    }
+    
     setShowTagBox(false);
   };
 
@@ -95,7 +161,23 @@ const RentalDetail = () => {
           const userData = docSnap.data();
 
           if (userData.rental) {
-            // No need to update tag here
+            const updatedRentals = userData.rental.map(r =>
+              r.id === rentalId ? { ...r, name: rentalName,  location: rentalLocate, rentFee: rentalFee, bedroom : rentalBedroom, restroom : rentalRestroom, squareMetre: rentalArea } : r
+            );
+            await updateDoc(userDocRef, {
+              rental: updatedRentals
+            });
+            
+            setRental(prevRental => ({
+              ...prevRental,
+              name: rentalName,
+              location: rentalLocate,
+              rentFee: rentalFee,
+              bedroom : rentalBedroom,
+              restroom : rentalRestroom,
+              squareMetre: rentalArea
+            }));
+  
             console.log("Other rental details updated successfully");
           }
         }
@@ -128,6 +210,7 @@ const RentalDetail = () => {
     loadUserData();
   }, [user]);
 
+  // Sent to firebase
   useEffect(() => {
     const fetchRentalDetail = async () => {
       try {
@@ -144,7 +227,15 @@ const RentalDetail = () => {
             const currentRental = userData.rental.find(r => r.id === rentalId);
             if (currentRental){
               setRental(currentRental);
+              setRentalName(currentRental.name);
+              setRentalLocate(currentRental.location);
+              setRentalFee(currentRental.rentFee);
+              setRentalBedroom(currentRental.bedroom);
+              setRentalRestroom(currentRental.restroom);
+              setRentalArea(currentRental.squareMetre);
               setSelectedTag(currentRental.tag);
+              setSelectedFrequency(currentRental.rentFrequency);
+              setSelectedDetails(currentRental.propertyDetails);
             }
           }
         }
@@ -154,11 +245,18 @@ const RentalDetail = () => {
         setLoading(false);
       }
     };
-
+  
     fetchRentalDetail();
   }, [rentalId]);
 
+  useEffect(() => {
+    if (showInputTip) {
+      const timer = setTimeout(() => setShowInputTip(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showInputTip]);
 
+  
   const getFixedIconPath = (iconPath) => {
     return iconPath ? iconPath.replace(/^\./, '') : '';
   };
@@ -168,21 +266,44 @@ const RentalDetail = () => {
   const iconTrash = getFixedIconPath(icons.trash);
   const iconEdit = getFixedIconPath(icons.edit);
   const iconSave = getFixedIconPath(icons.save);
+  const iconMegaphone = getFixedIconPath(icons.megaphone);
+  const iconFurniture = getFixedIconPath(icons.furniture);
+  const iconConditioner = getFixedIconPath(icons.conditioner);
+  const iconHeater = getFixedIconPath(icons.heater);
+  const iconWashing = getFixedIconPath(icons.washing);
+  const iconBath = getFixedIconPath(icons.bath);
+  const iconCctv = getFixedIconPath(icons.cctv);
+  const iconElevator = getFixedIconPath(icons.elevator);
+  const iconBalcony = getFixedIconPath(icons.balcony);
+  const iconGarden = getFixedIconPath(icons.garden);
+  const iconParking = getFixedIconPath(icons.parking);
+  const iconPool = getFixedIconPath(icons.pool);
 
-  const rentalDetail = [
-    { id: 1, squareMetre: 35 },
-    { id: 2, squareMetre: 42 },
-    { id: 3, squareMetre: 28 },
-    { id: 4, squareMetre: 50 },
-    { id: 5, squareMetre: 45 },
-    { id: 6, squareMetre: 32 },
-    { id: 7, squareMetre: 38 },
-    { id: 8, squareMetre: 55 },
-    { id: 9, squareMetre: 40 },
-    { id: 10, squareMetre: 36 },
-    { id: 11, squareMetre: 48 },
-    { id: 12, squareMetre: 33 }
-  ];
+  if (!rental || !rental.propertyDetails) return null;
+
+  const propertyMapping = {
+    วันประกาศ: { id: 1, name: `วันประกาศ ${rental.createdAt}`, icon: iconMegaphone },
+    ตกแต่งครบ: { id: 2, name: "ตกแต่งครบ", icon: iconFurniture },
+    เครื่องปรับอากาศ:{ id: 3, name: "เครื่องปรับอากาศ", icon: iconConditioner },
+    เครื่องทำน้ำอุ่น: { id: 4, name: "เครื่องทำน้ำอุ่น", icon: iconHeater },
+    เครื่องซักผ้า: { id: 5, name: "เครื่องซักผ้า", icon: iconWashing },
+    อ่างอาบน้ำ: { id: 6, name: "อ่างอาบน้ำ", icon: iconBath },
+    กล้องวงจรปิด: { id: 7, name: "กล้องวงจรปิด", icon: iconCctv },
+    ลิฟต์: { id: 8, name: "ลิฟต์", icon: iconElevator },
+    ระเบียง: { id: 9, name: "ระเบียง", icon: iconBalcony },
+    สวน: { id: 10, name: "สวน", icon: iconGarden },
+    ลานจอดรถ: { id: 11, name: "ลานจอดรถ", icon: iconParking },
+    สระว่ายน้ำ: { id: 12, name: "สระว่ายน้ำ", icon: iconPool },
+  }
+  
+  const rentalDetail = Object.entries(rental.propertyDetails)
+    .filter(([key, value]) => value === true) 
+    .map(([key]) => ({
+      id: propertyMapping[key].id,
+      name: propertyMapping[key].name,
+      icon: propertyMapping[key].icon,
+    }))
+    .sort((a, b) => a.id - b.id);
 
   if (loading) {
     return <div className='bg-ellWhite h-screen w-screen text-ellPrimary text-lg font-prompt font-semibold'>Loading...</div>;
@@ -216,20 +337,22 @@ const RentalDetail = () => {
         />
       )}
   {isEditing ? (
-    <div className="TooltipMain fixed bottom-2 right-2 flex flex-col items-center justify-center z-50">
-      <div className="flex text-center justify-center bg-ellGreen p-1 rounded-lg font-prompt text-[#F7F7F7] text-sm z-20 Tooltip">บันทึก</div>
+    <div className="TooltipMain fixed bottom-4 right-4 flex flex-col items-center justify-center z-50">
+      <div className="flex text-center justify-center bg-ellGreen p-1 mb-2 rounded-lg font-prompt text-[#F7F7F7] text-sm z-20 Tooltip">บันทึก</div>
       <div className="absolute mb-14 w-4 h-4 bg-ellGreen rotate-45 z-10 Tooltip"></div>
-      <img src={iconSave} width="55" height="40" alt="edit"
-        className='relative m-0 md:m-3 cursor-pointer bg-ellGreen border-1 border-transparent active:scale-98 hover:scale-105 p-2 rounded-full z-20'
-        onClick={handleSave}/>
+      <button className="relative rounded-full bg-ellGreen flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
+        onClick={handleSave}>
+        <img src={iconSave} width="40" height="40" alt="save"/>
+      </button>
     </div>
   ):(
-    <div className="TooltipMain fixed bottom-2 right-2 flex flex-col items-center justify-center z-50">
-      <div className="flex text-center justify-center bg-ellBlack p-1 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">แก้ไข</div>
+    <div className="TooltipMain fixed bottom-4 right-4 flex flex-col items-center justify-center z-50">
+      <div className="flex text-center justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">แก้ไข</div>
       <div className="absolute mb-14 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
-      <img src={iconEdit} width="55" height="40" alt="edit"
-        className='relative m-0 md:m-3 cursor-pointer bg-ellBlack border-1 border-transparent active:scale-98 hover:scale-105 p-2 rounded-full z-20'
-        onClick={() => setIsEditing(true)}/>
+      <button className="relative rounded-full bg-ellBlack flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
+        onClick={() => setIsEditing(true)}>
+        <img src={iconEdit} width="40" height="40" alt="edit"/>
+      </button>
   </div>
   )}
     <div className="overflow-y-auto overflow-x-hidden flex flex-col items-center w-full min-h-screen bg-ellWhite">
@@ -245,22 +368,22 @@ const RentalDetail = () => {
         </button>
         {/* TagBox */}
         {showTagBox &&
-        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-20 md:w-30 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl border-2 border-ellPrimary z-50" 
+        <div className="absolute top-full mt-2 left-2 md:left-1/2 -translate-x-1/2 w-25 md:w-30 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl border-2 border-ellPrimary z-50" 
             ref={filterTagBoxRef}>
-            <div className="absolute -top-2.5 left-7 md:left-11.75 w-4 h-4 bg-ellBlack rotate-45 border-s-2 border-t-2 border-s-ellPrimary border-t-ellPrimary"></div>
+            <div className="absolute -top-2.5 left-15 md:left-11.75 w-4 h-4 bg-ellBlack rotate-45 border-s-2 border-t-2 border-s-ellPrimary border-t-ellPrimary"></div>
         {tagOptions.map((tag, index) => (
         <label key={index} className="flex items-center gap-1 cursor-pointer">
             <input
             type="radio"
             checked={selectedTag === tag}
-            onChange={() => handleTagSelect(tag)}
+            onChange={() => handleTagSelect(tag, 'tag')}
             className="appearance-none w-3 h-3 rounded-full border-2 border-ellSecondary checked:bg-ellSecondary checked:border-transparent cursor-pointer"
             />
             <span className="font-prompt text-ellSecondary text-xs"
                 onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    handleTagSelect(tag);
+                    handleTagSelect(tag, 'tag');
                 }}>
                 {tag}
             </span>
@@ -277,17 +400,92 @@ const RentalDetail = () => {
           <img src="/img/sampleImage.jpg" alt="image" className="w-72 md:h-35 h-25 border-1 border-ellTertiary rounded-br-2xl"/>
         </div>
       </div>
-      <div className='flex flex-col xl:flex-row xl:w-fit w-full p-4'>
-        <div className="flex flex-col justify-between w-md">
+      <div className={`flex flex-col xl:flex-row xl:w-fit md:w-full w-full pt-4 xl:px-0 px-4 ${isEditing ? "pb-3" : "pb-4"}`}>
+        <div className="flex flex-col justify-between xl:w-md md:w-full w-full">
+        {isEditing ? (
+          <>
+          <input
+            type="text"
+            placeholder="กรุณากรอกชื่ออสังหาริมทรัพย์"
+            maxLength={40}
+            value={rentalName}
+            onChange={(e) => setRentalName(e.target.value)}
+            className="border-2 border-ellGray rounded-md px-2 py-0.5 xl:w-110 md:w-full w-full font-prompt font-semibold text-ellPrimary text-md md:text-xl"
+            required
+          />
+          <textarea
+          placeholder="กรุณากรอกที่อยู่ตาม Google Maps"
+          maxLength={144}
+          value={rentalLocate}
+          onChange={(e) => setRentalLocate(e.target.value)}
+          className="border-2 border-ellGray rounded-md px-2 py-0.5 mt-2 min-h-16 xl:w-110 md:w-full w-full font-prompt text-ellPrimary text-sm md:text-lg resize-none"
+          required
+          />
+          </>
+        ):(
+          <>
           <div className="flex items-center font-prompt font-semibold text-ellPrimary text-md md:text-xl xl:w-184 md:w-4xl w-56">
               {rental.name}
           </div>  
           <div className="font-prompt text-ellPrimary text-sm md:text-lg min-h-16 w-100 md:w-4xl xl:w-110">
               {rental.location}
           </div>
+          </>
+        )}
         </div>
         <div className='flex xl:flex-col flex-col-reverse gap-2 xl:w-md w-full'>
           <div className="flex flex-row gap-2">
+          {isEditing ? (
+            <>
+            {/* Bedroom */}
+            <div className="xl:w-36 md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+              <img src="/img/plus-dark.svg" width="30" height="20" alt="add"
+              className='border-2 border-[#333333] ml-0.5 rounded-sm cursor-pointer hover:scale-105 active:scale-98'
+                  onClick={() => setRentalBedroom(prev => Math.min(Math.max(prev + 1, 0), 50))}/>
+              <div className='w-full flex items-center justify-center'>
+                <img src="/img/bed.svg" width="35" height="40" alt="bed" className='xl:mr-2 md:mr-2 mr-0'/>
+                {rentalBedroom}
+              </div>
+              <img src="/img/minus-dark.svg" width="30" height="20" alt="remove"
+                  className='border-2 border-[#333333] mr-0.75 rounded-sm cursor-pointer hover:scale-105 active:scale-98'
+                  onClick={() => setRentalBedroom(prev => Math.min(Math.max(prev - 1, 0), 50))}/>
+            </div>
+            {/* Restroom */}
+            <div className="xl:w-36 md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+              <img src="/img/plus-dark.svg" width="30" height="20" alt="add"
+                  className='border-2 border-[#333333] ml-0.5 rounded-sm cursor-pointer hover:scale-105 active:scale-98'
+                  onClick={() => setRentalRestroom(prev => Math.min(Math.max(prev + 1, 0), 50))}/>
+              <div className='w-full flex items-center justify-center'>
+                <img src="/img/bath.svg" width="30" height="40" alt="bath" className='xl:mr-2 md:mr-2 mr-0'/>
+                {rentalRestroom}
+              </div>
+              <img src="/img/minus-dark.svg" width="30" height="20" alt="remove" 
+                  className='border-2 border-[#333333] mr-0.75 rounded-sm cursor-pointer hover:scale-105 active:scale-98'
+                  onClick={() => setRentalRestroom(prev => Math.min(Math.max(prev - 1, 0), 50))}/>
+            </div>
+            {/* Square Metre */}
+            <div className="relative inline-block xl:w-36 w-full">
+              {showInputTip && (
+                <div className="absolute bottom-10 left-0 bg-ellRed text-[#F7F7F7] text-xs rounded px-2 py-1 z-10 whitespace-nowrap">
+                  กรุณากรอกเฉพาะตัวเลขเท่านั้น
+                </div>
+              )}
+              <div className="xl:w-36 md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                <img src="/img/ruler.svg" width="33" height="40" alt="ruler" className='mx-2'/>
+                <input
+                  type="text"
+                  placeholder="กรอกพื้นที่"
+                  maxLength={6}
+                  value={rentalArea}
+                  onChange={(e) => handleChangeInput(e, 'area')}
+                  className="text-center border-2 border-[#333333]  rounded-md mr-2 px-2 py-0.5 w-full font-prompt font-semibold text-[#333333] xl:text-md text-sm"
+                  required
+                />
+              </div>
+            </div>
+            </>
+          ):(
+            <>
             <div className="xl:w-36 md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
               <img src="/img/bed.svg" width="35" height="40" alt="bed" className='mr-2'/>
               {rental.bedroom} ห้องนอน
@@ -300,23 +498,121 @@ const RentalDetail = () => {
               <img src="/img/ruler.svg" width="33" height="40" alt="ruler" className='mr-2'/>
               {rental.squareMetre} ตร.ม
             </div>
+            </>
+          )}
           </div>
-          <div className="flex font-prompt font-semibold text-ellPrimary text-md md:text-xl xl:justify-end justify-start">
+          <div className="flex font-prompt font-semibold text-ellPrimary text-md md:text-xl items-center xl:justify-end justify-start">
+          {isEditing ? (
+          <>
+          <input
+            type="text"
+            placeholder="กรอกค่าเช่า"
+            maxLength={10}
+            value={rentalFee}
+            onChange={(e) => handleChangeInput(e, 'fee')}
+            className="border-2 border-ellGray rounded-md px-2 py-0.5 w-32 font-prompt font-semibold text-ellPrimary text-md md:text-xl mr-2 xl:text-end text-start"
+            required
+          />
+          / 
+          <div className="relative inline-block">
+          <button className={`border-2 rounded-md px-2 py-0.5 ml-2 cursor-pointer ${showFrequencyBox ? "border-ellPrimary" : "border-ellGray"}`}
+                onClick={() => setShowFrequencyBox(prev => !prev)}>
+            {rental.rentFrequency}
+          </button>
+          {showFrequencyBox &&
+        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-25 md:w-30 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl border-2 border-ellPrimary z-50" 
+            ref={filterFrequencyBoxRef}>
+            <div className="absolute -top-2.5 left-11.75 w-4 h-4 bg-ellBlack rotate-45 border-s-2 border-t-2 border-s-ellPrimary border-t-ellPrimary"></div>
+        {frequencyOptions.map((frequency, index) => (
+        <label key={index} className="flex items-center gap-1 cursor-pointer">
+            <input
+            type="radio"
+            checked={selectedFrequency === frequency}
+            onChange={() => handleTagSelect(frequency, 'frequency')}
+            className="appearance-none w-3 h-3 rounded-full border-2 border-ellSecondary checked:bg-ellSecondary checked:border-transparent cursor-pointer"
+            />
+            <span className="font-prompt font-medium text-ellSecondary text-xs"
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleTagSelect(frequency, 'frequency');
+                }}>
+                {frequency}
+            </span>
+        </label>
+        ))}
+        </div>
+        }
+        </div>
+          </>
+          ):(
+            <>
             {rental.rentFee}/{rental.rentFrequency}
+            </>
+          )}
           </div>
         </div>
       </div>
       <div className='flex flex-col items-start justify-start xl:w-4xl w-full xl:px-0 px-4 flex-grow'>
-        <div className="flex font-prompt font-semibold text-ellPrimary text-md md:text-xl md:justify-end justify-start">รายละเอียดของอสังหาฯ</div>
-        <div className="grid grid-cols-2 xl:grid-cols-4	 md:grid-cols-3 w-full min-h-27">
-          {rentalDetail.map((rental) => (
-            <div key={rental.id} className="w-full flex flex-row items-center justify-start font-prompt text-ellPrimary text-md font-semibold pb-1 ">
-              <img src="/img/Home-light.svg" width="30" height="30" alt="bed" className="mr-2" />
-              {rental.squareMetre} ตร.ม
+        <div className='flex flex-row items-center w-full mb-2'>
+          <div className="flex font-prompt font-semibold text-ellPrimary text-md md:text-xl md:justify-end justify-start">รายละเอียดของอสังหาฯ</div>
+          {isEditing &&
+            <>
+          <div className="relative inline-block">
+          <button className="ml-3 py-1 px-3 flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray rounded-full xl:text-md text-sm font-semibold cursor-pointer"
+                  onClick={() => setShowDetailsBox(prev => !prev)}>
+            <img src="/img/plus-dark.svg" width="20" height="40" alt="add" className='mr-1'/>
+             เพิ่ม
+          </button>
+          {showDetailsBox &&
+            <div className="absolute top-1/2 mt-2 left-25 -translate-y-1/2 w-35 md:w-40 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl border-2 border-ellPrimary z-50" 
+                ref={filterDetailsBoxRef}>
+                <div className="absolute top-1/2 -left-2.5 -translate-y-1/2 w-4 h-4 bg-ellBlack rotate-45 border-s-2 border-b-2 border-s-ellPrimary border-b-ellPrimary"></div>
+                {Object.keys(detailsOptions).map((detail) => (
+            <label key={detail} className="flex items-center gap-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedDetails?.[detail] || false}
+                onChange={() => handleTagSelect(detail, 'details')}
+                className="appearance-none h-3 w-3 rounded border-ellSecondary text-ellSecondary border-2 checked:bg-ellSecondary cursor-pointer"
+              />
+              <span 
+                className="font-prompt font-medium text-ellSecondary text-xs"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleTagSelect(detail, 'details');
+                }}
+              >
+                {detail}
+              </span>
+            </label>
+          ))}
+            </div>
+            }
+            </div>
+            </>
+          }
+        </div>
+        <div className="grid xl:grid-cols-3 md:grid-cols-4 grid-cols-6 w-full min-h-27 [writing-mode:vertical-lr]">
+          {rentalDetail.map((item) => (
+            <div
+              key={item.id}
+              className="[writing-mode:horizontal-tb] flex flex-row items-center justify-start font-prompt text-ellPrimary text-md font-semibold pb-1"
+            >
+              <img
+                src={item.icon}
+                width="28"
+                height="28"
+                alt="propertyIcon"
+                className="mr-2"
+              />
+              {item.name}
             </div>
           ))}
         </div>
-        <div className='flex xl:flex-row flex-col-reverse w-full xl:w-4xl mb-2 mt-6 md:mt-auto xl:mt-auto self-center'>
+        <div className='flex xl:flex-row flex-col-reverse w-full xl:w-4xl mb-2 mt-4 md:mt-auto xl:mt-auto self-center'>
+          {!isEditing &&
           <div className="bg-ellWhite xl:h-20 h-22 w-full md:w-full xl:w-xl flex flex-row items-center justify-start rounded-xl border-2 border-ConstantGray p-2">
             <img src="/img/iconSubstitute.png" width="60" height="60" alt="icon" className="border-2 border-ellPrimary rounded-full ml-3" />
             <div className='flex flex-col ml-3'>
@@ -325,7 +621,8 @@ const RentalDetail = () => {
               <span className='text-ellPrimary font-prompt opacity-80 text-sm'>{number}</span>
             </div>
           </div>
-          <div className='w-full md:w-full xl:w-xl flex flex-row xl:flex-col justify-between gap-2 xl:pl-2 pl-0 xl:pb-0 pb-2'>
+          }
+          <div className={`w-full md:w-full flex flex-row justify-between gap-2 xl:pl-2 pl-0 xl:pb-0 pb-2 ${isEditing ? "xl:flex-row xl:w-full" : "xl:flex-col xl:w-xl"}`}>
             <div className="w-full xl:h-8.5 h-8 flex items-center justify-between font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray active:bg-ellDarkGray rounded-md text-md font-semibold cursor-pointer px-2">
               <div className="flex items-center w-full">
                 <img src="/img/plus-dark.svg" width="30" height="20" alt="add" />

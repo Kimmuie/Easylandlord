@@ -72,6 +72,9 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
             }
             const userData = docSnap.data()
             const rentalCount = userData.rental ? userData.rental.length : 0;
+            const timestamp = Timestamp.now();
+            const date = timestamp.toDate();
+            const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
             const newRental = {
                 id: Date.now().toString(),
                 name: "Untitle " + (rentalCount + 1),
@@ -83,10 +86,10 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                 bedroom: 0,
                 restroom: 0,
                 squareMetre: 0,
-                propertyDetails: "",
+                propertyDetails: {'วันประกาศ':false, 'ตกแต่งครบ': false, 'เครื่องปรับอากาศ': false, 'เครื่องทำน้ำอุ่น':false, 'เครื่องซักผ้า':false, 'อ่างอาบน้ำ':false, 'กล้องวงจรปิด':false, 'ลิฟต์':false, 'ระเบียง':false, 'สวน':false, 'ลานจอดรถ':false, 'สระว่ายน้ำ':false},
                 tenantName: "",
                 tenantNumber: "",
-                createdAt: Timestamp.now()
+                createdAt: formattedDate
             };
             
             await updateDoc(userDocRef, {

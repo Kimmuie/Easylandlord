@@ -67,8 +67,6 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow-y: hidden;
-  overflow-x: hidden;
 }
 
 .navbar-container {
@@ -103,10 +101,12 @@ html, body, #root {
 
 ::-webkit-scrollbar-track {
   background: var(--color-ellScrollbar1);
+  z-index: 10;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-ellScrollbar2);
+  z-index: 10;
 }
 
 ::-webkit-scrollbar-thumb:hover {
