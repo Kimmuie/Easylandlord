@@ -106,7 +106,7 @@ const Account = () => {
         <div className=" items-center justify-center flex-col w-full px-4 md:w-3xl border-b border-b-ellDarkGray">
           <div className="flex justify-end w-full md:w-3xl pt-6">
             {isEditing ? (
-              <button className="font-prompt text-ellGreen bg-ellLime rounded-2xl px-4 py-1 text-sm cursor-pointer"
+              <button className="font-prompt text-ellLime bg-ellGreen rounded-2xl px-4 py-1 text-sm cursor-pointer"
                 onClick={handleSave}>บันทึก</button>
             ) : (
               <button className="font-prompt text-ellRed text-sm px-4 py-1 cursor-pointer"
@@ -262,6 +262,8 @@ const Account = () => {
         <Alert
         onConfirm={confirmSignout} 
         onCancel={() => setShowAlert(false)} 
+        Header="You're about to sign out"
+        Description="You can return anytime, by the way your data will remain unchanged."
         />
       )}
     </>

@@ -19,7 +19,7 @@
   --color-ellDarkGray: #8E8E8E;
   --color-ellRed: #FF1E00;
   --color-ellGreen: #77B254;
-  --color-ellLime: #E4EFE7;
+  --color-ellLime: #E2F6CA;
   --color-ellScrollbar1: #D6D6D6;
   --color-ellScrollbar2: #333333;
   --color-ConstantGray: #D6D6D6;
@@ -61,6 +61,11 @@
 
 * {
   box-sizing: border-box;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5) sepia(1) saturate(5) hue-rotate(175deg); 
+  cursor: pointer;
 }
 
 html, body, #root {

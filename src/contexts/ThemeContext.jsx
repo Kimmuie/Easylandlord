@@ -74,6 +74,8 @@ const themeIcons = {
     garden: "./img/property/plant-dark.svg",
     parking: "./img/property/parking-dark.svg",
     pool: "./img/property/pool-dark.svg",
+    remove: "./img/remove-dark.svg",
+    sign: "./img/sign-dark.svg",
   },
   dark: {
     loading: "./img/Home-dark.svg",
@@ -106,6 +108,8 @@ const themeIcons = {
     garden: "./img/property/plant-light.svg",
     parking: "./img/property/parking-light.svg",
     pool: "./img/property/pool-light.svg",
+    remove: "./img/remove-light.svg",
+    sign: "./img/sign-light.svg",
   },
   blue: {
     loading: "./img/Home-light.svg",
@@ -138,6 +142,8 @@ const themeIcons = {
     garden: "./img/property/plant-light.svg",
     parking: "./img/property/parking-light.svg",
     pool: "./img/property/pool-light.svg",
+    remove: "./img/remove-light.svg",
+    sign: "./img/sign-light.svg",
   },
 };
 

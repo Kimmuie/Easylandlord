@@ -87,9 +87,15 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                 restroom: 0,
                 squareMetre: 0,
                 propertyDetails: {'วันประกาศ':false, 'ตกแต่งครบ': false, 'เครื่องปรับอากาศ': false, 'เครื่องทำน้ำอุ่น':false, 'เครื่องซักผ้า':false, 'อ่างอาบน้ำ':false, 'กล้องวงจรปิด':false, 'ลิฟต์':false, 'ระเบียง':false, 'สวน':false, 'ลานจอดรถ':false, 'สระว่ายน้ำ':false},
+                tenant: false,
                 tenantName: "",
                 tenantNumber: "",
-                createdAt: formattedDate
+                dueDate: "",
+                billDeposit: "",
+                billElectricity: "",
+                billWater: "",
+                createdAt: formattedDate,
+                financialHistory: {}
             };
             
             await updateDoc(userDocRef, {

@@ -34,6 +34,8 @@ const SignOut = ({ setUser }) => {
         <Alert
         onConfirm={confirmSignout} 
         onCancel={() => setShowAlert(false)} 
+        Header="You're about to sign out"
+        Description="You can return anytime, by the way your data will remain unchanged."
         />
       )}
     </>
