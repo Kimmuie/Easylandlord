@@ -76,6 +76,9 @@ const themeIcons = {
     pool: "./img/property/pool-dark.svg",
     remove: "./img/remove-dark.svg",
     sign: "./img/sign-dark.svg",
+    mapId: "abcd1234mymapid",
+    target: "./img/target-dark.svg",
+    calendar: "./img/calendar-dark.svg",
   },
   dark: {
     loading: "./img/Home-dark.svg",
@@ -110,6 +113,9 @@ const themeIcons = {
     pool: "./img/property/pool-light.svg",
     remove: "./img/remove-light.svg",
     sign: "./img/sign-light.svg",
+    mapId: import.meta.env.VITE_Dark_MapId,
+    target: "./img/target-light.svg",
+    calendar: "./img/calendar-light.svg",
   },
   blue: {
     loading: "./img/Home-light.svg",
@@ -144,6 +150,9 @@ const themeIcons = {
     pool: "./img/property/pool-light.svg",
     remove: "./img/remove-light.svg",
     sign: "./img/sign-light.svg",
+    mapId: import.meta.env.VITE_Blue_MapId,
+    target: "./img/target-light.svg",
+    calendar: "./img/calendar-light.svg",
   },
 };
 

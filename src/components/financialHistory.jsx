@@ -3,7 +3,7 @@ import ThemeContext from '../contexts/ThemeContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import Alert from '../components/Alert';
 import { db } from '../components/firebase';
-import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 
   const FinancialHistory = ({ isEditing, setIsEditing }) => {
   const { theme, icons } = useContext(ThemeContext);
@@ -15,11 +15,10 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
   const [isLoading, setIsLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSort, setIsSort] = useState(false);
-  const [currentRecord, setCurrentRecord] = useState(null);
+  const [rentalName, setRentalName] = useState('');
   const [depositBill, setDepositBill] = useState('');
   const [electricityBill, setElectricityBill] = useState('');
   const [waterBill, setWaterBill] = useState('');
-  const [tempoDate, setTempoDate] = useState('');
   const [formData, setFormData] = useState({
     moveInDate: '',
     dueInDate: '',
@@ -77,6 +76,7 @@ const handleRecordFieldChange = (e, field, recordId) => {
                 billDeposit: depositBill,
                 billElectricity: electricityBill,
                 billWater: waterBill,
+                financialHistory: records
               };
               await updateDoc(userDocRef, { rental: userData.rental });
               
@@ -96,10 +96,90 @@ const handleRecordFieldChange = (e, field, recordId) => {
       }
     }
   }
+
+   useEffect(() => {
+      const fetchRentalDetail = async () => {
+        try {
+          const userEmail = localStorage.getItem("email");
+          if (!userEmail) {
+            console.log("User Not logged in");
+            return;
+          }
+          const userDocRef = doc(db, "users", userEmail);
+          const docSnap = await getDoc(userDocRef);
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+            if (userData.rental) {
+              const currentRental = userData.rental.find(r => r.id === rentalId);
+              if (currentRental) {
+                setRentalName(currentRental.name);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching rental details:", error);
+        }
+      };
   
+      fetchRentalDetail();
+    }, [rentalId]);
+
+    const handleFinance = async () => {
+      if (!user || records.length === 0) return;
+      try {
+        const userDocRef = doc(db, "users", user);
+        const docSnap = await getDoc(userDocRef);
+        
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          const financeData = userData.finance || {};
+          const existingRecords = financeData.allRecords || [];
+          
+          // Filter out records with empty rental rates and map the valid ones
+          const filteredRecords = records
+            .filter(record => record.rentalRate && record.rentalRate !== "")
+            .map(record => ({
+              paymentDate: record.paymentDate,
+              income: record.rentalRate,
+              outcome: "",
+              id: record.id,
+              note: "ค่าเช่าของ " + rentalName,
+              edited: false,
+            }));
+          if (filteredRecords.length === 0) {
+            console.log("No valid records to add (all had empty rental rates)");
+            return;
+          }
+          const updatedRecords = existingRecords.map(existingRecord => {
+            const matchingNewRecord = filteredRecords.find(newRecord => 
+              newRecord.id === existingRecord.id
+            );
+            return matchingNewRecord || existingRecord;
+          });
+          
+          const recordsToAdd = filteredRecords.filter(newRecord => 
+            !existingRecords.some(existingRecord => existingRecord.id === newRecord.id)
+          );
+    
+          await updateDoc(userDocRef, {
+            finance: {
+              ...financeData,
+              allRecords: [...updatedRecords, ...recordsToAdd]
+            }
+          });
+          
+          console.log("Finance data updated successfully");
+        }
+      } catch (error) {
+        console.error("Error updating finance data:", error);
+      }
+    };
+  
+
   useEffect(() => {
     if (isEditing === false) {
       handleFinancialSave();
+      handleFinance();
     }
   }, [isEditing]);
 
@@ -232,6 +312,27 @@ const handleRecordFieldChange = (e, field, recordId) => {
             if (rentalIndex !== -1 && userData.rental[rentalIndex].financialHistory) {
               if (id === "all") {
                 userData.rental[rentalIndex].financialHistory = [];
+
+                setWaterBill("");
+                setElectricityBill("");
+                setDepositBill("");
+                if (rentalIndex !== -1) {
+                  userData.rental[rentalIndex] = {
+                    ...userData.rental[rentalIndex],
+                    billDeposit: "",
+                    billElectricity: "",
+                    billWater: "",
+                  };
+                  await updateDoc(userDocRef, { rental: userData.rental });
+                  
+                  setRental(prevRental => ({
+                    ...prevRental,
+                    billDeposit: "",
+                    billElectricity: "",
+                    billWater: "",
+                  }));
+                  console.log("All rental details updated successfully");
+                }
               } else if (rentalIndex !== -1 && userData.rental[rentalIndex].financialHistory) {
                 userData.rental[rentalIndex].financialHistory = 
                   userData.rental[rentalIndex].financialHistory.filter(record => record.id !== id);
@@ -241,6 +342,7 @@ const handleRecordFieldChange = (e, field, recordId) => {
               });
               
               fetchRecords();
+              setShowAlertDeleteHistory(false)
             }
           }
         }
@@ -350,7 +452,7 @@ const handleRecordFieldChange = (e, field, recordId) => {
                   <input
                     type="text"
                     placeholder="0"
-                    maxLength={6}
+                    maxLength={7}
                     value={depositBill}
                     onChange={(e) => handleChangeInput(e, 'depositBill')}
                     className="focus:outline-none whitespace-nowrap font-prompt text-center w-full"
@@ -373,7 +475,7 @@ const handleRecordFieldChange = (e, field, recordId) => {
           <table className="w-full">
             <thead className="bg-ellPrimary">
               <tr>
-                <th className="w-9 py-3 font-prompt hover:bg-ellBlack text-center bg-ellWhite border-2 border-ellGray md:text-sm text-xs text-ellPrimary uppercase tracking-wider cursor-pointer"
+                <th className="w-9 py-3 font-prompt hover:bg-ellGray text-center bg-ellWhite border-2 border-ellGray md:text-sm text-xs text-ellPrimary uppercase tracking-wider cursor-pointer"
                     onClick={() => setIsSort(prev => !prev)}>
                   <div className="flex flex-row justify-center" >
                     <img src={iconSign} width="18" height="40" alt="sign" className={`${isSort ? "rotate-0" : "rotate-180 mr-2"} md:block hidden`}/>
@@ -411,7 +513,7 @@ const handleRecordFieldChange = (e, field, recordId) => {
                           name="moveInDate"
                           value={record.moveInDate ? formatDateForInput(record.moveInDate) : ''}
                           onChange={(e) => handleRecordFieldChange(e, 'moveInDate', record.id)}
-                          className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text"
+                          className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text xl:text-md text-sm absolute inset-0"
                         />
                       </td>
                       <td className="font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary relative">
@@ -420,7 +522,7 @@ const handleRecordFieldChange = (e, field, recordId) => {
                           name="dueInDate"
                           value={record.dueInDate ? formatDateForInput(record.dueInDate) : ''}
                           onChange={(e) => handleRecordFieldChange(e, 'dueInDate', record.id)}
-                          className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text"
+                          className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text xl:text-md text-sm absolute inset-0"
                         />
                       </td>
                       <td 
@@ -435,9 +537,9 @@ const handleRecordFieldChange = (e, field, recordId) => {
                         <input
                           type="date"
                           name="paymentDate"
-                          value={record.paymentDate}
+                          value={record.paymentDate ? formatDateForInput(record.paymentDate) : ''}
                           onChange={(e) => handleRecordFieldChange(e, 'paymentDate', record.id)}
-                          className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text"
+                          className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text  xl:text-md text-sm absolute inset-0"
                         />
                       </td>
                       <td 
@@ -521,7 +623,7 @@ const handleRecordFieldChange = (e, field, recordId) => {
                             <input
                               type="date"
                               name="moveInDate"
-                              value={record.moveInDate}
+                              value={record.moveInDate ? formatDateForInput(record.moveInDate) : ''}
                               onChange={(e) => handleRecordFieldChange(e, 'moveInDate', record.id)}
                               className="w-full px-2 text-ellPrimary focus:outline-none cursor-text"
                             />
@@ -543,7 +645,7 @@ const handleRecordFieldChange = (e, field, recordId) => {
                             <input
                               type="date"
                               name="dueInDate"
-                              value={record.dueInDate}
+                              value={record.dueInDate ? formatDateForInput(record.dueInDate) : ''}
                               onChange={(e) => handleRecordFieldChange(e, 'dueInDate', record.id)}
                               className="w-full px-2 text-ellPrimary focus:outline-none cursor-text"
                             />
@@ -586,7 +688,7 @@ const handleRecordFieldChange = (e, field, recordId) => {
                             <input
                               type="date"
                               name="paymentDate"
-                              value={record.paymentDate}
+                              value={record.paymentDate ? formatDateForInput(record.paymentDate) : ''}
                               onChange={(e) => handleRecordFieldChange(e, 'paymentDate', record.id)}
                               className="w-full px-2 text-ellPrimary focus:outline-none cursor-text"
                             />

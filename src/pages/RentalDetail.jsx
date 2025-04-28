@@ -13,6 +13,8 @@ const RentalDetail = () => {
   const [rental, setRental] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAlertDelete, setShowAlertDelete] = useState(false);
+  const [showAlertDeleteTenant, setShowAlertDeleteTenant] = useState(false);
+  const [showAlertBackEdit, setShowAlertBackEdit] = useState(false);
   const [user, setUser] = useState(localStorage.getItem("email") || null);
   const [rentalName, setRentalName] = useState('');
   const [rentalLocate, setRentalLocate] = useState('');
@@ -91,7 +93,16 @@ const RentalDetail = () => {
   };
 
   const handleBackClick = () => {
+    if (isEditing){
+    setShowAlertBackEdit(true)
+    }else{
     navigate(`/`);
+    }
+  };
+
+  const handleDeleteTenant = () => {
+    setHaveTenant(false)
+    setDueDate("")
   };
 
   const handleDelete = async () => {
@@ -404,6 +415,30 @@ const RentalDetail = () => {
 
   return (
     <>
+      {showAlertDelete && (
+        <Alert
+          onConfirm={handleDelete}
+          onCancel={() => setShowAlertDelete(false)}
+          Header="You're about to delete this rental"
+          Description="The data has already been imported to the Finance page, but your financial data in this rental will be deleted."          
+        />
+      )}
+      {showAlertDeleteTenant && (
+        <Alert
+          onConfirm={handleDeleteTenant}
+          onCancel={() => setShowAlertDeleteTenant(false)}
+          Header="You're about to remove tenant"
+          Description="The data has already been imported to the Finance page, but your financial data and tenant data in this rental will be deleted."          
+        />
+      )}
+      {showAlertBackEdit && (
+        <Alert
+          onConfirm={() => navigate(`/`)}
+          onCancel={() => setShowAlertBackEdit(false)}
+          Header="You're about to leave this page without saving"
+          Description="The data that has already been edited will not be saved if you leave this page without saving."          
+        />
+      )}
       <div className="bg-ellWhite md:bg-transparent h-20 md:h-0 flex justify-between md:block items-center md:border-0 border-b border-b-ellDarkGray z-40 hiddenLandscapePhone">
         <img src={iconBack} width="55" height="40" alt="back"
           className='xl:top-2 md:top-0 xl:left-2 md:left-0 left-2 md:absolute relative m-0 xl:m-3 md:m-1 cursor-pointer border-1 border-transparent active:border-ellPrimary hover:border-ellPrimary p-2 rounded-full hiddenLandscapePhone z-20'
@@ -415,14 +450,6 @@ const RentalDetail = () => {
           className='xl:top-2 md:top-0 xl:right-2 md:right-0 right-2 md:absolute relative m-0 xl:m-3 md:m-1 cursor-pointer border-1 border-transparent active:border-ellPrimary hover:border-ellPrimary p-2 rounded-full hiddenLandscapePhone z-20'
           onClick={() => setShowAlertDelete(true)} />
       </div>
-      {showAlertDelete && (
-        <Alert
-          onConfirm={handleDelete}
-          onCancel={() => setShowAlertDelete(false)}
-          Header="You're about to delete this rental"
-          Description="The data has already been imported to the Finance page, but your financial data in this rental will be deleted."          
-        />
-      )}
       {isEditing ? (
         <div className="TooltipMain fixed bottom-4 right-4 flex flex-col items-center justify-center z-50">
           <div className="flex text-center justify-center bg-ellGreen p-1 mb-2 rounded-lg font-prompt text-[#F7F7F7] text-sm z-20 Tooltip">บันทึก</div>
@@ -682,7 +709,7 @@ const RentalDetail = () => {
                   
                   <div className="flex flex-row items-center gap-3 mr-3">
                     {isEditing &&
-                      <img src={iconRemove} width="40" height="60" alt="icon" className="p-1 cursor-pointer hover:scale-105 active:scale-98" />
+                      <img src={iconRemove} width="40" height="60" alt="icon" className="p-1 cursor-pointer hover:scale-105 active:scale-98" onClick={() => setShowAlertDeleteTenant(true)}/>
                     }
                   </div>
                 </div>
@@ -704,7 +731,7 @@ const RentalDetail = () => {
                     <img src="/img/upload-dark.svg" width="40" height="60" alt="icon" className="p-1 bg-ConstantGray rounded-full mr-3 cursor-pointer hover:scale-105 active:scale-98" />
                     }
                   </div>
-                  <div className="bg-ellWhite xl:h-20 h-22 w-40 md:w-sm xl:w-30 flex flex-col items-center justify-center rounded-r-xl border-2 border-ConstantGray py-2">
+                  <div className="bg-ellWhite xl:h-20 h-22 w-40 md:w-sm xl:w-32 flex flex-col items-center justify-center rounded-r-xl border-2 border-ConstantGray py-2">
                       <span className='text-ellPrimary font-prompt text-md font-semibold items-center py-2'>วันครบกำหนด</span>
                       {isEditing ? (
                       <>
@@ -712,9 +739,9 @@ const RentalDetail = () => {
                         type="date"
                         name="dueDate"
                         maxLength={12}
-                        value={tempoDate}
+                        value={tempoDate != "" ? tempoDate : tempoDate || dueDate != "" ? dueDate : dueDate}
                         onChange={handleDateChange}
-                        className="focus:outline-none text-center rounded-br-lg px-2 py-2 w-full border-t-2 border-t-ConstantGray font-prompt font-medium text-ellPrimary text-sm"
+                        className="xl:block md:flex flex justify-center focus:outline-none text-center rounded-br-lg px-2 py-2 w-full border-t-2 border-t-ConstantGray font-prompt font-medium text-ellPrimary text-sm"
                       />
                       </>
                     ):(

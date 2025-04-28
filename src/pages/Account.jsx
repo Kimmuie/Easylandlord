@@ -15,6 +15,7 @@ const Account = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isTheme, setIsTheme] = useState(false);
   const [isHelp, setIsHelp] = useState(false);
+  const [showAlertSignIn, setShowAlertSignIn] = useState(false);
   const [user, setUser] = useState(localStorage.getItem("email") || null);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
@@ -77,7 +78,7 @@ const Account = () => {
         console.error("Error updating profile:", error);
       }
     } else {
-      alert("Please sign in first.");
+      setShowAlertSignIn(true)
     }
   };
 
@@ -101,6 +102,14 @@ const Account = () => {
 
   return (
     <>
+        {showAlertSignIn && (
+      <Alert
+        onConfirm={() => setShowAlertSignIn(false)}
+        onCancel={() => setShowAlertSignIn(false)}
+        Header="You need to sign in first before using Easylandlord"
+        Description="Please sign in with your Google account to gain access to Easylandlord."          
+      />
+    )}
       <div className="w-full h-max bg-ellWhite flex items-center flex-col">
         {/* Profile */}
         <div className=" items-center justify-center flex-col w-full px-4 md:w-3xl border-b border-b-ellDarkGray">
