@@ -12,6 +12,7 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
   const [showAlertDeleteHistory, setShowAlertDeleteHistory] = useState(false);
   const [rental, setRental] = useState(null);
   const [currentFilter, setCurrentFilter] = useState('all');
+  const [filteredRecords, setFilteredRecords] = useState([]);
   const [allRecords, setAllRecords] = useState([]);
   const [allIncome, setAllIncome] = useState(0);
   const [allOutcome, setAllOutcome] = useState(0);
@@ -116,7 +117,7 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
   useEffect(() => {
     if (Array.isArray(allRecords)) {
       const filtered = getFilteredRecords();
-      
+      setFilteredRecords(filtered);
       const totalIncome = filtered.reduce((sum1, record) => {
         const incomeValue = parseInt(String(record.income).replace(/,/g, ""), 10);
         return sum1 + (isNaN(incomeValue) ? 0 : incomeValue);
@@ -144,6 +145,7 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
     }
   }, [allRecords, currentFilter, dateRange]);
 
+  
   const handleAddComma = (number) => {
     return number ? number.toLocaleString('en-US') : '';
   };
@@ -351,7 +353,7 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
                 name="firstDate"
                 value={dateRange.firstDate}
                 onChange={(e) => handleSortDate(e, 'firstDate')}
-                className={`w-xs h-full px-4 focus:outline-none cursor-text text-sm  ${currentFilter === 'custom' ? 'text-ellTertiary' : "text-ellPrimary"}`}
+                className={`calendar w-full h-full pl-10 focus:outline-none cursor-text text-sm text-right ${currentFilter === 'custom' ? 'text-ellTertiary' : "text-ellPrimary"}*`}
                 />
                 →
                 <input
@@ -408,9 +410,9 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
                   <td colSpan="7" className="px-6 py-4 text-center text-ellPrimary border-2 border-ellGray">No records found</td>
                 </tr>
               ) : (
-                sortedRecords.map((allrecords) => {
-                  
-                  return isEditing ? (
+                <>
+                  {filteredRecords.map(allrecords => (
+                   isEditing ? (
                     <tr key={allrecords.id} className="relative">
                       <td 
                         className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary"
@@ -453,6 +455,7 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
                       </td>
                     </tr>
                   ) : (
+                    <>
                     <tr key={allrecords.id}>
                       <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellGreen overflow-hidden whitespace-nowrap text-ellipsis">
                         {allrecords.income.trim() === "" ? "-" : allrecords.income}
@@ -467,8 +470,10 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
                         {allrecords.note.trim() === "" ? "-" : allrecords.note}
                       </td>
                     </tr>
+                    </>
                   )
-                })
+                ))}
+                </>
               )}
             </tbody>
           </table>
