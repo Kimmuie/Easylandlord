@@ -12,10 +12,7 @@ const GoogleMap = () => {
   const [open, setOpen] = useState(false);
   const mapBoxRef = useRef(null);
   const [mapZoom, setMapZoom] = useState(13);
-  const infoWindowPosition = { 
-    lat: markerPosition.lat + 0.003, // Offset to move it higher
-    lng: markerPosition.lng 
-  };
+  const markerRef = useRef(null);
 
   useEffect(() => {
       function handleClickOutside(event) {
@@ -28,17 +25,6 @@ const GoogleMap = () => {
           document.removeEventListener("mousedown", handleClickOutside);
       };
   }, []);
-
-    useEffect(() => {
-    if (open) {
-      setTimeout(() => {
-        const closeButtons = document.querySelectorAll('.gm-ui-hover-effect');
-        closeButtons.forEach(button => {
-          button.style.display = 'none';
-        });
-      }, 10);
-    }
-  }, [open]);
 
   // Handle map movement
   const handleCenterChanged = (e) => {
@@ -90,6 +76,7 @@ const GoogleMap = () => {
               mapId= {icons.mapId}
               options={{disableDefaultUI: true}}>                
             <AdvancedMarker 
+              ref={markerRef}
               position={markerPosition} 
               onClick={() => setOpen(true)}
               >
@@ -102,9 +89,9 @@ const GoogleMap = () => {
             </AdvancedMarker>
             
             {open && (
-              <InfoWindow position={infoWindowPosition}>
+              <InfoWindow anchor={markerRef.current}>
                 <div className='flex justify-center items-center flex-col' ref={mapBoxRef}>
-                  <img src="./img/sampleImage.jpg" width="100" height="40" alt="image" className="border-2 border-ellGray rounded-md"/>
+                  <img src="./img/sampleImage.jpg" width="100" height="40" alt="image" className="border-2 border-ellGray rounded-md mt-4"/>
                   <h3 className="font-bold font-prompt">Location</h3>
                   <button className="mt-1 flex flex-row bg-[#333333] rounded-full items-center justify-center font-prompt text-[#F7F7F7] h-6 px-2 w-full text-xs cursor-pointer active:scale-98">
                     ดูรายละเอียด

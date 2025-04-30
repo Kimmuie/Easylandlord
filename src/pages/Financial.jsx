@@ -11,16 +11,142 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
   const { recordId } = useParams();
   const [showAlertDeleteHistory, setShowAlertDeleteHistory] = useState(false);
   const [rental, setRental] = useState(null);
+  const [currentFilter, setCurrentFilter] = useState('all');
   const [allRecords, setAllRecords] = useState([]);
+  const [allIncome, setAllIncome] = useState(0);
+  const [allOutcome, setAllOutcome] = useState(0);
+  const [allTotal, setAllTotal] = useState(0);
+  const [profitRate, setProfitRate] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [isSort, setIsSort] = useState(false);
+  const [dateSort, setDateSort] = useState(true);
+  const [openCalendar, setOpenCalendar] = useState(false);
+  const [dateRange, setDateRange] = useState({
+    firstDate: '',
+    lastDate: ''
+  });
   const [formData, setFormData] = useState({
     income: '',
     outcome: '',
     paymentDate: '',
     note: '',
   });
+
+  const formatDateForInput = (displayDate) => {
+    if (!displayDate) return '';
+    const [day, month, year] = displayDate.split('/');
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleSortDate = (e, field) => {
+    const newValue = e.target.value;
+    setDateRange(prev => ({
+      ...prev,
+      [field]: newValue
+    }));
+    if (field === 'lastDate' || 
+        (field === 'firstDate' && dateRange.lastDate)) {
+      setCurrentFilter('custom');
+    }
+  };
+
+
+  const handleFilterFinance = (filter) => {
+    setCurrentFilter(filter);
+    if (filter === 'all' || filter === 'thisMonth' || filter === 'thisYear') {
+      setOpenCalendar(false);
+      setDateRange({
+        firstDate: '',
+        lastDate: ''
+      });
+    }
+  };
+
+  const getFilteredRecords = () => {
+    if (!Array.isArray(allRecords) || allRecords.length === 0) {
+      return [];
+    }
+  
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+  
+    return allRecords.filter(record => {
+      if (!record.paymentDate || record.paymentDate.trim() === '') {
+        return currentFilter === 'all';
+      }
+  
+      const [day, month, year] = record.paymentDate.split('/').map(num => parseInt(num, 10));
+      const recordDate = new Date(year, month - 1, day);
+      
+      switch (currentFilter) {
+        case 'thisMonth':
+          return recordDate.getMonth() === currentMonth && 
+                 recordDate.getFullYear() === currentYear;
+        case 'thisYear':
+          return recordDate.getFullYear() === currentYear;
+          case 'custom': {
+            if (!dateRange.firstDate && !dateRange.lastDate) {
+              return true;
+            }
+            if (dateRange.firstDate) {
+              let startDate = new Date(dateRange.firstDate);
+              startDate.setHours(0, 0, 0, 0);
+              if (dateRange.lastDate) {
+                let endDate = new Date(dateRange.lastDate);
+                endDate.setHours(23, 59, 59, 999);
+                return recordDate >= startDate && recordDate <= endDate;
+              }
+              return recordDate >= startDate;
+            }
+            if (dateRange.lastDate) {
+              let endDate = new Date(dateRange.lastDate);
+              endDate.setHours(23, 59, 59, 999);
+              return recordDate <= endDate;
+            }
+            return true;
+          }
+        case 'all':
+        default:
+          return true;
+      }
+    });
+  };
+  
+  useEffect(() => {
+    if (Array.isArray(allRecords)) {
+      const filtered = getFilteredRecords();
+      
+      const totalIncome = filtered.reduce((sum1, record) => {
+        const incomeValue = parseInt(String(record.income).replace(/,/g, ""), 10);
+        return sum1 + (isNaN(incomeValue) ? 0 : incomeValue);
+      }, 0);
+      
+      const totalOutcome = filtered.reduce((sum2, record) => {
+        const outcomeValue = parseInt(String(record.outcome).replace(/,/g, ""), 10);
+        return sum2 + (isNaN(outcomeValue) ? 0 : outcomeValue);
+      }, 0);
+      
+      const total = filtered.reduce((sum3, record) => {
+        const income = parseInt(String(record.income).replace(/,/g, ""), 10) || 0;
+        const outcome = parseInt(String(record.outcome).replace(/,/g, ""), 10) || 0;
+        const totalValue = income - outcome;
+        return sum3 + totalValue;
+      }, 0);
+      
+      const profitRate = totalOutcome === 0 ? 0
+        : Number((((totalIncome - totalOutcome) / totalOutcome) * 100).toFixed(2));        
+      
+      setAllIncome(totalIncome);
+      setAllOutcome(totalOutcome);
+      setAllTotal(total);
+      setProfitRate(profitRate);
+    }
+  }, [allRecords, currentFilter, dateRange]);
+
+  const handleAddComma = (number) => {
+    return number ? number.toLocaleString('en-US') : '';
+  };
 
   const fetchRecords = async () => {
     try {
@@ -51,22 +177,142 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
     }
   }, [user]);
   
+  const addRecord = async (e) => {
+      e.preventDefault();
+      try {
+      const newRecord = {
+          id: Date.now().toString(), 
+          ...formData,
+          };
+      
+      const userDocRef = doc(db, "users", user);
+      const userDoc = await getDoc(userDocRef);
+  
+      if (userDoc.exists()) {
+          const userData = userDoc.data();
+          
+          if (userData.finance) {
+            if (!Array.isArray(userData.finance.allRecords)) {
+              userData.finance.allRecords = [];
+            }
+            userData.finance.allRecords.push(newRecord);
+            await updateDoc(userDocRef, {
+              finance: userData.finance
+            });
+            setFormData({
+              income: '',
+              outcome: '',
+              paymentDate: '',
+              note: '',
+              edited: false,
+            });
+            fetchRecords();
+          } else {
+            console.error("No finance found for this user");
+          }
+        } else {
+          console.error("User document not found");
+        }
+      } catch (error) {
+        console.error("Error adding record:", error);
+      }
+    };
+
+  const deleteRecord = async (id) => {
+    try {
+      const userDocRef = doc(db, "users", user);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        
+      if (userData.finance) {
+            userData.finance.allRecords = 
+            userData.finance.allRecords.filter(record => record.id !== id);
+          await updateDoc(userDocRef, {
+            finance: userData.finance
+          });
+          fetchRecords();
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting record:", error);
+    }
+  };
+
+  const handleChangeRecord = async (e, field, recordId) => {
+    let newValue;
+    if (field === 'paymentDate') {
+      newValue = e.target.value;
+      const [day, month, year] = newValue.split('-');
+      newValue = `${year}/${month}/${day}`;
+    } else {
+      newValue = e.target.innerText;
+      if (field === 'income' || field === 'outcome') {
+        const cleanValue = newValue.replace(/,/g, '');
+        newValue = cleanValue;
+      }
+    }
+  
+    try {
+      const userDocRef = doc(db, "users", user);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        
+        if (userData.finance && Array.isArray(userData.finance.allRecords)) {
+          const recordIndex = userData.finance.allRecords.findIndex(record => record.id === recordId);
+          
+          if (recordIndex !== -1) {
+            userData.finance.allRecords[recordIndex][field] = newValue;
+            userData.finance.allRecords[recordIndex].edited = true;
+            
+            await updateDoc(userDocRef, {
+              finance: userData.finance
+            });
+            fetchRecords();
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error updating ${field}:`, error);
+    }
+  };
+
   const sortedRecords = [...(Array.isArray(allRecords) ? allRecords : [])].sort((a, b) => {
-    const idA = parseInt(a.id, 10);
-    const idB = parseInt(b.id, 10);
-    return isSort ? idB - idA : idA - idB;
-    
+    const dateA = parseDate(a.paymentDate);
+    const dateB = parseDate(b.paymentDate);
+    return dateSort ? dateB - dateA : dateA - dateB;
   });
+
+  function parseDate(dateStr) {
+      if (!dateStr) return 0;
+      
+      const [day, month, year] = dateStr.split('/').map(num => parseInt(num, 10));
+      return new Date(year, month - 1, day).getTime();
+  }
+
   return (
     <>
     <div className="TooltipMain fixed bottom-24 right-4 flex flex-col items-center justify-center z-50">
       <div className="flex text-center justify-center bg-blue-500 p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">เพิ่ม</div>
       <div className="absolute mb-14 w-4 h-4 bg-blue-500 rotate-45 z-10 Tooltip"></div>
       <button className="relative rounded-full bg-blue-500 flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
-        onClick={() => setIsEditing(true)}>
+        onClick={addRecord}>
         <img src={icons.plus} width="40" height="40" alt="edit" />
       </button>
     </div>
+    {isEditing ? (
+        <div className="TooltipMain fixed bottom-4 right-4 flex flex-col items-center justify-center z-50">
+          <div className="flex text-center justify-center bg-ellGreen p-1 mb-2 rounded-lg font-prompt text-[#F7F7F7] text-sm z-20 Tooltip">บันทึก</div>
+          <div className="absolute mb-14 w-4 h-4 bg-ellGreen rotate-45 z-10 Tooltip"></div>
+          <button className="relative rounded-full bg-ellGreen flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
+            onClick={() => setIsEditing(false)}>
+            <img src={icons.save} width="40" height="40" alt="save" />
+          </button>
+        </div>
+      ) : (
     <div className="TooltipMain fixed bottom-4 right-4 flex flex-col items-center justify-center z-50">
       <div className="flex text-center justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">แก้ไข</div>
       <div className="absolute mb-14 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
@@ -75,23 +321,48 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
         <img src={icons.edit} width="40" height="40" alt="edit" />
       </button>
     </div>
+      )}
     <div className='flex justify-center w-full h-full'>
         <div className="flex flex-col w-4xl h-full xl:pb-5 pb-22">
           {/* Table */}
           <div className='flex md:flex-col flex-col items-center justify-center w-full my-4'>
             <div className='flex flex-row w-full mb-4'>
-              <button className={`border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 w-25 md:w-22 font-prompt text-ellPrimary `}>
+              <button className={`border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 w-25 md:w-22 font-prompt text-ellPrimary ${currentFilter === 'all' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
+                onClick={() => handleFilterFinance("all")}>
                 ทั้งหมด
               </button>
-              <button className={`border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 w-25 md:w-22 font-prompt text-ellPrimary `}>
+              <button className={`border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 w-25 md:w-22 font-prompt text-ellPrimary ${currentFilter === 'thisMonth' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
+                onClick={() => handleFilterFinance("thisMonth")}>
                 เดือนนี้
               </button>
-              <button className={`border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 w-25 md:w-22 font-prompt text-ellPrimary `}>
+              <button className={`border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 w-25 md:w-22 font-prompt text-ellPrimary ${currentFilter === 'thisYear' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`} 
+                onClick={() => handleFilterFinance("thisYear")}>
                 ปีนี้
               </button>
-              <button className={`border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 px-4 mr-2 font-prompt text-ellPrimary flex justify-center`}>
+              {!openCalendar ? (
+              <button className={`border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 px-4 mr-2 font-prompt text-ellPrimary flex justify-center cursor-pointer`}
+                onClick={() => setOpenCalendar(true)}>
                 <img src={icons.calendar} width="25" height="40" alt="calendar" />
               </button>
+              ):(
+              <div className={`w-xs flex flex-row border-2 border-ellGray rounded-2xl font-semibold text-lg items-center ${currentFilter === 'custom' ? 'bg-ellPrimary border-transparent text-ellTertiary' : "text-ellPrimary"}`} >
+                <input
+                type="date"
+                name="firstDate"
+                value={dateRange.firstDate}
+                onChange={(e) => handleSortDate(e, 'firstDate')}
+                className={`w-xs h-full px-4 focus:outline-none cursor-text text-sm  ${currentFilter === 'custom' ? 'text-ellTertiary' : "text-ellPrimary"}`}
+                />
+                →
+                <input
+                type="date"
+                name="lastDate"
+                value={dateRange.lastDate}
+                onChange={(e) => handleSortDate(e, 'lastDate')}
+                className={`w-xs h-full px-4 focus:outline-none cursor-text text-sm  ${currentFilter === 'custom' ? 'text-ellTertiary' : "text-ellPrimary"}`}
+                />
+              </div>
+              )}
             </div>
             {/* Controls */}
               <table className="w-full md:mt-0 mt-4">
@@ -105,22 +376,25 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 <tr>
-                  <td className="w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary"></td>
-                  <td className="w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary">t</td>
-                  <td className="w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary">ill</td>
-                  <td className="w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary">ill</td>
+                  <td className={`w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray ${allIncome === 0 ? 'text-ellPrimary' : "text-ellGreen"}`}>{allIncome === 0 ? "0" : handleAddComma(allIncome)}</td>
+                  <td className={`w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray ${allOutcome === 0 ? 'text-ellPrimary' : "text-ellRed"}`}>{allOutcome === 0 ? "0" : handleAddComma(allOutcome)}</td>
+                  <td className={`w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray ${allTotal === 0 ? 'text-ellPrimary' : allTotal > 0 ? 'text-ellGreen' : 'text-ellRed'}`}>{allTotal === 0 ? "-" : handleAddComma(allTotal)}</td>
+                  <td className={`w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray ${profitRate === 0 ? 'text-ellPrimary' : profitRate > 0 ? 'text-ellGreen' : "text-ellRed"}`}>{profitRate === 0 ? "-" : handleAddComma(profitRate) + "%"}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         {/* Desktop/Tablet View (Headers on Top) - Hidden on Mobile */}
-        <div className="hidden sm:block">
           <table className="w-full">
             <thead className="bg-ellPrimary">
               <tr>
                 <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">รายรับ</th>
                 <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">รายจ่าย</th>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">วันที่</th>
+                <th className="w-20 py-3 font-prompt text-center hover:bg-ellGray bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-pointer" onClick={() => setDateSort(prev => !prev)}>
+                  <div className="flex flex-row justify-center" >
+                  <img src={icons.sign} width="18" height="40" alt="sign" className={`${!dateSort ? "rotate-0" : "rotate-180 mr-2"} md:block hidden`}/>วันที่
+                  </div>
+                </th>
                 <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">หมายเหตุ</th>
               </tr>
             </thead>
@@ -134,34 +408,32 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
                   <td colSpan="7" className="px-6 py-4 text-center text-ellPrimary border-2 border-ellGray">No records found</td>
                 </tr>
               ) : (
-                sortedRecords.map((allrecords, index) => {
-                  const displayIndex = isSort ? sortedRecords.length - index : index + 1;
+                sortedRecords.map((allrecords) => {
                   
                   return isEditing ? (
                     <tr key={allrecords.id} className="relative">
-                      <td className="font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary relative">
-                        <input
-                          type="date"
-                          name="moveInDate"
-                          value={allrecords.moveInDate ? formatDateForInput(allrecords.moveInDate) : ''}
-                          onChange={(e) => handleRecordFieldChange(e, 'moveInDate', allrecords.id)}
-                          className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text xl:text-md text-sm absolute inset-0"
-                        />
+                      <td 
+                        className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary"
+                        contentEditable="true"
+                        suppressContentEditableWarning={true}
+                        onBlur={(e) => handleChangeRecord(e, 'income', allrecords.id)}
+                      >
+                        {allrecords.income}
                       </td>
                       <td 
                         className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary"
                         contentEditable="true"
                         suppressContentEditableWarning={true}
-                        onBlur={(e) => handleChangeRecord(e, 'rentalRate', allrecords.id)}
+                        onBlur={(e) => handleChangeRecord(e, 'outcome', allrecords.id)}
                       >
-                        {allrecords.rentalRate}
+                        {allrecords.outcome}
                       </td>
                       <td className="font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary relative">
                         <input
                           type="date"
                           name="paymentDate"
-                          value={allrecords.paymentDate}
-                          onChange={(e) => handleRecordFieldChange(e, 'paymentDate', allrecords.id)}
+                          value={allrecords.paymentDate ? formatDateForInput(allrecords.paymentDate) : ''}
+                          onChange={(e) => handleChangeRecord(e, 'paymentDate', allrecords.id)}
                           className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text xl:text-md text-sm absolute inset-0"
                         />
                       </td>
@@ -169,9 +441,9 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
                         className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary"
                         contentEditable="true"
                         suppressContentEditableWarning={true}
-                        onBlur={(e) => handleRecordFieldChange(e, 'transactionCode', allrecords.id)}
+                        onBlur={(e) => handleChangeRecord(e, 'note', allrecords.id)}
                       >
-                        {allrecords.transactionCode}
+                        {allrecords.note}
                       </td>
                       <td className="w-0 p-0 m-0 relative">
                         <div className="absolute right-[-80px] top-1/2 -translate-y-1/2 bg-ellWhite text-ellRed px-3 py-1 rounded-full cursor-pointer hover:bg-ellBlack"
@@ -182,17 +454,17 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
                     </tr>
                   ) : (
                     <tr key={allrecords.id}>
-                      <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                        {allrecords.income?.trim() === "" ? "-" : allrecords.income}
+                      <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellGreen overflow-hidden whitespace-nowrap text-ellipsis">
+                        {allrecords.income.trim() === "" ? "-" : allrecords.income}
+                      </td>
+                      <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellRed overflow-hidden whitespace-nowrap text-ellipsis">
+                        {allrecords.outcome.trim() === "" ? "-" : allrecords.outcome}
                       </td>
                       <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                        {allrecords.expense?.trim() === "" ? "-" : allrecords.expense}
-                      </td>
-                      <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                        {allrecords.date?.trim() === "" ? "-" : allrecords.date}
+                        {allrecords.paymentDate.trim() === "" ? "-" : allrecords.paymentDate}
                       </td>
                       <td className="py-4 w-59.5 font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                        {allrecords.note?.trim() === "" ? "-" : allrecords.note}
+                        {allrecords.note.trim() === "" ? "-" : allrecords.note}
                       </td>
                     </tr>
                   )
@@ -200,7 +472,6 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
               )}
             </tbody>
           </table>
-        </div>
         </div>
       </div>
     </>

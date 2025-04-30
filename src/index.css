@@ -118,3 +118,8 @@ html, body, #root {
 ::-webkit-scrollbar-thumb:hover {
   background: #222222;
 }
+
+.gm-style-iw-chr,
+.gm-ui-hover-effect {
+display: none;
+}
