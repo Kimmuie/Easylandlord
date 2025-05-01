@@ -110,6 +110,15 @@ const Account = () => {
         Description="Please sign in with your Google account to gain access to Easylandlord."          
       />
     )}
+    {showAlert && (
+      <Alert
+      onConfirm={confirmSignout} 
+      onCancel={() => setShowAlert(false)} 
+      Header="You're about to sign out"
+      Description="You can return anytime, by the way your data will remain unchanged."
+      />
+    )}
+    <div className="flex flex-col h-full w-full">
       <div className="w-full h-max bg-ellWhite flex items-center flex-col">
         {/* Profile */}
         <div className=" items-center justify-center flex-col w-full px-4 md:w-3xl border-b border-b-ellDarkGray">
@@ -263,18 +272,11 @@ const Account = () => {
           </div>
         )}
       </div>
-
-      <div className="fixed bottom-0 w-full bg-ellBlack py-3 text-center font-promp text-ellSecondary text-sm z-10">
+      <div className="flex-grow "></div>
+      <div className="w-full bg-ellBlack py-3 text-center font-prompt text-ellSecondary text-sm pb-7">
         © {new Date().getFullYear()} Easylandlord. All Rights Reserved.
       </div>
-      {showAlert && (
-        <Alert
-        onConfirm={confirmSignout} 
-        onCancel={() => setShowAlert(false)} 
-        Header="You're about to sign out"
-        Description="You can return anytime, by the way your data will remain unchanged."
-        />
-      )}
+    </div>
     </>
   );
 };

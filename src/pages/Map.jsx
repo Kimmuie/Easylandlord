@@ -2,7 +2,10 @@
 
 import React, { useEffect, useState, useContext, useRef } from 'react'
 import { APIProvider, Map, AdvancedMarker, Pin, InfoWindow } from "@vis.gl/react-google-maps";
+import { useParams, useNavigate } from 'react-router-dom';
 import ThemeContext from '../contexts/ThemeContext';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { db } from '../components/firebase';
 
 const GoogleMap = () => {
   const { theme, icons } = useContext(ThemeContext);
@@ -13,6 +16,102 @@ const GoogleMap = () => {
   const mapBoxRef = useRef(null);
   const [mapZoom, setMapZoom] = useState(13);
   const markerRef = useRef(null);
+  const [rentals, setRentals] = useState([]);
+  const { rentalId } = useParams();
+  const [filteredRentals, setFilteredRentals] = useState([]);
+  const [location, setLocation] = useState("99 หมู่ที่ 2 ถนน เลียบคลองเปรมประชากร Bang Phun, Mueang Pathum Thani District, Pathum Thani 12000");
+  const [coordinates, setCoordinates] = useState({ lat: null, lng: null });
+ 
+  useEffect(() => {
+    const geocoder = new window.google.maps.Geocoder();
+
+    geocoder.geocode({ address: location }, (results, status) => {
+      if (status === "OK" && results[0]) {
+        const { lat, lng } = results[0].geometry.location;
+        setCoordinates({
+          lat: lat(),
+          lng: lng(),
+        });
+      } else {
+        console.error("Geocoding failed: ", status);
+      }
+    });
+  }, [location]);
+
+  useEffect(() => { 
+    const userEmail = localStorage.getItem("email");
+    if (!userEmail) {
+      console.error("User not logged in");
+      return;
+    }
+    const userDocRef = doc(db, "users", userEmail);
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        if (userData.rental) {
+          const essentialRentalData = userData.rental.map(rental => ({
+            id: rental.id,
+            name: rental.name,
+            location: rental.location,
+            status: rental.status
+          }));
+          setRentals(essentialRentalData);
+        }
+      }
+    }, (error) => {
+      console.error("Error fetching rental data:", error);
+    });
+    
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const fetchSpecificRental = async () => {
+      if (!rentalId) return;
+      
+      const userEmail = localStorage.getItem("email");
+      if (!userEmail) return;
+      
+      try {
+        const userDocRef = doc(db, "users", userEmail);
+        const docSnap = await getDoc(userDocRef);
+        
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          if (userData.rental) {
+            const currentRental = userData.rental.find(r => r.id === rentalId);
+            if (currentRental && currentRental.location) {
+              try {
+                setSelectedRental({
+                  id: currentRental.id,
+                  name: currentRental.name,
+                  location: currentRental.location,
+                  status: currentRental.status
+                });
+              } catch (error) {
+                console.error("Error parsing rental location:", error);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching specific rental:", error);
+      }
+    };
+    
+    fetchSpecificRental();
+  }, [rentalId]); 
+
+    useEffect(() => {
+      let result = [...rentals];
+      // Status Filter
+      if (currentFilterMap === 'available') {
+        result = result.filter(rental => rental.status === "available");
+      } else if (currentFilterMap === 'unavailable') {
+        result = result.filter(rental => rental.status === "unavailable");
+      }
+      setFilteredRentals(result);
+    }, [currentFilterMap, rentals]);
 
   useEffect(() => {
       function handleClickOutside(event) {
@@ -74,10 +173,12 @@ const GoogleMap = () => {
               onCenterChanged={handleCenterChanged}
               gestureHandling="greedy"
               mapId= {icons.mapId}
-              options={{disableDefaultUI: true}}>                
+              options={{disableDefaultUI: true}}>   
+          {filteredRentals.map((rental) => (           
+            <>
             <AdvancedMarker 
               ref={markerRef}
-              position={markerPosition} 
+              position={coordinates} 
               onClick={() => setOpen(true)}
               >
               <Pin 
@@ -87,18 +188,19 @@ const GoogleMap = () => {
                 scale={1.5}
               />
             </AdvancedMarker>
-            
             {open && (
               <InfoWindow anchor={markerRef.current}>
                 <div className='flex justify-center items-center flex-col' ref={mapBoxRef}>
                   <img src="./img/sampleImage.jpg" width="100" height="40" alt="image" className="border-2 border-ellGray rounded-md mt-4"/>
-                  <h3 className="font-bold font-prompt">Location</h3>
+                  <h3 className="font-bold font-prompt">{rental.name}</h3>
                   <button className="mt-1 flex flex-row bg-[#333333] rounded-full items-center justify-center font-prompt text-[#F7F7F7] h-6 px-2 w-full text-xs cursor-pointer active:scale-98">
                     ดูรายละเอียด
                   </button>
                 </div>
               </InfoWindow>
             )}
+            </>
+          ))}  
           </Map>
         </div>
       </APIProvider>

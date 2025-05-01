@@ -68,6 +68,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
+.calendar::-webkit-calendar-picker-indicator {
+ position: absolute;
+ transform: translateX(-150%);
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;

@@ -411,6 +411,12 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
                 </tr>
               ) : (
                 <>
+                {filteredRecords.length === 0 ? (
+                  <tr>
+                  <td colSpan="7" className="px-6 py-4 text-center text-ellPrimary border-2 border-ellGray">No records found</td>
+                </tr>
+                ):(
+                  <>
                   {filteredRecords.map(allrecords => (
                    isEditing ? (
                     <tr key={allrecords.id} className="relative">
@@ -473,6 +479,8 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
                     </>
                   )
                 ))}
+                </>
+              )}
                 </>
               )}
             </tbody>
