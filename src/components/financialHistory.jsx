@@ -5,7 +5,7 @@ import Alert from '../components/Alert';
 import { db } from '../components/firebase';
 import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 
-  const FinancialHistory = ({ isEditing, setIsEditing }) => {
+  const FinancialHistory = ({ isEditing, setIsEditing, setDeleteAll }) => {
   const { theme, icons } = useContext(ThemeContext);
   const [user, setUser] = useState(localStorage.getItem("email") || null);
   const { rentalId } = useParams();
@@ -298,6 +298,10 @@ const handleRecordFieldChange = (e, field, recordId) => {
     }
   };
   
+  useEffect(() => {
+    deleteRecord(setDeleteAll);
+  }, [setDeleteAll]);
+
   // Delete record
   const deleteRecord = async (id) => {
       try {

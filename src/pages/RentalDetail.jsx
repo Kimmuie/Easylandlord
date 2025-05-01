@@ -25,10 +25,12 @@ const RentalDetail = () => {
   const [showInputTip, setShowInputTip] = useState(false);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
+  const [haveStatus, sethaveStatus] = useState('');
   const [haveTenant, setHaveTenant] = useState(false);
   const [nameTenant, setNameTenant] = useState('');
   const [numberTenant, setNumberTenant] = useState('');
   const [tempoDate, setTempoDate] = useState('');
+  const [sentDelete, setSentDelete] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [showTagBox, setShowTagBox] = useState(false);
@@ -101,8 +103,13 @@ const RentalDetail = () => {
   };
 
   const handleDeleteTenant = () => {
+    setSentDelete("all")
+    setNameTenant("")
+    setNumberTenant("")
+    sethaveStatus("available")
     setHaveTenant(false)
     setDueDate("")
+    setShowAlertDeleteTenant(false)
   };
 
   const handleDelete = async () => {
@@ -280,6 +287,7 @@ const RentalDetail = () => {
               setSelectedFrequency(currentRental.rentFrequency);
               setSelectedDetails(currentRental.propertyDetails);
               setHaveTenant(currentRental.tenant);
+              sethaveStatus(currentRental.status);
               setNameTenant(currentRental.tenantName);
               setNumberTenant(currentRental.tenantNumber);
               setDueDate(currentRental.dueDate);
@@ -310,7 +318,7 @@ const RentalDetail = () => {
         if (docSnap.exists() && docSnap.data().rental) {
           const updatedRentals = docSnap.data().rental.map(r => {
             if (r.id === rentalId) {
-              return { ...r, tenant: haveTenant };
+              return { ...r, tenant: haveTenant, status: haveStatus };
             }
             return r;
           });
@@ -319,7 +327,8 @@ const RentalDetail = () => {
   
           setRental(prev => ({
             ...prev,
-            tenant: haveTenant
+            tenant: haveTenant,
+            status: haveStatus
           }));
           
           console.log("Tenant status updated successfully");
@@ -329,7 +338,7 @@ const RentalDetail = () => {
       }
     };
     autoSaveData();
-  }, [haveTenant, rental, user, rentalId]);
+  }, [haveTenant, rental, user, rentalId, haveStatus]);
 
   useEffect(() => {
     if (showInputTip) {
@@ -754,6 +763,7 @@ const RentalDetail = () => {
             <FinancialHistory
               isEditing={isEditing} 
               setIsEditing={setIsEditing}
+              setDeleteAll={sentDelete}
              />
           </div>
         ):(
@@ -828,7 +838,10 @@ const RentalDetail = () => {
             }
             <div className={`w-full md:w-full flex flex-row justify-between gap-2 xl:pl-2 pl-0 xl:pb-0 pb-2 ${isEditing ? "xl:flex-row xl:w-full" : "xl:flex-col xl:w-xl"}`}>
               <button className="w-full xl:h-8.5 h-8 flex items-center justify-between font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray active:bg-ellDarkGray rounded-md text-md font-semibold cursor-pointer px-2"
-                    onClick={() => setHaveTenant(true)}>
+                    onClick={() => {
+                      sethaveStatus("unavailable");
+                      setHaveTenant(true);
+                    }}>
                 <div className="flex items-center w-full">
                   <img src="/img/plus-dark.svg" width="30" height="20" alt="add" />
                   <span className="flex-1 text-center">เพิ่มผู้เช่า</span>
