@@ -65,9 +65,7 @@ const GeocodingComponent = ({ rentals, setRentalsWithCoordinates }) => {
 
 const GoogleMap = () => {
   const { theme, icons } = useContext(ThemeContext);
-  const markerPosition = { lat: 13.740139342382921, lng: 100.49064271501378 }
   const [currentFilterMap, setCurrentFilterMap] = useState('all');
-  const [mapCenter, setMapCenter] = useState(markerPosition);
   const [open, setOpen] = useState(false);
   const [selectedRentalId, setSelectedRentalId] = useState(null);
   const mapBoxRef = useRef(null);
@@ -78,7 +76,24 @@ const GoogleMap = () => {
   const { rentalId } = useParams();
   const [filteredRentals, setFilteredRentals] = useState([]);
   const [selectedRental, setSelectedRental] = useState(null);
+  const markerPosition = { lat: 13.740139342382921, lng: 100.49064271501378 }
+  const [userCoordinates, setUserCoordinates] = useState(null);
+  const [mapCenter, setMapCenter] = useState(markerPosition);
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((position) => {
+      const coords = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
+      setUserCoordinates(coords);
+      setMapCenter(coords); // Set initial center
+    }, () => {
+      // On failure, fallback
+      setMapCenter(markerPosition);
+    });
+  }, []);
 
+  
   useEffect(() => { 
     const userEmail = localStorage.getItem("email");
     if (!userEmail) {
@@ -146,7 +161,9 @@ const GoogleMap = () => {
   useEffect(() => {
     let result = [...rentalsWithCoordinates];
     // Status Filter
-    if (currentFilterMap === 'available') {
+    if (currentFilterMap === 'all') {
+      result = result.filter(rental => rental.status);
+    } else if (currentFilterMap === 'available') {
       result = result.filter(rental => rental.status === "available");
     } else if (currentFilterMap === 'unavailable') {
       result = result.filter(rental => rental.status === "unavailable");
@@ -206,7 +223,7 @@ const GoogleMap = () => {
       </div>
       <div className='absolute z-10 inset-0 flex justify-end h-min right-4 pointer-events-none'>
         <button className={`mt-4.5 border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 px-2 bg-ellWhite cursor-pointer pointer-events-auto`}
-              onClick={() => setMapCenter(markerPosition)}>
+              onClick={() => setMapCenter(userCoordinates)}>
           <img src={iconTarget} width="30" height="40" alt="target"/>
         </button>
       </div>
@@ -225,7 +242,13 @@ const GoogleMap = () => {
               rentals={rentals} 
               setRentalsWithCoordinates={setRentalsWithCoordinates} 
             />
-                
+              <AdvancedMarker position={userCoordinates}>
+                <Pin 
+                  background={"#FF0000"} 
+                  glyphColor={"#F7F7F7"} 
+                  scale={1.5}
+                />
+              </AdvancedMarker>
             {filteredRentals.map((rental) => (
               rental.coordinates && (
                 <React.Fragment key={rental.id}>
@@ -236,6 +259,7 @@ const GoogleMap = () => {
                   >
                     <Pin 
                       background={"#FFFFFF"} 
+                      borderColor={rental.status === "available" ? "#00FF00" : "#FF0000"} 
                       glyphColor={rental.status === "available" ? "#00FF00" : "#FF0000"} 
                       glyph="⬤"
                       scale={1.5}

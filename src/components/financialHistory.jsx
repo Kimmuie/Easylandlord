@@ -135,6 +135,12 @@ const handleRecordFieldChange = (e, field, recordId) => {
           const financeData = userData.finance || {};
           const existingRecords = financeData.allRecords || [];
           
+          const validRecords = Array.isArray(records)
+  ? records.filter(record => record.rentalRate && record.rentalRate !== "")
+  : [];
+
+console.log("Filtered records:", validRecords);
+
           // Filter out records with empty rental rates and map the valid ones
           const filteredRecords = records
             .filter(record => record.rentalRate && record.rentalRate !== "")
@@ -335,11 +341,17 @@ const handleRecordFieldChange = (e, field, recordId) => {
                     billElectricity: "",
                     billWater: "",
                   }));
-                  console.log("All rental details updated successfully");
+                  console.log("All rental details delete successfully");
                 }
               } else if (rentalIndex !== -1 && userData.rental[rentalIndex].financialHistory) {
-                userData.rental[rentalIndex].financialHistory = 
-                  userData.rental[rentalIndex].financialHistory.filter(record => record.id !== id);
+                if (Array.isArray(userData.rental[rentalIndex].financialHistory)) {
+                  userData.rental[rentalIndex].financialHistory = userData.rental[rentalIndex].financialHistory.filter(
+                    record => record.id !== id
+                  );
+                } else {
+                  console.warn("financialHistory is not an array:", userData.rental[rentalIndex].financialHistory);
+                }
+                
               }
               await updateDoc(userDocRef, {
                 rental: userData.rental

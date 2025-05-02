@@ -25,7 +25,6 @@ const RentalDetail = () => {
   const [showInputTip, setShowInputTip] = useState(false);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
-  const [haveStatus, sethaveStatus] = useState('');
   const [haveTenant, setHaveTenant] = useState(false);
   const [nameTenant, setNameTenant] = useState('');
   const [numberTenant, setNumberTenant] = useState('');
@@ -101,15 +100,30 @@ const RentalDetail = () => {
     navigate(`/`);
     }
   };
+  
+  const handleDeleteTenant = async () => {
+    setShowAlertDeleteTenant(false);
+    
+    try {
+      setHaveTenant(false);
+      setNameTenant("");
+      setNumberTenant("");
+      setDueDate("");
+      setSentDelete("all");
+      await updateRentalField({ 
+        tenant: false, 
+        status: "available", 
+        dueDate: "", 
+        tenantName: "", 
+        tenantNumber: "" 
+      });
+      console.log("Tenant removed successfully");
 
-  const handleDeleteTenant = () => {
-    setSentDelete("all")
-    setNameTenant("")
-    setNumberTenant("")
-    sethaveStatus("available")
-    setHaveTenant(false)
-    setDueDate("")
-    setShowAlertDeleteTenant(false)
+      await fetchRentalDetail();
+    } catch (error) {
+      console.error("Error removing tenant:", error);
+      setHaveTenant(true);
+    }
   };
 
   const handleDelete = async () => {
@@ -261,84 +275,77 @@ const RentalDetail = () => {
   }, [user]);
 
   // Get from firebase Rental DB
-  useEffect(() => {
-    const fetchRentalDetail = async () => {
-      try {
-        const userEmail = localStorage.getItem("email");
-        if (!userEmail) {
-          console.log("User Not logged in");
-          return;
-        }
-        const userDocRef = doc(db, "users", userEmail);
-        const docSnap = await getDoc(userDocRef);
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          if (userData.rental) {
-            const currentRental = userData.rental.find(r => r.id === rentalId);
-            if (currentRental) {
-              setRental(currentRental);
-              setRentalName(currentRental.name);
-              setRentalLocate(currentRental.location);
-              setRentalFee(currentRental.rentFee);
-              setRentalBedroom(currentRental.bedroom);
-              setRentalRestroom(currentRental.restroom);
-              setRentalArea(currentRental.squareMetre);
-              setSelectedTag(currentRental.tag);
-              setSelectedFrequency(currentRental.rentFrequency);
-              setSelectedDetails(currentRental.propertyDetails);
-              setHaveTenant(currentRental.tenant);
-              sethaveStatus(currentRental.status);
-              setNameTenant(currentRental.tenantName);
-              setNumberTenant(currentRental.tenantNumber);
-              setDueDate(currentRental.dueDate);
-            }
+  const fetchRentalDetail = async () => {
+    try {
+      const userEmail = localStorage.getItem("email");
+      if (!userEmail) {
+        console.log("User Not logged in");
+        return;
+      }
+      const userDocRef = doc(db, "users", userEmail);
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        if (userData.rental) {
+          const currentRental = userData.rental.find(r => r.id === rentalId);
+          if (currentRental) {
+            setRental(currentRental);
+            setRentalName(currentRental.name);
+            setRentalLocate(currentRental.location);
+            setRentalFee(currentRental.rentFee);
+            setRentalBedroom(currentRental.bedroom);
+            setRentalRestroom(currentRental.restroom);
+            setRentalArea(currentRental.squareMetre);
+            setSelectedTag(currentRental.tag);
+            setSelectedFrequency(currentRental.rentFrequency);
+            setSelectedDetails(currentRental.propertyDetails);
+            setHaveTenant(currentRental.tenant);
+            setNameTenant(currentRental.tenantName);
+            setNumberTenant(currentRental.tenantNumber);
+            setDueDate(currentRental.dueDate);
           }
         }
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching rental details:", error);
-        setLoading(false);
       }
-    };
-
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching rental details:", error);
+      setLoading(false);
+    }
+  };
+  
+  // Run once on mount or rentalId change
+  useEffect(() => {
     fetchRentalDetail();
   }, [rentalId]);
 
   // Auto Save
-  useEffect(() => {
-    const autoSaveData = async () => {
-      if (!rental || !user || rental.tenant === haveTenant) {
-        return;
-      }
-  
+  const updateRentalField = async (fieldsToUpdate) => {
+    if (rental && user) {
       try {
         const userDocRef = doc(db, "users", user);
         const docSnap = await getDoc(userDocRef);
   
-        if (docSnap.exists() && docSnap.data().rental) {
-          const updatedRentals = docSnap.data().rental.map(r => {
-            if (r.id === rentalId) {
-              return { ...r, tenant: haveTenant, status: haveStatus };
-            }
-            return r;
-          });
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
   
-          await updateDoc(userDocRef, { rental: updatedRentals });
+          if (Array.isArray(userData.rental)) {
+            const updatedRentals = userData.rental.map(r =>
+              r.id === rentalId ? { ...r, ...fieldsToUpdate } : r
+            );
   
-          setRental(prev => ({
-            ...prev,
-            tenant: haveTenant,
-            status: haveStatus
-          }));
-          
-          console.log("Tenant status updated successfully");
+            await updateDoc(userDocRef, { rental: updatedRentals });
+            setRental(prev => ({ ...prev, ...fieldsToUpdate }));
+  
+            console.log("Rental updated successfully");
+          }
         }
       } catch (error) {
-        console.error("Error updating tenant status:", error);
+        console.error("Error updating rental:", error);
       }
-    };
-    autoSaveData();
-  }, [haveTenant, rental, user, rentalId, haveStatus]);
+    }
+    fetchRentalDetail();
+  };
+  
 
   useEffect(() => {
     if (showInputTip) {
@@ -838,10 +845,7 @@ const RentalDetail = () => {
             }
             <div className={`w-full md:w-full flex flex-row justify-between gap-2 xl:pl-2 pl-0 xl:pb-0 pb-2 ${isEditing ? "xl:flex-row xl:w-full" : "xl:flex-col xl:w-xl"}`}>
               <button className="w-full xl:h-8.5 h-8 flex items-center justify-between font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray active:bg-ellDarkGray rounded-md text-md font-semibold cursor-pointer px-2"
-                    onClick={() => {
-                      sethaveStatus("unavailable");
-                      setHaveTenant(true);
-                    }}>
+                    onClick={() => updateRentalField({ tenant: true, status: "unavailable" })}>
                 <div className="flex items-center w-full">
                   <img src="/img/plus-dark.svg" width="30" height="20" alt="add" />
                   <span className="flex-1 text-center">เพิ่มผู้เช่า</span>
