@@ -22,7 +22,6 @@ const RentalDetail = () => {
   const [rentalBedroom, setRentalBedroom] = useState(0);
   const [rentalRestroom, setRentalRestroom] = useState(0);
   const [rentalArea, setRentalArea] = useState('');
-  const [showInputTip, setShowInputTip] = useState(false);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
   const [haveTenant, setHaveTenant] = useState(false);
@@ -84,11 +83,6 @@ const RentalDetail = () => {
         setRentalArea(formatted);
       } else if (fieldType === 'fee') {
         setRentalFee(formatted);
-      }
-      setShowInputTip(false);
-    } else {
-      if (fieldType === 'area') {
-        setShowInputTip(true);
       }
     }
   };
@@ -346,15 +340,6 @@ const RentalDetail = () => {
     fetchRentalDetail();
   };
   
-
-  useEffect(() => {
-    if (showInputTip) {
-      const timer = setTimeout(() => setShowInputTip(false), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [showInputTip]);
-
-
   const getFixedIconPath = (iconPath) => {
     return iconPath ? iconPath.replace(/^\./, '') : '';
   };
@@ -594,12 +579,6 @@ const RentalDetail = () => {
                       onClick={() => setRentalRestroom(prev => Math.min(Math.max(prev - 1, 0), 50))} />
                   </div>
                   {/* Square Metre */}
-                  <div className="relative inline-block xl:w-36 w-full">
-                    {showInputTip && (
-                      <div className="absolute bottom-10 left-0 bg-ellRed text-[#F7F7F7] text-xs rounded px-2 py-1 z-10 whitespace-nowrap">
-                        กรุณากรอกเฉพาะตัวเลขเท่านั้น
-                      </div>
-                    )}
                     <div className="xl:w-36 md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
                       <img src="/img/ruler.svg" width="33" height="40" alt="ruler" className='mx-2' />
                       <input
@@ -612,7 +591,6 @@ const RentalDetail = () => {
                         required
                       />
                     </div>
-                  </div>
                 </>
               ) : (
                 <>

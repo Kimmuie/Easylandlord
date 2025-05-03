@@ -117,18 +117,26 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
   useEffect(() => {
     if (Array.isArray(allRecords)) {
       const filtered = getFilteredRecords();
-      setFilteredRecords(filtered);
-      const totalIncome = filtered.reduce((sum1, record) => {
+  
+      const sortedFiltered = [...filtered].sort((a, b) => {
+        const dateA = parseDate(a.paymentDate);
+        const dateB = parseDate(b.paymentDate);
+        return dateSort ? dateB - dateA : dateA - dateB;
+      });
+  
+      setFilteredRecords(sortedFiltered);
+  
+      const totalIncome = sortedFiltered.reduce((sum1, record) => {
         const incomeValue = parseInt(String(record.income).replace(/,/g, ""), 10);
         return sum1 + (isNaN(incomeValue) ? 0 : incomeValue);
       }, 0);
       
-      const totalOutcome = filtered.reduce((sum2, record) => {
+      const totalOutcome = sortedFiltered.reduce((sum2, record) => {
         const outcomeValue = parseInt(String(record.outcome).replace(/,/g, ""), 10);
         return sum2 + (isNaN(outcomeValue) ? 0 : outcomeValue);
       }, 0);
       
-      const total = filtered.reduce((sum3, record) => {
+      const total = sortedFiltered.reduce((sum3, record) => {
         const income = parseInt(String(record.income).replace(/,/g, ""), 10) || 0;
         const outcome = parseInt(String(record.outcome).replace(/,/g, ""), 10) || 0;
         const totalValue = income - outcome;
@@ -143,8 +151,7 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
       setAllTotal(total);
       setProfitRate(profitRate);
     }
-  }, [allRecords, currentFilter, dateRange]);
-
+  }, [allRecords, currentFilter, dateRange, dateSort]);
   
   const handleAddComma = (number) => {
     return number ? number.toLocaleString('en-US') : '';
