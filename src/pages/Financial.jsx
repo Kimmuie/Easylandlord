@@ -377,18 +377,18 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
               <table className="w-full md:mt-0 mt-4">
               <thead>
                 <tr>
-                  <th className="w-md py-2 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary tracking-wider">รายรับ</th>
-                  <th className="w-md py-2 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary tracking-wider">รายจ่าย</th>
-                  <th className="w-md py-2 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary tracking-wider">รายได้รวม</th>
-                  <th className="w-md py-2 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary tracking-wider">อัตรากำไร</th>
+                  <th className="w-20 py-2 font-prompt text-sm md:text-base text-center bg-ellWhite border-2 border-ellGray  text-ellPrimary tracking-wider">รายรับ</th>
+                  <th className="w-20 py-2 font-prompt text-sm md:text-base text-center bg-ellWhite border-2 border-ellGray  text-ellPrimary tracking-wider">รายจ่าย</th>
+                  <th className="w-20 py-2 font-prompt text-sm md:text-base text-center bg-ellWhite border-2 border-ellGray  text-ellPrimary tracking-wider">รายได้รวม</th>
+                  <th className="w-20 py-2 font-prompt text-sm md:text-base text-center bg-ellWhite border-2 border-ellGray  text-ellPrimary tracking-wider">อัตรากำไร</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 <tr>
-                  <td className={`w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray ${allIncome === 0 ? 'text-ellPrimary' : "text-ellGreen"}`}>{allIncome === 0 ? "0" : handleAddComma(allIncome)}</td>
-                  <td className={`w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray ${allOutcome === 0 ? 'text-ellPrimary' : "text-ellRed"}`}>{allOutcome === 0 ? "0" : handleAddComma(allOutcome)}</td>
-                  <td className={`w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray ${allTotal === 0 ? 'text-ellPrimary' : allTotal > 0 ? 'text-ellGreen' : 'text-ellRed'}`}>{allTotal === 0 ? "-" : handleAddComma(allTotal)}</td>
-                  <td className={`w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray ${profitRate === 0 ? 'text-ellPrimary' : profitRate > 0 ? 'text-ellGreen' : "text-ellRed"}`}>{profitRate === 0 ? "-" : handleAddComma(profitRate) + "%"}</td>
+                  <td className={`w-20 py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-md text-sm ${allIncome === 0 ? 'text-ellPrimary' : "text-ellGreen"}`}>{allIncome === 0 ? "0" : handleAddComma(allIncome)}</td>
+                  <td className={`w-20 py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-md text-sm ${allOutcome === 0 ? 'text-ellPrimary' : "text-ellRed"}`}>{allOutcome === 0 ? "0" : handleAddComma(allOutcome)}</td>
+                  <td className={`w-20 py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-md text-sm ${allTotal === 0 ? 'text-ellPrimary' : allTotal > 0 ? 'text-ellGreen' : 'text-ellRed'}`}>{allTotal === 0 ? "-" : handleAddComma(allTotal)}</td>
+                  <td className={`w-20 py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-md text-sm ${profitRate === 0 ? 'text-ellPrimary' : profitRate > 0 ? 'text-ellGreen' : "text-ellRed"}`}>{profitRate === 0 ? "-" : handleAddComma(profitRate) + "%"}</td>
                 </tr>
               </tbody>
             </table>
@@ -397,14 +397,14 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
           <table className="w-full">
             <thead className="bg-ellPrimary">
               <tr>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">รายรับ</th>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">รายจ่าย</th>
-                <th className="w-20 py-3 font-prompt text-center hover:bg-ellGray bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-pointer" onClick={() => setDateSort(prev => !prev)}>
+                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-default">รายรับ</th>
+                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-default">รายจ่าย</th>
+                <th className="w-20 py-3 font-prompt text-center hover:bg-ellGray bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-pointer" onClick={() => setDateSort(prev => !prev)}>
                   <div className="flex flex-row justify-center" >
                   <img src={icons.sign} width="18" height="40" alt="sign" className={`${!dateSort ? "rotate-0" : "rotate-180 mr-2"} md:block hidden`}/>วันที่
                   </div>
                 </th>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">หมายเหตุ</th>
+                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-default">หมายเหตุ</th>
               </tr>
             </thead>
             <tbody>
@@ -426,9 +426,10 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
                   <>
                   {filteredRecords.map(allrecords => (
                    isEditing ? (
+                    <>
                     <tr key={allrecords.id} className="relative">
                       <td 
-                        className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary"
+                        className="py-4 w-20 md:text-base text-sm font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary"
                         contentEditable="true"
                         suppressContentEditableWarning={true}
                         onBlur={(e) => handleChangeRecord(e, 'income', allrecords.id)}
@@ -436,14 +437,14 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
                         {allrecords.income}
                       </td>
                       <td 
-                        className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary"
+                        className="py-4 w-20 md:text-base text-sm font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary"
                         contentEditable="true"
                         suppressContentEditableWarning={true}
                         onBlur={(e) => handleChangeRecord(e, 'outcome', allrecords.id)}
                       >
                         {allrecords.outcome}
                       </td>
-                      <td className="font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary relative">
+                      <td className="py-4 w-20 md:text-base text-sm font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary relative">
                         <input
                           type="date"
                           name="paymentDate"
@@ -453,7 +454,7 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
                         />
                       </td>
                       <td 
-                        className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary"
+                        className="py-4 w-20 md:text-base text-sm font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary break-all"
                         contentEditable="true"
                         suppressContentEditableWarning={true}
                         onBlur={(e) => handleChangeRecord(e, 'note', allrecords.id)}
@@ -461,25 +462,36 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
                         {allrecords.note}
                       </td>
                       <td className="w-0 p-0 m-0 relative">
-                        <div className="absolute right-[-80px] top-1/2 -translate-y-1/2 bg-ellWhite text-ellRed px-3 py-1 rounded-full cursor-pointer hover:bg-ellBlack"
+                        <button className="absolute xl:right-[-80px] md:right-[-70px] top-1/2 -translate-y-1/2 bg-ellWhite text-ellRed px-3 py-1 rounded-full cursor-pointer hover:bg-ellBlack"
                             onClick={() => deleteRecord(allrecords.id)}>
                           Delete
-                        </div>
+                        </button>
                       </td>
                     </tr>
+                      <tr>
+                      <td colSpan={5} className="bg-ellWhite text-center md:hidden ">
+                        <button
+                          className="w-full bg-ellRed text-[#F7F7F7] active:bg-red-800 cursor-pointer font-prompt"
+                          onClick={() => deleteRecord(allrecords.id)}
+                        >
+                          ↑<br/>Delete
+                        </button>
+                      </td>
+                    </tr>
+                    </>
                   ) : (
                     <>
                     <tr key={allrecords.id}>
-                      <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellGreen overflow-hidden whitespace-nowrap text-ellipsis">
+                      <td className="py-4 w-20 md:text-base text-sm font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellGreen overflow-hidden whitespace-nowrap text-ellipsis">
                         {allrecords.income.trim() === "" ? "-" : allrecords.income}
                       </td>
-                      <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellRed overflow-hidden whitespace-nowrap text-ellipsis">
+                      <td className="py-4 w-20 md:text-base text-sm font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellRed overflow-hidden whitespace-nowrap text-ellipsis">
                         {allrecords.outcome.trim() === "" ? "-" : allrecords.outcome}
                       </td>
-                      <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
+                      <td className="py-4 w-20 md:text-base text-xs font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary text-ellipsis">
                         {allrecords.paymentDate.trim() === "" ? "-" : allrecords.paymentDate}
                       </td>
-                      <td className="py-4 w-59.5 font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
+                      <td className="py-4 md:w-63.5 w-20 md:text-base text-sm font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary text-ellipsis break-all px-1">
                         {allrecords.note.trim() === "" ? "-" : allrecords.note}
                       </td>
                     </tr>

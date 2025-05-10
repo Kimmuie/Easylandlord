@@ -29,6 +29,7 @@ const RentalDetail = () => {
   const [numberTenant, setNumberTenant] = useState('');
   const [tempoDate, setTempoDate] = useState('');
   const [sentDelete, setSentDelete] = useState('');
+  const [checkDate, setCheckDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [showTagBox, setShowTagBox] = useState(false);
@@ -205,6 +206,37 @@ const RentalDetail = () => {
     setShowTagBox(false);
   };
 
+  const handleCheck = async () => {
+    if (rental && user) {
+      try {
+        const userDocRef = doc(db, "users", user);
+        const docSnap = await getDoc(userDocRef);
+
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setCheckDate(Date.now())
+          if (userData.rental) {
+            const updatedRentals = userData.rental.map(r =>
+              r.id === rentalId ? { ...r, checkDate: checkDate } : r
+            );
+            await updateDoc(userDocRef, {
+              rental: updatedRentals
+            });
+
+            setRental(prevRental => ({
+              ...prevRental,
+              checkDate: checkDate
+            }));
+
+            console.log("Check rental successfully");
+          }
+        }
+      } catch (error) {
+        console.error("Error updating rental:", error);
+      }
+    }
+  }
+
   // Manual Save
   const handleSave = async () => {
     if (isEditing && rental && user) {
@@ -297,6 +329,7 @@ const RentalDetail = () => {
             setNameTenant(currentRental.tenantName);
             setNumberTenant(currentRental.tenantNumber);
             setDueDate(currentRental.dueDate);
+            setCheckDate(currentRental.checkDate)
           }
         }
       }
@@ -347,6 +380,7 @@ const RentalDetail = () => {
   const iconError = getFixedIconPath(icons.error);
   const iconBack = getFixedIconPath(icons.back);
   const iconTrash = getFixedIconPath(icons.trash);
+  const iconCheck = getFixedIconPath(icons.check);
   const iconEdit = getFixedIconPath(icons.edit);
   const iconSave = getFixedIconPath(icons.save);
   const iconMegaphone = getFixedIconPath(icons.megaphone);
@@ -451,6 +485,14 @@ const RentalDetail = () => {
           className='xl:top-2 md:top-0 xl:right-2 md:right-0 right-2 md:absolute relative m-0 xl:m-3 md:m-1 cursor-pointer border-1 border-transparent active:border-ellPrimary hover:border-ellPrimary p-2 rounded-full hiddenLandscapePhone z-20'
           onClick={() => setShowAlertDelete(true)} />
       </div>
+        <div className="TooltipMain fixed bottom-24 right-4 flex flex-col items-center justify-center z-50">
+          <div className="flex text-center justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">ตรวจเช็ค</div>
+          <div className="absolute mb-14 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
+          <button className="relative rounded-full bg-ellBlack flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
+            onClick={handleCheck}>
+            <img src={iconCheck} width="40" height="40" alt="edit" />
+          </button>
+        </div>
       {isEditing ? (
         <div className="TooltipMain fixed bottom-4 right-4 flex flex-col items-center justify-center z-50">
           <div className="flex text-center justify-center bg-ellGreen p-1 mb-2 rounded-lg font-prompt text-[#F7F7F7] text-sm z-20 Tooltip">บันทึก</div>
@@ -462,7 +504,7 @@ const RentalDetail = () => {
         </div>
       ) : (
         <div className="TooltipMain fixed bottom-4 right-4 flex flex-col items-center justify-center z-50">
-          <div className="flex text-center justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">แก้ไข</div>
+          <div className="flex text-center justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip border-t-2 border-x-2 border-ellWhite">แก้ไข</div>
           <div className="absolute mb-14 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
           <button className="relative rounded-full bg-ellBlack flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
             onClick={() => setIsEditing(true)}>

@@ -1,9 +1,16 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useRef, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import ThemeContext from "../contexts/ThemeContext";
+import Notification from "./notification";
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../components/firebase';
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notiOpen, setNotiOpen] = useState(false);
+  const [readed, setReaded] = useState(false);
+  const [user, setUser] = useState(localStorage.getItem("email") || null);
+  const notiOpenBoxRef = useRef(null);
   const location = useLocation();
   const { theme, icons } = useContext(ThemeContext);
   const menuItems = [
@@ -13,6 +20,51 @@ const Navbar = () => {
     { name: "บัญชี", paths: ["/account"] },
   ];
 
+  useEffect(() => {
+    setInterval(() => {
+      checkReaded();
+    }, 30000);
+
+    setTimeout(() => {
+      checkReaded();
+    }, 3000);
+
+    function handleClickOutside(event) {
+        if (notiOpenBoxRef.current && !notiOpenBoxRef.current.contains(event.target)) {
+          setNotiOpen(false);
+          checkReaded();
+        }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const checkReaded = async () => {
+    try {
+      const userDocRef = doc(db, "users", user);
+      const docSnap = await getDoc(userDocRef);
+      
+      if (!docSnap.exists()) {
+        console.log("User document doesn't exist");
+        return;
+      }
+      
+      const userData = docSnap.data();
+      const existingNotifications = userData.notification || [];
+      
+      if (existingNotifications.some( notification => notification.readed === false)){
+        console.log("Have unread Notification");
+        setReaded(true);
+      } else {
+        console.log("All Notification readed");
+        setReaded(false);
+      }
+    } catch (error) {
+      console.error("Error checking notification status:", error);
+    }
+  };
   return (
     <>
       <div className="relative flex w-full h-20 bg-ellWhite items-center border-b border-b-ellDarkGray z-40">
@@ -21,7 +73,6 @@ const Navbar = () => {
             <img src={icons.logo} width="40" height="40" alt="logoEasylandlord" />
             <div className="text-ellPrimary text-lg font-inter font-semibold">Easylandlord</div>
           </div>
-
           {/* Desktop Navigation */}
           <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 gap-6">
             {menuItems.map((item) => (
@@ -47,10 +98,16 @@ const Navbar = () => {
           </div>
 
           {/* Notification */}
-          <div>
-            <button className="hover:animate-wiggle cursor-pointer">
-              <img src={icons.notification} width="40" height="40" alt="notifications" />
-            </button>
+          <div className="relative inline-block">
+            {notiOpen && (
+              <Notification ref={notiOpenBoxRef}/>
+            )}
+            <div>
+              <button className={`hover:animate-wiggle cursor-pointer ${notiOpen && "pointer-events-none"}`} onClick={() => setNotiOpen(true)}>
+                <div className={`absolute rounded-full border-4 border-ellWhite h-5 w-5 bg-ellRed right-0 ${!readed && "hidden"}`} ></div>
+                <img src={icons.notification} width="40" height="40" alt="notifications" />
+              </button>
+            </div>
           </div>
 
           {/* Mobile Menu Icon */}
@@ -72,7 +129,7 @@ const Navbar = () => {
 
       {/* Mobile Navigation */}
       {menuOpen && (
-        <div className="fixed top-20 left-0 w-full bg-ellWhite flex flex-col items-center md:hidden z-40">
+        <div className="fixed top-20 left-0 w-full bg-ellWhite flex flex-col items-center md:hidden z-40 animate-fadeDown">
           {menuItems.map((item) => (
             <NavLink
               key={item.name}
