@@ -8,6 +8,7 @@ import { db } from '../components/firebase';
 import { useTheme } from '../contexts/ThemeContext'
 import { auth } from '../components/firebase';
 import { signOut } from "firebase/auth";
+import UploadImage from '../components/uploadImage';
 
 const Account = () => {
   const HelpCenterAPI = [import.meta.env.VITE_HELPCENTER_RECEIVER_1,import.meta.env.VITE_HELPCENTER_RECEIVER_2];
@@ -19,9 +20,9 @@ const Account = () => {
   const [user, setUser] = useState(localStorage.getItem("email") || null);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
+  const [iconImage, setIconImage] = useState("");
   const [showAlert, setShowAlert] = useState(false);
-
-  // Use the theme context
+  const [uploadedImage, setUploadedImage] = useState("");
   const { theme: currentTheme, changeTheme, icons } = useTheme();
 
   useEffect(() => {
@@ -35,6 +36,7 @@ const Account = () => {
             const data = docSnap.data();
             setName(data.name || '');
             setNumber(data.number || '');
+            setIconImage(data.profileImage);
             if (data.theme) {
               changeTheme(data.theme);
             }
@@ -46,7 +48,7 @@ const Account = () => {
     };
     
     loadUserData();
-  }, [user, changeTheme]);
+  }, [user, changeTheme, uploadedImage]);
 
   const handleSignout = () => {
     setShowAlert(true);
@@ -63,16 +65,22 @@ const Account = () => {
       .catch((error) => console.error("Logout Failed", error));
   };
 
+  const handleImageUpload = (url) => {
+  console.log('Uploaded Image URL:', url);
+  setUploadedImage(url)
+};
+
   const handleSave = async () => {
     if (user) {
       try {
         await setDoc(doc(db, "users", user), {
           name,
           number,
-          theme: currentTheme
+          theme: currentTheme,
+          profileImage: uploadedImage || iconImage,
         }, { merge: true });
         
-        console.log("Profile saved:", name, number, currentTheme);
+        console.log("Profile saved:", name, number, currentTheme, uploadedImage);
         setIsEditing(false);
       } catch (error) {
         console.error("Error updating profile:", error);
@@ -82,11 +90,9 @@ const Account = () => {
     }
   };
 
-  // Handle theme change with user data persistence
   const handleThemeChange = async (themeName) => {
     changeTheme(themeName);
     
-    // Save to Firestore if user is logged in
     if (user) {
       try {
         await setDoc(doc(db, "users", user), {
@@ -134,7 +140,12 @@ const Account = () => {
           {isEditing ? (
             // Editing
             <div className="flex justify-center flex-col items-center w-full md:w-3xl pt-4 pb-6 animate-fadeDown">
-              <img src="./img/iconSubstitute.png" width="87" height="87" alt="icon" className="border-2 border-ellBlack rounded-full" />
+              <UploadImage onUploadSuccess={handleImageUpload}>
+                <div className="absolute rounded-full border-4 border-ellWhite h-7 w-7 bg-ellRed bottom-0 right-0 z-10 flex justify-center items-center">
+                  <img src="./img/camera-light.svg" alt="edit" className="w-4" />
+                </div>
+                <img src={uploadedImage || iconImage || "./img/iconSubstitute.png"} width="87" height="87" alt="icon" className="h-26 w-26 object-cover border-2 border-ellPrimary rounded-full hover:opacity-70" />
+              </UploadImage>
               <input
                 type="text"
                 placeholder="กรุณากรอกชื่อ"
@@ -157,7 +168,7 @@ const Account = () => {
           ) : (
             // Default
             <div className="flex items-center w-3xl pt-4 pb-6">
-              <img src="./img/iconSubstitute.png" width="87" height="87" alt="icon" className="border-2 border-ellBlack rounded-full" />
+              <img src={uploadedImage || iconImage || "./img/iconSubstitute.png"} alt="icon" className="h-26 w-26 object-cover border-2 border-ellPrimary rounded-full " />
               <div className="pl-6">
                 <div className="font-prompt text-ellPrimary text-lg font-semibold">{name || "ชื่อผู้ใช้"}</div>
                 <div className="flex items-center">

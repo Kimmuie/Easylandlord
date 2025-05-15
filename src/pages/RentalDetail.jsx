@@ -5,6 +5,9 @@ import Alert from '../components/Alert';
 import FinancialHistory from '../components/financialHistory';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../components/firebase';
+import UploadImage from '../components/uploadImage';
+import UploadPDF from '../components/uploadPdf';
+import PDFdownload from '../components/pdfDownload';
 
 const RentalDetail = () => {
   const { theme, icons } = useContext(ThemeContext);
@@ -38,6 +41,21 @@ const RentalDetail = () => {
   const filterTagBoxRef = useRef(null);
   const filterFrequencyBoxRef = useRef(null);
   const filterDetailsBoxRef = useRef(null);
+  const [userIconImage, setUserIconImage] = useState("");
+  const [tenantIconImage, setTenantIconImage] = useState("");
+  const [uploadedTenantImage, setUploadedTenantImage] = useState("");
+  const [rentalImage1, setRentalImage1] = useState("");
+  const [uploadedRentalImage1, setUploadedRentalImage1] = useState(null);
+  const [rentalImage2, setRentalImage2] = useState("");
+  const [uploadedRentalImage2, setUploadedRentalImage2] = useState(null);
+  const [rentalImage3, setRentalImage3] = useState("");
+  const [uploadedRentalImage3, setUploadedRentalImage3] = useState(null);
+  const [rentalImage4, setRentalImage4] = useState("");
+  const [uploadedRentalImage4, setUploadedRentalImage4] = useState(null);
+  const [rentalPDF, setRentalPDF] = useState("");
+  const [uploadedPDF, setUploadedPDF] = useState(null);
+  const [currentImageShow, setCurrentImageShow] = useState('2');
+  const [currentImage, setCurrentImage] = useState(currentImageShow);
   const [selectedTag, setSelectedTag] = useState('');
   const [selectedFrequency, setSelectedFrequency] = useState('');
   const [selectedDetails, setSelectedDetails] = useState('');
@@ -173,7 +191,7 @@ const RentalDetail = () => {
             if (type === 'tag') {
               return { ...r, tag: value };
             } else if (type === 'frequency') {
-              return { ...r, propertyDetails: value };
+              return { ...r, rentFrequency: value };
             } else if (type === 'details') {
               const updatedPropertyDetails = { ...r.propertyDetails };
               updatedPropertyDetails[value] = !updatedPropertyDetails[value];
@@ -237,6 +255,48 @@ const RentalDetail = () => {
     }
   }
 
+  //Set Image Count
+  useEffect(() => {
+    if (rentalImage4) {
+      setCurrentImageShow("4")
+      setCurrentImage("4")
+    } else if (rentalImage3) {
+      setCurrentImageShow("3")
+      setCurrentImage("3")
+    } else {
+      setCurrentImageShow("2")
+    }
+  }, [rentalImage3, rentalImage4]);
+
+  // Save image/pdf to Cloudinary
+  const handleUpload = (url, field) => {
+    if (field === 'tenant') {
+      console.log('Uploaded Image URL:', url);
+      setUploadedTenantImage(url)
+    } else if (field === 'rental1') {
+      console.log('Uploaded Image URL:', url);
+      setUploadedRentalImage1(url)
+    } else if (field === 'rental2') {
+      console.log('Uploaded Image URL:', url);
+      setUploadedRentalImage2(url)
+    } else if (field === 'rental3') {
+      console.log('Uploaded Image URL:', url);
+      setUploadedRentalImage3(url)
+    } else if (field === 'rental4') {
+      console.log('Uploaded Image URL:', url);
+      setUploadedRentalImage4(url)
+    } else if (field === 'pdf') {
+      console.log('Uploaded PDF URL:', url);
+      setUploadedPDF(url)
+    }
+  };
+
+ const handleDownload = () => {
+    if (pdfData?.url) {
+      window.open(pdfData.url, '_blank');
+    }
+  };
+
   // Manual Save
   const handleSave = async () => {
     if (isEditing && rental && user) {
@@ -249,7 +309,13 @@ const RentalDetail = () => {
 
           if (userData.rental) {
             const updatedRentals = userData.rental.map(r =>
-              r.id === rentalId ? { ...r, name: rentalName, location: rentalLocate, rentFee: rentalFee, bedroom: rentalBedroom, restroom: rentalRestroom, squareMetre: rentalArea, tenantName: nameTenant, tenantNumber: numberTenant, dueDate: dueDate } : r
+              r.id === rentalId ? { ...r, name: rentalName, location: rentalLocate, rentFee: rentalFee, bedroom: rentalBedroom, restroom: rentalRestroom, squareMetre: rentalArea, tenantName: nameTenant, tenantNumber: numberTenant, dueDate: tempoDate, rentFrequency: selectedFrequency,
+              tenantImage: uploadedTenantImage ?? tenantIconImage,
+              rentalImage1: uploadedRentalImage1 ?? rentalImage1,
+              rentalImage2: uploadedRentalImage2 ?? rentalImage2,
+              rentalImage3: uploadedRentalImage3 ?? rentalImage3,
+              rentalImage4: uploadedRentalImage4 ?? rentalImage4,
+              pdf: uploadedPDF ?? rentalPDF} : r
             );
             await updateDoc(userDocRef, {
               rental: updatedRentals
@@ -265,7 +331,14 @@ const RentalDetail = () => {
               squareMetre: rentalArea,
               tenantName: nameTenant,
               tenantNumber: numberTenant,
-              dueDate: dueDate
+              dueDate: tempoDate,
+              rentFrequency: selectedFrequency,
+              tenantImage: uploadedTenantImage || tenantIconImage,
+              rentalImage1: uploadedRentalImage1 || rentalImage1,
+              rentalImage2: uploadedRentalImage2 || rentalImage2,
+              rentalImage3: uploadedRentalImage3 || rentalImage3,
+              rentalImage4: uploadedRentalImage4 || rentalImage4,
+              pdf: uploadedPDF || rentalPDF
             }));
 
             console.log("Other rental details updated successfully");
@@ -275,7 +348,7 @@ const RentalDetail = () => {
         console.error("Error updating rental:", error);
       }
     }
-
+    fetchRentalDetail();
     setIsEditing(false);
   }
 
@@ -291,6 +364,7 @@ const RentalDetail = () => {
             const data = docSnap.data();
             setName(data.name || '');
             setNumber(data.number || '');
+            setUserIconImage(data.profileImage);
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -329,7 +403,13 @@ const RentalDetail = () => {
             setNameTenant(currentRental.tenantName);
             setNumberTenant(currentRental.tenantNumber);
             setDueDate(currentRental.dueDate);
-            setCheckDate(currentRental.checkDate)
+            setCheckDate(currentRental.checkDate);
+            setTenantIconImage(currentRental.tenantImage);
+            setRentalImage1(currentRental.rentalImage1);
+            setRentalImage2(currentRental.rentalImage2);
+            setRentalImage3(currentRental.rentalImage3);
+            setRentalImage4(currentRental.rentalImage4);
+            setRentalPDF(currentRental.pdf);
           }
         }
       }
@@ -415,13 +495,18 @@ const RentalDetail = () => {
     สระว่ายน้ำ: { id: 12, name: "สระว่ายน้ำ", icon: iconPool },
   }
 
+  function toDisplayDate(isoStr) {
+    if (!isoStr) return "";
+    const [year, month, day] = isoStr.split('-');
+    return `${day}/${month}/${year}`;
+  }
+
   const handleDateChange = (e) => {
     const isoDate = e.target.value;
     setTempoDate(isoDate);
     
     if (isoDate) {
-      const [year, month, day] = isoDate.split('-');
-      setDueDate(`${day}/${month}/${year}`);
+      setDueDate(toDisplayDate(isoDate));
     } else {
       setDueDate("");
     }
@@ -514,12 +599,22 @@ const RentalDetail = () => {
       )}
       <div className="overflow-y-auto overflow-x-hidden flex flex-col items-center w-full min-h-screen bg-ellWhite">
         <div className="flex flex-row justify-between xl:w-4xl md:w-2xl w-full my-4 md:mx-0 px-2">
-          <div className="flex flex-row items-center font-prompt text-ellPrimary text-lg">
+          <div className="flex flex-row items-center font-prompt text-ellPrimary text-lg w-30">
             <div className={`rounded-full border-2 border-ellGray h-5 w-5 mr-2 ${rental.status === "available" ? "bg-ellGreen" : "bg-ellRed"}`}></div>
             {rental.status === "available" ? "ว่าง" : "ไม่ว่าง"}
           </div>
-          <div className="relative inline-block">
-            <button className="flex justify-center rounded-sm px-1 font-prompt text-ellSecondary text-md md:text-lg bg-ellBlack h-8 cursor-pointer"
+          {isEditing && (
+          <div className='flex flex-row gap-1'>
+            <button className={`font-prompt text-ellPrimary text-lg cursor-pointer rounded h-9 w-9 border-2 border-ellGray hover:border-ellPrimary flex items-center justify-center hover:scale-102 active:scale-97 ${currentImage === '2' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
+              onClick={() => setCurrentImage("2")}>2</button>
+            <button className={`font-prompt text-ellPrimary text-lg cursor-pointer rounded h-9 w-9 border-2 border-ellGray hover:border-ellPrimary flex items-center justify-center hover:scale-102 active:scale-97 ${currentImage === '3' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
+              onClick={() => setCurrentImage("3")}>3</button>
+            <button className={`font-prompt text-ellPrimary text-lg cursor-pointer rounded h-9 w-9 border-2 border-ellGray hover:border-ellPrimary flex items-center justify-center hover:scale-102 active:scale-97 ${currentImage === '4' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
+              onClick={() => setCurrentImage("4")}>4</button>
+          </div>
+          )}
+          <div className="relative flex justify-end w-30">
+            <button className={`flex justify-center rounded-sm px-1 font-prompt text-ellSecondary text-md md:text-lg bg-ellBlack h-8 cursor-pointer ${showTagBox && "pointer-events-none"}`}
               onClick={() => setShowTagBox(prev => !prev)}>
               {rental.tag}
             </button>
@@ -551,10 +646,69 @@ const RentalDetail = () => {
           </div>
         </div>
         <div className='flex flex-row xl:pl-2 md:pl-4 pl-2 xl:pr-2 md:pr-4 pr-2'>
-          <img src="/img/sampleImage.jpg" alt="image" className="md:w-152 w-72 md:h-70 h-50 border-1 border-ellTertiary rounded-l-2xl" />
           <div className='flex flex-col'>
-            <img src="/img/sampleImage.jpg" alt="image" className="w-72 md:h-35 h-25 border-1 border-ellTertiary rounded-tr-2xl" />
-            <img src="/img/sampleImage.jpg" alt="image" className="w-72 md:h-35 h-25 border-1 border-ellTertiary rounded-br-2xl" />
+            {/* 1 */}            
+            <div className="relative inline-block">
+              <img src={uploadedRentalImage1 || rentalImage1 || "/img/sampleImage.jpg"} alt="image" className={`object-cover border-1 border-ellTertiary ${isEditing ? (currentImage === '2' ? 'w-112 md:h-70 h-35 rounded-l-lg' : currentImage === '3' ? "md:w-152 w-72 md:h-70 h-50 rounded-l-lg"  : "md:w-112 w-full md:h-60 h-30 rounded-tl-lg"):(currentImageShow === '2' ? 'w-112 md:h-70 h-35 rounded-l-lg' : currentImageShow === '3' ? "md:w-152 w-72 md:h-70 h-50 rounded-l-lg"  : "md:w-112 w-full md:h-60 h-30 rounded-tl-lg")}`}/>
+              <div className={`absolute right-1 bottom-1 flex flex-row ${!isEditing && "hidden"}`}>
+                <UploadImage onUploadSuccess={(url) => handleUpload(url, "rental1")}>
+                <div className="cursor-pointer rounded h-9 w-9 bg-blue-500 mr-1 flex items-center justify-center hover:scale-102 active:scale-97">
+                  <img src="/img/plus-light.svg" alt="edit" className="w-7" />
+                </div>
+                </UploadImage>
+                <div className={`cursor-pointer rounded h-9 w-9 bg-ellRed flex items-center justify-center hover:scale-102 active:scale-97 ${!rentalImage1 && "hidden"}`}
+                  onClick={() => setUploadedRentalImage1("")}>
+                  <img src="/img/trash-light.svg" alt="edit" className="w-7" />
+                </div>
+              </div>
+            </div>
+            {/* 4 */}
+            <div className={`relative ${isEditing ? (currentImage === '2' ? 'hidden' : currentImage === '3' ? "hidden"  : "inline-block"):(currentImageShow === '2' ? 'hidden' : currentImageShow === '3' ? "hidden"  : "inline-block")}`}>
+              <img src={uploadedRentalImage4 || rentalImage4 || "/img/sampleImage.jpg"} alt="image" className={`object-cover border-1 border-ellTertiary rounded-l-lg ${isEditing ? (currentImage === '2' ? '' : currentImage === '3' ? ""  : "md:w-112 w-full md:h-60 h-30 rounded-bl-lg"):(currentImageShow === '2' ? '' : currentImageShow === '3' ? ""  : "md:w-112 w-full md:h-60 h-30 rounded-bl-lg")}`}/>
+              <div className={`absolute right-1 bottom-1 flex flex-row ${!isEditing && "hidden"}`}>
+                <UploadImage onUploadSuccess={(url) => handleUpload(url, "rental4")}>
+                <div className="cursor-pointer rounded h-9 w-9 bg-blue-500 mr-1 flex items-center justify-center hover:scale-102 active:scale-97">
+                  <img src="/img/plus-light.svg" alt="edit" className="w-7" />
+                </div>
+                </UploadImage>
+                <div className={`cursor-pointer rounded h-9 w-9 bg-ellRed flex items-center justify-center hover:scale-102 active:scale-97 ${!rentalImage4 && "hidden"}`}
+                  onClick={() => setUploadedRentalImage4("")}>
+                  <img src="/img/trash-light.svg" alt="edit" className="w-7" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className='flex flex-col'>
+            {/* 2 */}
+            <div className="relative inline-block">
+              <img src={uploadedRentalImage2 || rentalImage2 || "/img/sampleImage.jpg"} alt="image" className={`object-cover border-1 border-ellTertiary ${isEditing ? (currentImage === '2' ? 'w-112 md:h-70 h-35 rounded-r-lg' : currentImage === '3' ? "md:w-72 w-40 md:h-35 h-25 rounded-tr-lg"  : "md:w-112 w-full md:h-60 h-30 rounded-tr-lg"):(currentImageShow === '2' ? 'w-112 md:h-70 h-35 rounded-r-lg' : currentImageShow === '3' ? "md:w-72 w-40 md:h-35 h-25 rounded-tr-lg"  : "md:w-112 w-full md:h-60 h-30 rounded-tr-lg")}`}/>
+              <div className={`absolute right-1 bottom-1 flex flex-row ${!isEditing && "hidden"}`}>
+                <UploadImage onUploadSuccess={(url) => handleUpload(url, "rental2")}>
+                <div className="cursor-pointer rounded h-9 w-9 bg-blue-500 mr-1 flex items-center justify-center hover:scale-102 active:scale-97">
+                  <img src="/img/plus-light.svg" alt="edit" className="w-7" />
+                </div>
+                </UploadImage>
+                <div className={`cursor-pointer rounded h-9 w-9 bg-ellRed flex items-center justify-center hover:scale-102 active:scale-97 ${!rentalImage2 && "hidden"}`}
+                  onClick={() => setUploadedRentalImage2("")}>
+                  <img src="/img/trash-light.svg" alt="edit" className="w-7" />
+                </div>
+              </div>
+            </div>
+            {/* 3 */}
+            <div className={`relative ${isEditing ? (currentImage === '2' ? 'hidden' : currentImage === '3' ? "inline-block"  : "inline-block"):(currentImageShow === '2' ? 'hidden' : currentImageShow === '3' ? "inline-block"  : "inline-block")}`}>
+              <img src={uploadedRentalImage3 || rentalImage3 || "/img/sampleImage.jpg"} alt="image" className={`object-cover border-1 border-ellTertiary ${isEditing ? (currentImage === '2' ? '' : currentImage === '3' ? "md:w-72 w-40 md:h-35 h-25 rounded-br-lg"  : "md:w-112 w-full md:h-60 h-30 rounded-br-lg"):(currentImageShow === '2' ? '' : currentImageShow === '3' ? "md:w-72 w-40 md:h-35 h-25 rounded-br-lg"  : "md:w-112 w-full md:h-60 h-30 rounded-br-lg")}`}/>
+              <div className={`absolute right-1 bottom-1 flex flex-row ${!isEditing && "hidden"}`}>
+                <UploadImage onUploadSuccess={(url) => handleUpload(url, "rental3")}>
+                <div className="cursor-pointer rounded h-9 w-9 bg-blue-500 mr-1 flex items-center justify-center hover:scale-102 active:scale-97">
+                  <img src="/img/plus-light.svg" alt="edit" className="w-7" />
+                </div>
+                </UploadImage>
+                <div className={`cursor-pointer rounded h-9 w-9 bg-ellRed flex items-center justify-center hover:scale-102 active:scale-97 ${!rentalImage3 && "hidden"}`}
+                  onClick={() => setUploadedRentalImage3("")}>
+                  <img src="/img/trash-light.svg" alt="edit" className="w-7" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div className={`flex flex-col xl:flex-row xl:w-fit md:w-full w-full pt-4 xl:px-0 px-4 ${isEditing ? "pb-1" : "pb-0"}`}>
@@ -665,7 +819,7 @@ const RentalDetail = () => {
                   />
                   /
                   <div className="relative inline-block">
-                    <button className={`border-2 rounded-md px-2 py-0.5 ml-2 cursor-pointer ${showFrequencyBox ? "border-ellPrimary" : "border-ellGray"}`}
+                    <button className={`border-2 rounded-md px-2 py-0.5 ml-2 cursor-pointer ${showFrequencyBox ? "border-ellPrimary pointer-events-none" : "border-ellGray"}`}
                       onClick={() => setShowFrequencyBox(prev => !prev)}>
                       {rental.rentFrequency}
                     </button>
@@ -712,7 +866,16 @@ const RentalDetail = () => {
                 </div>
                 <div className="bg-ellWhite xl:h-20 h-22 w-full md:w-full xl:w-full flex flex-row items-center justify-between rounded-xl border-2 border-ConstantGray p-2">
                   <div className="flex flex-row items-center">
-                    <img src="/img/iconSubstitute.png" width="60" height="60" alt="icon" className="border-2 border-ellPrimary rounded-full ml-3" />
+                    {isEditing ? (
+                    <UploadImage onUploadSuccess={(url) => handleUpload(url, "tenant")}>
+                      <div className="absolute rounded-full border-4 border-ellWhite h-7 w-7 bg-ellRed bottom-0 right-0 z-10 flex justify-center items-center">
+                        <img src="/img/camera-light.svg" alt="edit" className="w-4" />
+                      </div>
+                      <img src={uploadedTenantImage || tenantIconImage || "/img/iconSubstitute.png"} alt="icon" className="w-16 h-16 object-cover border-2 border-ellPrimary rounded-full ml-3 hover:opacity-70" />
+                    </UploadImage>
+                    ):(
+                    <img src={tenantIconImage || "/img/iconSubstitute.png"} alt="icon" className="w-16 h-16 object-cover border-2 border-ellPrimary rounded-full ml-3" />
+                    )}
                     <div className='flex flex-col ml-3'>
                     {isEditing ? (
                       <>
@@ -755,18 +918,11 @@ const RentalDetail = () => {
                   สัญญาเช่า
                 </div>
                 <div className='flex flex-row'>
-                  <div className="bg-ellWhite xl:h-20 h-22 w-full md:w-4xl xl:w-80 flex flex-row items-center justify-between rounded-l-xl border-2 border-r-0 border-ConstantGray p-2">
-                    <div className="flex flex-row items-center">
-                      <img src="/img/pdf-icon.png" width="45" height="60" alt="icon" className="ml-3" />
-                      <div className='flex flex-col ml-3 w-full'>
-                        <span className='text-ellPrimary font-prompt text-md font-semibold'>file.pdf</span>
-                        <span className='text-ellPrimary font-prompt opacity-80 text-sm'>filesize</span>
-                      </div>
-                    </div>
-                    {isEditing &&
-                    <img src="/img/upload-dark.svg" width="40" height="60" alt="icon" className="p-1 bg-ConstantGray rounded-full mr-3 cursor-pointer hover:scale-105 active:scale-98" />
-                    }
-                  </div>
+                  <PDFdownload 
+                    pdfData={uploadedPDF || rentalPDF} 
+                    isEditing={isEditing} 
+                    handleUpload={handleUpload} 
+                  />
                   <div className="bg-ellWhite xl:h-20 h-22 w-40 md:w-sm xl:w-32 flex flex-col items-center justify-center rounded-r-xl border-2 border-ConstantGray py-2">
                       <span className='text-ellPrimary font-prompt text-md font-semibold items-center py-2'>วันครบกำหนด</span>
                       {isEditing ? (
@@ -775,13 +931,13 @@ const RentalDetail = () => {
                         type="date"
                         name="dueDate"
                         maxLength={12}
-                        value={tempoDate != "" ? tempoDate : tempoDate || dueDate != "" ? dueDate : dueDate}
+                        value={tempoDate || dueDate}
                         onChange={handleDateChange}
                         className="xl:block md:flex flex justify-center focus:outline-none text-center rounded-br-lg px-2 py-2 w-full border-t-2 border-t-ConstantGray font-prompt font-medium text-ellPrimary text-sm"
                       />
                       </>
                     ):(
-                      <span className='text-ellPrimary font-prompt text-sm font-semibold border-t-2 border-t-ConstantGray w-full text-center py-2'>{dueDate.trim() === "" ? "-" : dueDate}</span>
+                      <span className='text-ellPrimary font-prompt text-sm font-semibold border-t-2 border-t-ConstantGray w-full text-center py-2'>{toDisplayDate(dueDate).trim() === "" ? "-" : toDisplayDate(dueDate)}</span>
                     )}
                   </div>
                 </div>
@@ -855,7 +1011,7 @@ const RentalDetail = () => {
           <div className='flex xl:flex-row flex-col-reverse w-full xl:w-4xl mb-2 mt-4 md:mt-auto xl:mt-auto self-center'>
             {!isEditing &&
               <div className="bg-ellWhite xl:h-20 h-22 w-full md:w-full xl:w-xl flex flex-row items-center justify-start rounded-xl border-2 border-ConstantGray p-2">
-                <img src="/img/iconSubstitute.png" width="60" height="60" alt="icon" className="border-2 border-ellPrimary rounded-full ml-3" />
+                <img src={userIconImage || "/img/iconSubstitute.png"} alt="icon" className="w-16 h-16 object-cover border-2 border-ellPrimary rounded-full ml-3" />
                 <div className='flex flex-col ml-3'>
                   <div className="flex justify-center font-prompt text-ellLime bg-ellGreen rounded-2xl px-4 py-0.75 text-xs">เจ้าของ{rental.tag}</div>
                   <span className='text-ellPrimary font-prompt text-md font-semibold'>{name}</span>

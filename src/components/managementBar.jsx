@@ -96,6 +96,12 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                 billElectricity: "",
                 billWater: "",
                 createdAt: formattedDate,
+                tenantImage: "",
+                rentalImage1: "",
+                rentalImage2: "",
+                rentalImage3: "",
+                rentalImage4: "",
+                pdf: "",
                 financialHistory: {}
             };
             

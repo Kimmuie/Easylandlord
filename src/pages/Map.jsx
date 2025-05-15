@@ -198,7 +198,11 @@ const GoogleMap = () => {
             id: rental.id,
             name: rental.name,
             location: rental.location,
-            status: rental.status
+            status: rental.status,
+            rentalImage1: rental.rentalImage1,
+            rentalImage2: rental.rentalImage2,
+            rentalImage3: rental.rentalImage3,
+            rentalImage4: rental.rentalImage4
           }));
           setRentals(essentialRentalData);
         }
@@ -210,42 +214,46 @@ const GoogleMap = () => {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const fetchSpecificRental = async () => {
-      if (!rentalId) return;
+  // useEffect(() => {
+  //   const fetchSpecificRental = async () => {
+  //     if (!rentalId) return;
       
-      const userEmail = localStorage.getItem("email");
-      if (!userEmail) return;
+  //     const userEmail = localStorage.getItem("email");
+  //     if (!userEmail) return;
       
-      try {
-        const userDocRef = doc(db, "users", userEmail);
-        const docSnap = await getDoc(userDocRef);
+  //     try {
+  //       const userDocRef = doc(db, "users", userEmail);
+  //       const docSnap = await getDoc(userDocRef);
         
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          if (userData.rental) {
-            const currentRental = userData.rental.find(r => r.id === rentalId);
-            if (currentRental && currentRental.location) {
-              try {
-                setSelectedRental({
-                  id: currentRental.id,
-                  name: currentRental.name,
-                  location: currentRental.location,
-                  status: currentRental.status
-                });
-              } catch (error) {
-                console.error("Error parsing rental location:", error);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching specific rental:", error);
-      }
-    };
+  //       if (docSnap.exists()) {
+  //         const userData = docSnap.data();
+  //         if (userData.rental) {
+  //           const currentRental = userData.rental.find(r => r.id === rentalId);
+  //           if (currentRental && currentRental.location) {
+  //             try {
+  //               setSelectedRental({
+  //                 id: currentRental.id,
+  //                 name: currentRental.name,
+  //                 location: currentRental.location,
+  //                 status: currentRental.status,
+  //                 rentalImage1: rental.rentalImage1,
+  //                 rentalImage2: rental.rentalImage2,
+  //                 rentalImage3: rental.rentalImage3,
+  //                 rentalImage4: rental.rentalImage4
+  //               });
+  //             } catch (error) {
+  //               console.error("Error parsing rental location:", error);
+  //             }
+  //           }
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching specific rental:", error);
+  //     }
+  //   };
     
-    fetchSpecificRental();
-  }, [rentalId]); 
+  //   fetchSpecificRental();
+  // }, [rentalId]); 
 
   useEffect(() => {
     let result = [...rentalsWithCoordinates];
@@ -368,7 +376,7 @@ const GoogleMap = () => {
                   {open && selectedRentalId === rental.id && (
                     <InfoWindow anchor={markerRefs.current[rental.id]}>
                       <div className='flex justify-center items-center flex-col' ref={mapBoxRef}>
-                        <img src="./img/sampleImage.jpg" width="100" height="40" alt="image" className="border-2 border-ellGray rounded-md mt-4"/>
+                        <img src={rental.rentalImage1 || rental.rentalImage2 || rental.rentalImage3 || rental.rentalImage4 || "./img/sampleImage.jpg"} alt="image" className="h-15 w-25 object-cover border-2 border-ellGray rounded-md mt-4"/>
                         <h3 className="font-bold font-prompt">{rental.name}</h3>
                         <button className="mt-1 flex flex-row bg-[#333333] rounded-full items-center justify-center font-prompt text-[#F7F7F7] h-6 px-2 w-full text-xs cursor-pointer active:scale-98"
                           onClick={() => navigate(`/management/${rental.id}`)}>

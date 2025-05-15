@@ -2,7 +2,7 @@ import React, { useState, useContext, useRef, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import ThemeContext from "../contexts/ThemeContext";
 import Notification from "./notification";
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../components/firebase';
 
 const Navbar = () => {
@@ -31,8 +31,9 @@ const Navbar = () => {
 
     function handleClickOutside(event) {
         if (notiOpenBoxRef.current && !notiOpenBoxRef.current.contains(event.target)) {
+          setReaded(false);
           setNotiOpen(false);
-          checkReaded();
+          updateAllNotifications({readed: true});
         }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -40,6 +41,32 @@ const Navbar = () => {
         document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+    
+  const updateAllNotifications = async (fieldsToUpdate) => {
+    if (user) {
+      try {
+        const userDocRef = doc(db, "users", user);
+        const docSnap = await getDoc(userDocRef);
+  
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+  
+          if (Array.isArray(userData.notification)) {
+            const updatedNotifications = userData.notification.map(notification => ({
+              ...notification,
+              ...fieldsToUpdate
+            }));
+  
+            await updateDoc(userDocRef, { notification: updatedNotifications });
+  
+            console.log("All notifications updated successfully");
+          }
+        }
+      } catch (error) {
+        console.error("Error updating notifications:", error);
+      }
+    }
+  };
 
   const checkReaded = async () => {
     try {

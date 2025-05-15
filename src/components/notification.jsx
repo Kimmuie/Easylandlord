@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, forwardRef, useContext } from "react";
 import ThemeContext from '../contexts/ThemeContext';
-import { doc, updateDoc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../components/firebase';
 
 const Notification = forwardRef((props, ref) => {
@@ -8,46 +8,6 @@ const Notification = forwardRef((props, ref) => {
   const [user, setUser] = useState(localStorage.getItem("email") || null);
   const [notification, setNotification] = useState([]);
   const [allNotification, setallNotification] = useState([]);
-
-  useEffect(() => { 
-    if (!user) {
-      console.error("User not logged in");
-      return;
-    }
-    const markAllAsRead = async () => {
-      await updateAllNotifications({ 
-        readed: true, 
-      });
-    };
-    
-    markAllAsRead();
-  }, [user]);
-  
-  const updateAllNotifications = async (fieldsToUpdate) => {
-    if (user) {
-      try {
-        const userDocRef = doc(db, "users", user);
-        const docSnap = await getDoc(userDocRef);
-  
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-  
-          if (Array.isArray(userData.notification)) {
-            const updatedNotifications = userData.notification.map(notification => ({
-              ...notification,
-              ...fieldsToUpdate
-            }));
-  
-            await updateDoc(userDocRef, { notification: updatedNotifications });
-  
-            console.log("All notifications updated successfully");
-          }
-        }
-      } catch (error) {
-        console.error("Error updating notifications:", error);
-      }
-    }
-  };
 
   useEffect(() => { 
     if (!user) {
@@ -99,9 +59,12 @@ const Notification = forwardRef((props, ref) => {
               key={noti.id} 
               className="p-3 border-b border-ellDarkGray flex flex-row"
             >
-              <img src="./img/iconSubstitute.png" alt="icon" className="w-18 h-18 border-2 border-ellBlack rounded-full" />
+              <img src={noti.image || "./img/sampleImage.jpg"} alt="icon" className="w-18 h-18 object-cover border-2 border-ellBlack rounded-full" />
               <div className="flex flex-col w-full ml-3">
-                <div className="font-prompt font-semibold text-ellPrimary">{noti.header}</div>
+                <div className="font-prompt font-semibold text-ellPrimary flex justify-between">
+                  {noti.header}
+                  <span className={`font-prompt font-semibold text-xs h-4 text-[#F7F7F7] bg-ellRed rounded px-1 ${noti.readed && "hidden"}`}>NEW</span>
+                </div>
                 <div className="h-10 font-prompt text-sm text-ellPrimary">{noti.description}</div>
                 <div className="font-prompt text-xs text-ellDarkGray mt-3 flex justify-end">{noti.date}</div>
               </div>

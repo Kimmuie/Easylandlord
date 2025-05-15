@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation, useParams } from "react-router-dom";
 import { useState, useEffect } from 'react';
 import Navbar from "./components/Navbar";
 import LoadingScreen from './components/LoadingScreen'
@@ -15,6 +15,8 @@ const AppContent = () => {
   const location = useLocation();
   const isRentalDetailPage = /^\/management\/[^/]+$/.test(location.pathname);
   const [user, setUser] = useState(localStorage.getItem("email") || null);
+  const { rentalId } = useParams();
+    const [records, setRecords] = useState([]);
 
   useEffect(() => {
     // Check for user authentication
@@ -32,8 +34,17 @@ const AppContent = () => {
           console.log("User document doesn't exist");
           return;
         }
-        
+
         const userData = docSnap.data();
+        if (userData.rental) {
+          const rental = userData.rental.find(r => r.id === rentalId);
+          
+          if (rental && rental.financialHistory) {
+            setRecords(rental.financialHistory);
+          } else {
+            setRecords([]);
+          }
+        }
         
         if (!userData.rental || !Array.isArray(userData.rental) || userData.rental.length === 0) {
           console.log("No rentals found for this user");
@@ -49,7 +60,7 @@ const AppContent = () => {
         
         // Scan through all rentals to check their due dates
         for (const rental of userData.rental) {
-          console.log(`Checking rental: ${rental.name || rental.id} | Due date value: ${rental.dueDate}`);
+          console.log(`-------------Checking rental: ${rental.name || rental.id}------------`);
           
           if (!rental.dueDate) {
             console.log(`Rental ${rental.name || rental.id} has no due date`);
@@ -101,6 +112,7 @@ const AppContent = () => {
           const hours = String(now.getHours()).padStart(2, '0');
           const minutes = String(now.getMinutes()).padStart(2, '0');
           const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}`;
+          // ---------- CONTRACT DUE DATE NOTIFICATIONS ----------
           if (daysLeft <= 30 && daysLeft >= 0) {
             let description;
             if (daysLeft === 0) {
@@ -131,6 +143,7 @@ const AppContent = () => {
                 id: notificationId,
                 date: formattedDate,
                 rawDate: now.toISOString(),
+                image: rental.rentalImage1 || rental.rentalImage2 || rental.rentalImage3 || rental.rentalImage4 || "",
                 header: rental.name || `Rental ${rental.id}`,
                 description: description,
                 readed: false,
@@ -161,6 +174,7 @@ const AppContent = () => {
                 id: notificationId,
                 date: formattedDate,
                 rawDate: now.toISOString(),
+                image: rental.rentalImage1 || rental.rentalImage2 || rental.rentalImage3 || rental.rentalImage4 || "",
                 header: rental.name || `Rental ${rental.id}`,
                 description: description,
                 readed: false,
@@ -168,6 +182,7 @@ const AppContent = () => {
               console.log(`Creating overdue notification for ${rental.name || rental.id}`);
             }
           }
+          // ---------- CHECK RENTALS NOTIFICATIONS ----------
           if (rental.checkDate) {
             const checkDateObj = typeof rental.checkDate === 'number' 
               ? new Date(rental.checkDate) 
@@ -200,6 +215,7 @@ const AppContent = () => {
                     id: notificationId,
                     date: formattedDate,
                     rawDate: now.toISOString(),
+                    image: rental.rentalImage1 || rental.rentalImage2 || rental.rentalImage3 || rental.rentalImage4 || "",
                     header: rental.name || `Rental ${rental.id}`,
                     description: description,
                     readed: false,
@@ -211,6 +227,121 @@ const AppContent = () => {
               console.log(`Invalid checkDate format for rental ${rental.name || rental.id}`);
             }
           }
+        
+        // ---------- PAYMENT DUE DATE NOTIFICATIONS ----------
+        if (rental.financialHistory && Array.isArray(rental.financialHistory) && rental.financialHistory.length > 0) {
+          const latestRecord = rental.financialHistory[rental.financialHistory.length - 1];
+          
+          // console.log(`Checking payment due for rental ${rental.name || rental.id} | Latest record:`, latestRecord);
+          if (latestRecord.dueInDate && !latestRecord.paymentDate) {
+            let paymentDueDate;
+            
+            if (typeof latestRecord.dueInDate === 'string') {
+              if (latestRecord.dueInDate.includes('/')) {
+                const [day, month, year] = latestRecord.dueInDate.split('/');
+                paymentDueDate = new Date(year, month - 1, day);
+              } else if (latestRecord.dueInDate.includes('-')) {
+                paymentDueDate = new Date(latestRecord.dueInDate);
+              } else {
+                paymentDueDate = new Date(latestRecord.dueInDate);
+              }
+            } else if (latestRecord.dueInDate instanceof Date) {
+              paymentDueDate = latestRecord.dueInDate;
+            } else if (typeof latestRecord.dueInDate === 'object' && latestRecord.dueInDate.seconds) {
+              paymentDueDate = new Date(latestRecord.dueInDate.seconds * 1000);
+            } else {
+              paymentDueDate = new Date(latestRecord.dueInDate);
+            }
+            let dateFrequency;
+            const rentFrequency = rental.rentFrequency.trim();
+            if (rentFrequency === "วัน") {
+              dateFrequency = 1;
+            } else {
+              dateFrequency = 7;
+            }
+            
+
+            if (!isNaN(paymentDueDate.getTime())) {
+              const timeDiff = paymentDueDate.getTime() - now.getTime();
+              const daysUntilDue = Math.ceil(timeDiff / (1000 * 3600 * 24));
+              console.log(`Days until payment due: ${daysUntilDue}`);
+
+              if (daysUntilDue <= dateFrequency && daysUntilDue >= 0) {
+                let description;
+                if (daysUntilDue === 0) {
+                  description = `ถึงกำหนดชำระค่าเช่าแล้วในวันนี้`;
+                } else if (daysUntilDue === 1) {
+                  description = `ถึงกำหนดชำระค่าเช่าในวันพรุ่งนี้`;
+                } else {
+                  description = `อีก ${daysUntilDue} วัน จะถึงกำหนดชำระค่าเช่า`;
+                }
+                
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const alreadySent = existingNotifications.some(notification => {
+                  const isForSameRental = notification.header === (rental.name || `Rental ${rental.id}`);
+                  const isPaymentNotification = notification.description.includes(`กำหนดชำระค่าเช่า`);
+                  const notificationDate = notification.rawDate ? new Date(notification.rawDate) : null;
+                  if (!notificationDate) return false;
+                  
+                  notificationDate.setHours(0, 0, 0, 0);
+                  const isSentToday = notificationDate.getTime() === today.getTime();
+                  
+                  return isForSameRental && isPaymentNotification && isSentToday;
+                });
+                
+                if (!alreadySent) {
+                  const notificationId = `noti_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+                  newNotifications.push({
+                    id: notificationId,
+                    date: formattedDate,
+                    rawDate: now.toISOString(),
+                    image: rental.rentalImage1 || rental.rentalImage2 || rental.rentalImage3 || rental.rentalImage4 || "",
+                    header: rental.name || `Rental ${rental.id}`,
+                    description: description,
+                    readed: false,
+                  });
+                  console.log(`Creating payment due notification for ${rental.name || rental.id} - Due in ${daysUntilDue} days`);
+                }
+              }
+              
+              if (daysUntilDue < 0) {
+                const daysOverdue = Math.abs(daysUntilDue);
+                const description = `ค่าเช่าค้างชำระเป็นเวลา ${daysOverdue} วันแล้ว`;
+                
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const alreadySent = existingNotifications.some(notification => {
+                  const isForSameRental = notification.header === (rental.name || `Rental ${rental.id}`);
+                  const isOverdueNotification = notification.description.includes(`ค่าเช่าค้างชำระ`);
+                  const notificationDate = notification.rawDate ? new Date(notification.rawDate) : null;
+                  if (!notificationDate) return false;
+                  
+                  notificationDate.setHours(0, 0, 0, 0);
+                  const isSentToday = notificationDate.getTime() === today.getTime();
+                  
+                  return isForSameRental && isOverdueNotification && isSentToday;
+                });
+                
+                if (!alreadySent) {
+                  const notificationId = `noti_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+                  newNotifications.push({
+                    id: notificationId,
+                    date: formattedDate,
+                    rawDate: now.toISOString(),
+                    image: rental.rentalImage1 || rental.rentalImage2 || rental.rentalImage3 || rental.rentalImage4 || "",
+                    header: rental.name || `Rental ${rental.id}`,
+                    description: description,
+                    readed: false,
+                  });
+                  console.log(`Creating payment overdue notification for ${rental.name || rental.id} - Overdue by ${daysOverdue} days`);
+                }
+              }
+            } else {
+              console.log(`Invalid payment due date format for rental ${rental.name || rental.id}`);
+            }
+          }
+        }
         }
         
         // If we have new notifications, add them to the database
