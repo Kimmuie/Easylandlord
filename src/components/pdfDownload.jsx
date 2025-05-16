@@ -4,15 +4,9 @@ import UploadPDF from './uploadPdf';
 const PDFdownload = ({ pdfData, isEditing, handleUpload }) => {
   const handleDownload = () => {
     if (pdfData?.publicId) {
-      // Build the correct Cloudinary image URL format for PDF viewing
       const cloudName = 'da9cur8vr';
       const imageUrl = `https://res.cloudinary.com/${cloudName}/image/upload/v1747298881/${pdfData.fileName}.pdf`;
-      
-      // Open in a new tab for viewing
       window.open(imageUrl, '_blank');
-    } else if (pdfData?.viewUrl) {
-      // Fallback to viewUrl if publicId is not available
-      window.open(pdfData.viewUrl, '_blank');
     }
   };
 

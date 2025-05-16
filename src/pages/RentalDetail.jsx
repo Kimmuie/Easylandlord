@@ -6,8 +6,8 @@ import FinancialHistory from '../components/financialHistory';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../components/firebase';
 import UploadImage from '../components/uploadImage';
-import UploadPDF from '../components/uploadPdf';
 import PDFdownload from '../components/pdfDownload';
+import html2canvas from "html2canvas";
 
 const RentalDetail = () => {
   const { theme, icons } = useContext(ThemeContext);
@@ -291,11 +291,32 @@ const RentalDetail = () => {
     }
   };
 
- const handleDownload = () => {
-    if (pdfData?.url) {
-      window.open(pdfData.url, '_blank');
-    }
-  };
+const handleShare = async () => {
+  const element = document.getElementById('capture-area'); // Use the correct element ID
+
+  // Wait to ensure DOM is fully rendered
+  await new Promise((resolve) => setTimeout(resolve, 500)); // slight delay for image rendering
+
+  const canvas = await html2canvas(element, {
+    useCORS: true,       // Helps if images are loaded from another domain
+    scale: 2,            // Better quality
+    backgroundColor: null
+  });
+
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+
+  const file = new File([blob], rental.name + ".png", { type: 'image/png' });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    await navigator.share({
+      title: 'Shared from my website',
+      text: 'Check this out!',
+      files: [file]
+    });
+  } else {
+    alert('Sharing not supported on this device');
+  }
+};
 
   // Manual Save
   const handleSave = async () => {
@@ -597,7 +618,7 @@ const RentalDetail = () => {
           </button>
         </div>
       )}
-      <div className="overflow-y-auto overflow-x-hidden flex flex-col items-center w-full min-h-screen bg-ellWhite">
+      <div id="capture-area" className="overflow-y-auto overflow-x-hidden flex flex-col items-center w-full min-h-screen bg-ellWhite">
         <div className="flex flex-row justify-between xl:w-4xl md:w-2xl w-full my-4 md:mx-0 px-2">
           <div className="flex flex-row items-center font-prompt text-ellPrimary text-lg w-30">
             <div className={`rounded-full border-2 border-ellGray h-5 w-5 mr-2 ${rental.status === "available" ? "bg-ellGreen" : "bg-ellRed"}`}></div>
@@ -738,7 +759,7 @@ const RentalDetail = () => {
                 <div className="flex items-center font-prompt font-semibold text-ellPrimary text-md md:text-xl xl:w-184 md:w-4xl w-56">
                   {rental.name}
                 </div>
-                <div className="font-prompt text-ellPrimary text-sm md:text-lg min-h-16 w-100 md:w-4xl xl:w-110">
+                <div className="font-prompt text-ellPrimary text-sm md:text-lg min-h-16 w-100 md:w-4xl xl:w-110 break-all">
                   {rental.location}
                 </div>
               </>
@@ -1027,7 +1048,8 @@ const RentalDetail = () => {
                   <span className="flex-1 text-center">เพิ่มผู้เช่า</span>
                 </div>
               </button>
-              <div className="w-full xl:h-8.5 h-8 flex items-center justify-between font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray active:bg-ellDarkGray rounded-md text-md font-semibold cursor-pointer px-2">
+              <div className="w-full xl:h-8.5 h-8 flex items-center justify-between font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray active:bg-ellDarkGray rounded-md text-md font-semibold cursor-pointer px-2"
+                    onClick={handleShare}>
                 <img src="/img/share.svg" width="35" height="40" alt="share" />
                 <span className='flex-1 text-center'>แชร์หน้านี้</span>
               </div>
