@@ -96,7 +96,7 @@ const Navbar = () => {
     <>
       <div className="relative flex w-full h-20 bg-ellWhite items-center border-b border-b-ellDarkGray z-40">
         <div className="flex w-full items-center justify-between pl-6 pr-6">
-          <div className="hidden md:flex flex-row items-center gap-2">
+          <div className="hidden md:flex flex-row items-center gap-2 cursor-pointer" onClick={() => window.location.reload()}>
             <img src={icons.logo} width="40" height="40" alt="logoEasylandlord" />
             <div className="text-ellPrimary text-lg font-inter font-semibold">Easylandlord</div>
           </div>

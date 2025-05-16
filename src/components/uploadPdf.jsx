@@ -23,11 +23,8 @@ const UploadPDF = ({ onUploadSuccess, children }) => {
       );
     const downloadUrl = res.data.secure_url.replace('/upload/', '/upload/fl_attachment/');
     onUploadSuccess({
-        url: downloadUrl,
         fileName: pdfFile.name,
         fileSize: pdfFile.size,
-        publicId: res.data.public_id,
-        viewUrl: res.data.secure_url 
       });
     } catch (err) {
       console.error("Upload failed", err);

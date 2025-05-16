@@ -3,7 +3,7 @@ import UploadPDF from './uploadPdf';
 
 const PDFdownload = ({ pdfData, isEditing, handleUpload }) => {
   const handleDownload = () => {
-    if (pdfData?.publicId) {
+    if (pdfData?.fileName) {
       const cloudName = 'da9cur8vr';
       const imageUrl = `https://res.cloudinary.com/${cloudName}/image/upload/v1747298881/${pdfData.fileName}.pdf`;
       window.open(imageUrl, '_blank');

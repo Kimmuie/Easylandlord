@@ -102,7 +102,7 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                 rentalImage3: "",
                 rentalImage4: "",
                 pdf: "",
-                financialHistory: {}
+                financialHistory: []
             };
             
             await updateDoc(userDocRef, {
