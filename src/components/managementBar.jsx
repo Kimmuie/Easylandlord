@@ -2,9 +2,11 @@ import React, { useContext, useState, useEffect, useRef } from "react";
 import ThemeContext from "../contexts/ThemeContext";
 import { doc, getDoc, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
 import { db } from "../components/firebase";
+import { useNavigate } from 'react-router-dom';
 
 const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagFilterChange, handleSearch }) => {
     const { theme, icons } = useContext(ThemeContext);
+    const navigate = useNavigate();
     const [showFilterTag, setShowFilterTag] = useState(false);
     const [showFilterTagBox, setShowFilterTagBox] = useState(false);
     const filterTagBoxRef = useRef(null);
@@ -63,13 +65,14 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
     const handleCreateRental = async () => {
         try {
             const userEmail = localStorage.getItem("email");
+            if (!userEmail) {
+                console.error("User not logged in");
+                navigate(`/account`)
+                return;
+            }
             const userDocRef = doc(db, "users", userEmail);
             const docSnap = await getDoc(userDocRef);
             
-            if (!userEmail) {
-                console.error("User not logged in");
-                return;
-            }
             const userData = docSnap.data()
             const rentalCount = userData.rental ? userData.rental.length : 0;
             const timestamp = Timestamp.now();

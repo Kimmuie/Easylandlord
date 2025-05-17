@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import ThemeContext from '../contexts/ThemeContext';
 import { useParams, useNavigate } from 'react-router-dom';
-import Alert from '../components/Alert';
 import { db } from '../components/firebase';
-import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 
   const Finance = () => {
   const { theme, icons } = useContext(ThemeContext);
@@ -22,6 +21,7 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
   const [isEditing, setIsEditing] = useState(false);
   const [dateSort, setDateSort] = useState(true);
   const [openCalendar, setOpenCalendar] = useState(false);
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState({
     firstDate: '',
     lastDate: ''
@@ -193,7 +193,12 @@ import { doc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
           id: Date.now().toString(), 
           ...formData,
           };
-      
+      const userEmail = localStorage.getItem("email");
+      if (!userEmail) {
+        console.error("User not logged in");
+        navigate(`/account`)
+        return;
+      }
       const userDocRef = doc(db, "users", user);
       const userDoc = await getDoc(userDocRef);
   
