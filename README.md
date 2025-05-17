@@ -1,6 +1,6 @@
 # Easylandlord
 
-### What is Easylandlord[https://easylandlord-e3923.web.app/]?
+### What is [Easylandlord](https://easylandlord-e3923.web.app/)?
 **Easylandlord** is a web application designed to manage and organize rental and real estate information efficiently. It allows users to store and access key details such as:
 - Rental Information
 - Tenant Contracts
@@ -14,7 +14,7 @@ The platform also includes helpful features like:
 To accommodate different user preferences, Easylandlord offers three distinct themes and responsive for all IOS, enhancing usability and user experience.
 
 *🗣 Note: The platform currently supports the Thai language only, including client agreements.*
-Click here to use Easylandlord[https://easylandlord-e3923.web.app/]. 
+----------- Click here to use [Easylandlord](https://easylandlord-e3923.web.app/)----------- 
 <br>
 <br>
 <br>
