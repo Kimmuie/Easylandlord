@@ -10,24 +10,25 @@ import RentalDetail from "./pages/RentalDetail";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../src/components/firebase';
+import { useAuth, AuthProvider } from "./contexts/AuthContext";
 
 const AppContent = () => {
+  const { currentUser } = useAuth();
   const location = useLocation();
   const isRentalDetailPage = /^\/management\/[^/]+$/.test(location.pathname);
-  const [user, setUser] = useState(localStorage.getItem("email") || null);
   const { rentalId } = useParams();
-    const [records, setRecords] = useState([]);
+  const [records, setRecords] = useState([]);
 
   useEffect(() => {
     // Check for user authentication
-    if (!user) {
+    if (!currentUser.email) {
       console.log("No user found in localStorage");
       return;
     }
     
     const checkRentalDueDates = async () => {
       try {
-        const userDocRef = doc(db, "users", user);
+        const userDocRef = doc(db, "users", currentUser.email);
         const docSnap = await getDoc(userDocRef);
         
         if (!docSnap.exists()) {
@@ -362,7 +363,7 @@ const AppContent = () => {
     };
     
     checkRentalDueDates();
-  }, [user]);
+  }, [currentUser]);
 
   return (
     <>
@@ -387,11 +388,13 @@ const AppContent = () => {
 
 function App() {
   return (
-    <ThemeProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 

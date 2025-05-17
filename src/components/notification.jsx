@@ -2,20 +2,21 @@ import React, { useState, useEffect, useRef, forwardRef, useContext } from "reac
 import ThemeContext from '../contexts/ThemeContext';
 import { doc, getDoc, onSnapshot, updateDoc, deleteField } from 'firebase/firestore';
 import { db } from '../components/firebase';
+import { useAuth } from '../contexts/AuthContext'; 
 
 const Notification = forwardRef((props, ref) => {
+  const { currentUser } = useAuth();
   const { theme, icons } = useContext(ThemeContext);
-  const [user, setUser] = useState(localStorage.getItem("email") || null);
   const [notification, setNotification] = useState([]);
   const [allNotification, setallNotification] = useState([]);
   const [ clear, setClear ] = useState(false);
 
   useEffect(() => { 
-    if (!user) {
+    if (!currentUser) {
       console.error("User not logged in");
       return;
     }
-    const userDocRef = doc(db, "users", user);
+    const userDocRef = doc(db, "users", currentUser.email);
     
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -29,13 +30,13 @@ const Notification = forwardRef((props, ref) => {
     });
     
     return () => unsubscribe();
-  }, [user]);
+  }, [currentUser]);
     
   const handleDelete = async (notiId) => {
-  if (!notiId || !user) return;
+  if (!notiId || !currentUser) return;
 
   try {
-    const userDocRef = doc(db, "users", user);
+    const userDocRef = doc(db, "users", currentUser.email);
     const docSnap = await getDoc(userDocRef);
 
     if (docSnap.exists() && Array.isArray(docSnap.data().notification)) {

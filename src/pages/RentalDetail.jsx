@@ -8,8 +8,10 @@ import { db } from '../components/firebase';
 import UploadImage from '../components/uploadImage';
 import PDFdownload from '../components/pdfDownload';
 import html2canvas from "html2canvas";
+import { useAuth } from '../contexts/AuthContext'; 
 
 const RentalDetail = () => {
+  const { currentUser } = useAuth();
   const { theme, icons } = useContext(ThemeContext);
   const navigate = useNavigate();
   const { rentalId } = useParams();
@@ -18,7 +20,6 @@ const RentalDetail = () => {
   const [showAlertDelete, setShowAlertDelete] = useState(false);
   const [showAlertDeleteTenant, setShowAlertDeleteTenant] = useState(false);
   const [showAlertBackEdit, setShowAlertBackEdit] = useState(false);
-  const [user, setUser] = useState(localStorage.getItem("email") || null);
   const [rentalName, setRentalName] = useState('');
   const [rentalLocate, setRentalLocate] = useState('');
   const [rentalFee, setRentalFee] = useState('');
@@ -141,12 +142,12 @@ const RentalDetail = () => {
 
   const handleDelete = async () => {
     setShowAlertDelete(false);
-    if (!rental || !user) {
+    if (!rental || !currentUser) {
       return;
     }
   
     try {
-      const userDocRef = doc(db, "users", user);
+      const userDocRef = doc(db, "users", currentUser.email);
       const docSnap = await getDoc(userDocRef);
   
       if (docSnap.exists() && docSnap.data().rental) {
@@ -177,12 +178,12 @@ const RentalDetail = () => {
       setSelectedDetails(updatedDetails);
     }
 
-    if (!rental || !user) {
+    if (!rental || !currentUser) {
       return;
     }
 
     try {
-      const userDocRef = doc(db, "users", user);
+      const userDocRef = doc(db, "users", currentUser.email);
       const docSnap = await getDoc(userDocRef);
 
       if (docSnap.exists() && docSnap.data().rental) {
@@ -225,9 +226,9 @@ const RentalDetail = () => {
   };
 
   const handleCheck = async () => {
-    if (rental && user) {
+    if (rental && currentUser) {
       try {
-        const userDocRef = doc(db, "users", user);
+        const userDocRef = doc(db, "users", currentUser.email);
         const docSnap = await getDoc(userDocRef);
 
         if (docSnap.exists()) {
@@ -292,14 +293,12 @@ const RentalDetail = () => {
   };
 
 const handleShare = async () => {
-  const element = document.getElementById('capture-area'); // Use the correct element ID
-
-  // Wait to ensure DOM is fully rendered
-  await new Promise((resolve) => setTimeout(resolve, 500)); // slight delay for image rendering
+  const element = document.getElementById('capture-area'); 
+  await new Promise((resolve) => setTimeout(resolve, 300));
 
   const canvas = await html2canvas(element, {
-    useCORS: true,       // Helps if images are loaded from another domain
-    scale: 2,            // Better quality
+    useCORS: true, 
+    scale: 2,      
     backgroundColor: null
   });
 
@@ -320,9 +319,9 @@ const handleShare = async () => {
 
   // Manual Save
   const handleSave = async () => {
-    if (isEditing && rental && user) {
+    if (isEditing && rental && currentUser) {
       try {
-        const userDocRef = doc(db, "users", user);
+        const userDocRef = doc(db, "users", currentUser.email);
         const docSnap = await getDoc(userDocRef);
 
         if (docSnap.exists()) {
@@ -376,9 +375,9 @@ const handleShare = async () => {
   // Get from firebase User DB
   useEffect(() => {
     const loadUserData = async () => {
-      if (user) {
+      if (currentUser) {
         try {
-          const docRef = doc(db, "users", user);
+          const docRef = doc(db, "users", currentUser.email);
           const docSnap = await getDoc(docRef);
 
           if (docSnap.exists()) {
@@ -393,7 +392,7 @@ const handleShare = async () => {
       }
     };
     loadUserData();
-  }, [user]);
+  }, [currentUser]);
 
   // Get from firebase Rental DB
   const fetchRentalDetail = async () => {
@@ -448,9 +447,9 @@ const handleShare = async () => {
 
   // Auto Save
   const updateRentalField = async (fieldsToUpdate) => {
-    if (rental && user) {
+    if (rental && currentUser) {
       try {
-        const userDocRef = doc(db, "users", user);
+        const userDocRef = doc(db, "users", currentUser.email);
         const docSnap = await getDoc(userDocRef);
   
         if (docSnap.exists()) {

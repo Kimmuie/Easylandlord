@@ -3,10 +3,11 @@ import ThemeContext from '../contexts/ThemeContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../components/firebase';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext'; 
 
   const Finance = () => {
   const { theme, icons } = useContext(ThemeContext);
-  const [user, setUser] = useState(localStorage.getItem("email") || null);
+  const { currentUser } = useAuth();
   const { recordId } = useParams();
   const [showAlertDeleteHistory, setShowAlertDeleteHistory] = useState(false);
   const [rental, setRental] = useState(null);
@@ -159,7 +160,7 @@ import { doc, updateDoc, getDoc } from 'firebase/firestore';
 
   const fetchRecords = async () => {
     try {
-      const userDocRef = doc(db, "users", user);
+      const userDocRef = doc(db, "users", currentUser.email);
       const userDoc = await getDoc(userDocRef);
       
       if (userDoc.exists()) {
@@ -181,10 +182,10 @@ import { doc, updateDoc, getDoc } from 'firebase/firestore';
   };
 
   useEffect(() => {
-    if (user) {
+    if (currentUser) {
       fetchRecords();
     }
-  }, [user]);
+  }, [currentUser]);
   
   const addRecord = async (e) => {
       e.preventDefault();
@@ -193,13 +194,12 @@ import { doc, updateDoc, getDoc } from 'firebase/firestore';
           id: Date.now().toString(), 
           ...formData,
           };
-      const userEmail = localStorage.getItem("email");
-      if (!userEmail) {
+      if (!currentUser) {
         console.error("User not logged in");
         navigate(`/account`)
         return;
       }
-      const userDocRef = doc(db, "users", user);
+      const userDocRef = doc(db, "users", currentUser.email);
       const userDoc = await getDoc(userDocRef);
   
       if (userDoc.exists()) {
@@ -234,7 +234,7 @@ import { doc, updateDoc, getDoc } from 'firebase/firestore';
 
   const deleteRecord = async (id) => {
     try {
-      const userDocRef = doc(db, "users", user);
+      const userDocRef = doc(db, "users", currentUser.email);
       const userDoc = await getDoc(userDocRef);
       
       if (userDoc.exists()) {
@@ -269,7 +269,7 @@ import { doc, updateDoc, getDoc } from 'firebase/firestore';
     }
   
     try {
-      const userDocRef = doc(db, "users", user);
+      const userDocRef = doc(db, "users", currentUser.email);
       const userDoc = await getDoc(userDocRef);
       
       if (userDoc.exists()) {

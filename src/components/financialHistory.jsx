@@ -4,10 +4,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Alert from '../components/Alert';
 import { db } from '../components/firebase';
 import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext'; 
 
   const FinancialHistory = ({ isEditing, setIsEditing, setDeleteAll }) => {
+  const { currentUser } = useAuth();
   const { theme, icons } = useContext(ThemeContext);
-  const [user, setUser] = useState(localStorage.getItem("email") || null);
   const { rentalId } = useParams();
   const [showAlertDeleteHistory, setShowAlertDeleteHistory] = useState(false);
   const [rental, setRental] = useState(null);
@@ -59,9 +60,9 @@ const handleRecordFieldChange = (e, field, recordId) => {
 };
 
   const handleFinancialSave = async () => {
-    if (rental && user) {
+    if (rental && currentUser) {
       try {
-        const userDocRef = doc(db, "users", user);
+        const userDocRef = doc(db, "users", currentUser.email);
         const docSnap = await getDoc(userDocRef);
   
         if (docSnap.exists()) {
@@ -125,9 +126,9 @@ const handleRecordFieldChange = (e, field, recordId) => {
     }, [rentalId]);
 
     const handleFinance = async () => {
-      if (!user || records.length === 0) return;
+      if (!currentUser || records.length === 0) return;
       try {
-        const userDocRef = doc(db, "users", user);
+        const userDocRef = doc(db, "users", currentUser.email);
         const docSnap = await getDoc(userDocRef);
         
         if (docSnap.exists()) {
@@ -190,14 +191,14 @@ console.log("Filtered records:", validRecords);
   }, [isEditing]);
 
   useEffect(() => {
-    if (user) {
+    if (currentUser) {
       fetchRental();
     }
-  }, [user, rentalId]);
+  }, [currentUser, rentalId]);
   
   const fetchRental = async () => {
     try {
-      const userDocRef = doc(db, "users", user);
+      const userDocRef = doc(db, "users", currentUser.email);
       const docSnap = await getDoc(userDocRef);
   
       if (docSnap.exists()) {
@@ -227,7 +228,7 @@ console.log("Filtered records:", validRecords);
   const fetchRecords = async () => {
     try {
       setIsLoading(true);
-      const userDocRef = doc(db, "users", user);
+      const userDocRef = doc(db, "users", currentUser.email);
       const userDoc = await getDoc(userDocRef);
       
       if (userDoc.exists()) {
@@ -263,7 +264,7 @@ console.log("Filtered records:", validRecords);
         ...formData,
         };
     
-    const userDocRef = doc(db, "users", user);
+    const userDocRef = doc(db, "users", currentUser.email);
     const userDoc = await getDoc(userDocRef);
 
 
@@ -311,7 +312,7 @@ console.log("Filtered records:", validRecords);
   // Delete record
   const deleteRecord = async (id) => {
       try {
-        const userDocRef = doc(db, "users", user);
+        const userDocRef = doc(db, "users", currentUser.email);
         const userDoc = await getDoc(userDocRef);
         
         if (userDoc.exists()) {

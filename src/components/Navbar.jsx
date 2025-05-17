@@ -4,12 +4,13 @@ import ThemeContext from "../contexts/ThemeContext";
 import Notification from "./notification";
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../components/firebase';
+import { useAuth } from '../contexts/AuthContext'; 
 
 const Navbar = () => {
+  const { currentUser, isAuthenticated } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notiOpen, setNotiOpen] = useState(false);
   const [readed, setReaded] = useState(false);
-  const [user, setUser] = useState(localStorage.getItem("email") || null);
   const notiOpenBoxRef = useRef(null);
   const location = useLocation();
   const { theme, icons } = useContext(ThemeContext);
@@ -43,9 +44,9 @@ const Navbar = () => {
   }, []);
     
   const updateAllNotifications = async (fieldsToUpdate) => {
-    if (user) {
+    if (currentUser) {
       try {
-        const userDocRef = doc(db, "users", user);
+        const userDocRef = doc(db, "users", currentUser.email);
         const docSnap = await getDoc(userDocRef);
   
         if (docSnap.exists()) {
@@ -70,7 +71,7 @@ const Navbar = () => {
 
   const checkReaded = async () => {
     try {
-      const userDocRef = doc(db, "users", user);
+      const userDocRef = doc(db, "users", currentUser.email);
       const docSnap = await getDoc(userDocRef);
       
       if (!docSnap.exists()) {

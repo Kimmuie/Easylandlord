@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import SignIn from '../components/signIn';
 import SignOut from '../components/signout';
 import Alert from '../components/Alert';
@@ -9,15 +8,15 @@ import { useTheme } from '../contexts/ThemeContext'
 import { auth } from '../components/firebase';
 import { signOut } from "firebase/auth";
 import UploadImage from '../components/uploadImage';
+import { useAuth } from '../contexts/AuthContext'; 
 
 const Account = () => {
   const HelpCenterAPI = [import.meta.env.VITE_HELPCENTER_RECEIVER_1,import.meta.env.VITE_HELPCENTER_RECEIVER_2];
-  const navigate = useNavigate();
+  const { currentUser, isAuthenticated } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isTheme, setIsTheme] = useState(false);
   const [isHelp, setIsHelp] = useState(false);
   const [showAlertSignIn, setShowAlertSignIn] = useState(false);
-  const [user, setUser] = useState(localStorage.getItem("email") || null);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
   const [iconImage, setIconImage] = useState("");
@@ -27,9 +26,9 @@ const Account = () => {
 
   useEffect(() => {
     const loadUserData = async () => {
-      if (user) {
+      if (currentUser) {
         try {
-          const docRef = doc(db, "users", user);
+          const docRef = doc(db, "users", currentUser.email);
           const docSnap = await getDoc(docRef);
   
           if (docSnap.exists()) {
@@ -48,7 +47,7 @@ const Account = () => {
     };
     
     loadUserData();
-  }, [user, changeTheme, uploadedImage]);
+  }, [currentUser, changeTheme, uploadedImage]);
 
   const handleSignout = () => {
     setShowAlert(true);
@@ -71,9 +70,9 @@ const Account = () => {
 };
 
   const handleSave = async () => {
-    if (user) {
+    if (currentUser) {
       try {
-        await setDoc(doc(db, "users", user), {
+        await setDoc(doc(db, "users", currentUser.email), {
           name,
           number,
           theme: currentTheme,
@@ -93,9 +92,9 @@ const Account = () => {
   const handleThemeChange = async (themeName) => {
     changeTheme(themeName);
     
-    if (user) {
+    if (currentUser) {
       try {
-        await setDoc(doc(db, "users", user), {
+        await setDoc(doc(db, "users", currentUser.email), {
           name: name,
           number: number,
           theme: themeName
@@ -163,7 +162,7 @@ const Account = () => {
                 onChange={(e) => setNumber(e.target.value)}
                 className="border-2 border-ellGray rounded-md px-4 py-2 m-2 mb-6 w-80 font-prompt text-ellPrimary text-lg"
               />
-              {!user ? <SignIn setUser={setUser} /> : <SignOut setUser={setUser} />}
+              {!currentUser ? <SignIn setUser={currentUser} /> : <SignOut setUser={currentUser} />}
             </div>
           ) : (
             // Default
@@ -263,7 +262,7 @@ const Account = () => {
             </form>
           </div>
         </div>
-        {user ? (
+        {currentUser ? (
           // Logout Button - Changed from button to div
           <div className="w-full md:w-3xl border-b border-b-ellDarkGray cursor-pointer"
             onClick={handleSignout}>
