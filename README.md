@@ -1,14 +1,20 @@
 # Easylandlord
 
-### What is Easylandlord?
-**Easylandlord** is a website that ...
-<br>  
-**Easylandlord** เป็นเว็บไซต์ที่ให้ ...
-<br>
-<br>
-<br>
-### Method
-...
+### What is Easylandlord[https://easylandlord-e3923.web.app/]?
+**Easylandlord** is a web application designed to manage and organize rental and real estate information efficiently. It allows users to store and access key details such as:
+- Rental Information
+- Tenant Contracts
+- Financial History
+
+The platform also includes helpful features like:
+- Interactive Rental Map
+- Rental Sharing
+- Advanced Filtering Options
+
+To accommodate different user preferences, Easylandlord offers three distinct themes and responsive for all IOS, enhancing usability and user experience.
+
+*🗣 Note: The platform currently supports the Thai language only, including client agreements.*
+Click here to use Easylandlord[https://easylandlord-e3923.web.app/]. 
 <br>
 <br>
 <br>
@@ -24,19 +30,15 @@
 </div>
 <br>  
 
-This website is under development.
-
-### Flowchart 
-<div>
-  <img src="./illustration/Flowchart.jpeg"  title="Flowchart"width="400" height="400"/>
-</div>
-<br>  
-
 ### Website Interface
 <div>
-  <img src="./illustration/UI1.png"  title="UI" height="210"/>
-  <img src="./illustration/UI2.png"  title="UI" height="210"/>
-  <img src="./illustration/UI3.png"  title="UI" height="210"/>
-  <img src="./illustration/UI4.png"  title="UI" height="210"/>
+  <img src="./illustration/UI1_.png"  title="UI" height="210"/>
+  <img src="./illustration/UI2_.png"  title="UI" height="210"/>
+  <img src="./illustration/UI3_.png"  title="UI" height="210"/>
+  <img src="./illustration/UI4_.png"  title="UI" height="210"/>
+  <img src="./illustration/UI5_.png"  title="UI" height="210"/>
+  <img src="./illustration/UI6_.png"  title="UI" height="210"/>
 </div>
 
+## License
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
