@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { useAuth } from '../contexts/AuthContext'; 
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../components/firebase';
 
 const themes = {
   light: { 
@@ -177,41 +179,30 @@ export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState("light");
   const [icons, setIcons] = useState(themeIcons.light);
 
-  useEffect(() => {
-    const loadUserTheme = async () => {
+    useEffect(() => {
+    const loadUserData = async () => {
       if (currentUser) {
         try {
-          const userDocRef = doc(db, "users", currentUser.email);
-          const docSnap = await getDoc(userDocRef);
+          const docRef = doc(db, "users", currentUser.email);
+          const docSnap = await getDoc(docRef);
 
           if (docSnap.exists()) {
-            const userData = docSnap.data();
-            const userTheme = userData.theme || "light";
-            applyTheme(userTheme);
-          } else {
-            const fallbackTheme = localStorage.getItem("theme") || "light";
-            applyTheme(fallbackTheme);
+            const data = docSnap.data();
+            setTheme(data.theme || '');
+            applyTheme(theme);
           }
         } catch (error) {
-          console.error("Failed to fetch theme:", error);
-          applyTheme("light");
+          console.error("Error fetching user data:", error);
         }
-      } else {
-        const fallbackTheme = localStorage.getItem("theme") || "light";
-        applyTheme(fallbackTheme);
       }
     };
-
-    loadUserTheme();
+    loadUserData();
   }, [currentUser]);
 
-  // Function to apply theme that is now internal to the context
   const applyTheme = (themeName) => {
     const theme = themes[themeName] || themes.light;
-    
-    // Apply all theme properties
     Object.entries(theme).forEach(([key, value]) => {
-      document.documentElement.style.setProperty(`--color-${key}`, value);
+    document.documentElement.style.setProperty(`--color-${key}`, value);
     });
     
   };
