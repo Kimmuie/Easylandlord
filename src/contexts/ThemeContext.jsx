@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
+import { useAuth } from '../contexts/AuthContext'; 
 
 const themes = {
   light: { 
@@ -172,15 +173,37 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => {
-    // Initialize from localStorage
-    return localStorage.getItem("theme") || "light";
-  });
-  
-  const [icons, setIcons] = useState(() => {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    return themeIcons[savedTheme] || themeIcons.light;
-  });
+  const { currentUser } = useAuth();
+  const [theme, setTheme] = useState("light");
+  const [icons, setIcons] = useState(themeIcons.light);
+
+  useEffect(() => {
+    const loadUserTheme = async () => {
+      if (currentUser) {
+        try {
+          const userDocRef = doc(db, "users", currentUser.email);
+          const docSnap = await getDoc(userDocRef);
+
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+            const userTheme = userData.theme || "light";
+            applyTheme(userTheme);
+          } else {
+            const fallbackTheme = localStorage.getItem("theme") || "light";
+            applyTheme(fallbackTheme);
+          }
+        } catch (error) {
+          console.error("Failed to fetch theme:", error);
+          applyTheme("light");
+        }
+      } else {
+        const fallbackTheme = localStorage.getItem("theme") || "light";
+        applyTheme(fallbackTheme);
+      }
+    };
+
+    loadUserTheme();
+  }, [currentUser]);
 
   // Function to apply theme that is now internal to the context
   const applyTheme = (themeName) => {
@@ -191,17 +214,6 @@ export const ThemeProvider = ({ children }) => {
       document.documentElement.style.setProperty(`--color-${key}`, value);
     });
     
-    // For backward compatibility with your current setup
-    document.documentElement.style.setProperty("--color-ellPrimary", theme.ellPrimary);
-    document.documentElement.style.setProperty("--color-ellSecondary", theme.ellSecondary);
-    document.documentElement.style.setProperty("--color-ellTertiary", theme.ellTertiary);
-    document.documentElement.style.setProperty("--color-ellWhite", theme.ellWhite);
-    document.documentElement.style.setProperty("--color-ellBlack", theme.ellBlack);
-    document.documentElement.style.setProperty("--color-ellGray", theme.ellGray);
-    document.documentElement.style.setProperty("--color-ellDarkGray", theme.ellDarkGray);
-    document.documentElement.style.setProperty("--color-ellScrollbar1", theme.ellScrollbar1);
-    document.documentElement.style.setProperty("--color-ellScrollbar2", theme.ellScrollbar2);
-    localStorage.setItem("theme", themeName);
   };
 
   // Function to change theme that can be called from anywhere in the app

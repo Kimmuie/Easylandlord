@@ -6,8 +6,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import ThemeContext from '../contexts/ThemeContext';
 import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../components/firebase';
+import { useAuth } from '../contexts/AuthContext'; 
 
 const GeocodingComponent = ({ rentals, setRentalsWithCoordinates, onGeocodingComplete }) => {
+  const { currentUser } = useAuth();
   const geocodingLibrary = useMapsLibrary("geocoding");
   const [isGeocoding, setIsGeocoding] = useState(false);
 
@@ -83,11 +85,10 @@ const GeocodingComponent = ({ rentals, setRentalsWithCoordinates, onGeocodingCom
   }, [geocodingLibrary, rentals]);
   
   const saveCoordinatesToFirebase = async (rentalsWithCoords) => {
-    const userEmail = localStorage.getItem("email");
-    if (!userEmail) return;
+    if (!currentUser) return;
     
     try {
-      const userDocRef = doc(db, "users", userEmail);
+      const userDocRef = doc(db, "users", currentUser.email);
       const docSnap = await getDoc(userDocRef);
       
       if (docSnap.exists()) {
@@ -121,6 +122,7 @@ const GeocodingComponent = ({ rentals, setRentalsWithCoordinates, onGeocodingCom
 };
 
 const GoogleMap = () => {
+  const { currentUser } = useAuth();
   const { theme, icons } = useContext(ThemeContext);
   const [currentFilterMap, setCurrentFilterMap] = useState('all');
   const [open, setOpen] = useState(false);
@@ -184,12 +186,11 @@ const GoogleMap = () => {
 
   
   useEffect(() => { 
-    const userEmail = localStorage.getItem("email");
-    if (!userEmail) {
+    if (!currentUser) {
       console.error("User not logged in");
       return;
     }
-    const userDocRef = doc(db, "users", userEmail);
+    const userDocRef = doc(db, "users", currentUser.email);
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const userData = docSnap.data();
@@ -213,47 +214,6 @@ const GoogleMap = () => {
     
     return () => unsubscribe();
   }, []);
-
-  // useEffect(() => {
-  //   const fetchSpecificRental = async () => {
-  //     if (!rentalId) return;
-      
-  //     const userEmail = localStorage.getItem("email");
-  //     if (!userEmail) return;
-      
-  //     try {
-  //       const userDocRef = doc(db, "users", userEmail);
-  //       const docSnap = await getDoc(userDocRef);
-        
-  //       if (docSnap.exists()) {
-  //         const userData = docSnap.data();
-  //         if (userData.rental) {
-  //           const currentRental = userData.rental.find(r => r.id === rentalId);
-  //           if (currentRental && currentRental.location) {
-  //             try {
-  //               setSelectedRental({
-  //                 id: currentRental.id,
-  //                 name: currentRental.name,
-  //                 location: currentRental.location,
-  //                 status: currentRental.status,
-  //                 rentalImage1: rental.rentalImage1,
-  //                 rentalImage2: rental.rentalImage2,
-  //                 rentalImage3: rental.rentalImage3,
-  //                 rentalImage4: rental.rentalImage4
-  //               });
-  //             } catch (error) {
-  //               console.error("Error parsing rental location:", error);
-  //             }
-  //           }
-  //         }
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching specific rental:", error);
-  //     }
-  //   };
-    
-  //   fetchSpecificRental();
-  // }, [rentalId]); 
 
   useEffect(() => {
     let result = [...rentalsWithCoordinates];

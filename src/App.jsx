@@ -21,7 +21,7 @@ const AppContent = () => {
 
   useEffect(() => {
     // Check for user authentication
-    if (!currentUser.email) {
+    if (!currentUser) {
       console.log("No user found in localStorage");
       return;
     }

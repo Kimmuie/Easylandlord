@@ -4,8 +4,10 @@ import RentalCards from '../components/rentalCards'
 import ManagementBar from '../components/managementBar'
 import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../components/firebase';
+import { useAuth } from '../contexts/AuthContext'; 
 
 const Management = () => {
+  const { currentUser } = useAuth();
   const { theme, icons } = useContext(ThemeContext);
   const [rentals, setRentals] = useState([]);
   const [currentFilter, setCurrentFilter] = useState('all');
@@ -26,14 +28,12 @@ const Management = () => {
   };
 
   useEffect(() => { 
-    const userEmail = localStorage.getItem("email");
-
-    if (!userEmail) {
+    if (!currentUser) {
       console.error("User not logged in");
       return;
     }
         
-    const userDocRef = doc(db, "users", userEmail);
+    const userDocRef = doc(db, "users", currentUser.email);
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const userData = docSnap.data();
@@ -68,14 +68,12 @@ const Management = () => {
 
   const updateRental = async (rentalId, updateData) => {
     try {
-      const userEmail = localStorage.getItem("email");
-      
-      if (!userEmail) {
+      if (!currentUser) {
         console.error("User not logged in");
         return;
       }
       
-      const userDocRef = doc(db, "users", userEmail);
+      const userDocRef = doc(db, "users", currentUser.email);
       const docSnap = await getDoc(userDocRef);
       
       if (docSnap.exists()) {

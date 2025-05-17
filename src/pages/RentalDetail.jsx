@@ -397,12 +397,11 @@ const handleShare = async () => {
   // Get from firebase Rental DB
   const fetchRentalDetail = async () => {
     try {
-      const userEmail = localStorage.getItem("email");
-      if (!userEmail) {
+      if (!currentUser) {
         console.log("User Not logged in");
         return;
       }
-      const userDocRef = doc(db, "users", userEmail);
+      const userDocRef = doc(db, "users", currentUser.email);
       const docSnap = await getDoc(userDocRef);
       if (docSnap.exists()) {
         const userData = docSnap.data();

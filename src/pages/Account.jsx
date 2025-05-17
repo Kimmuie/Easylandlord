@@ -56,7 +56,6 @@ const Account = () => {
   const confirmSignout = () => {
     signOut(auth)
       .then(() => {
-        localStorage.removeItem("email");
         setUser(null);
         console.log("Log Out Success");
         setShowAlert(false);

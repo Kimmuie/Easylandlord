@@ -4,8 +4,7 @@ import { signOut } from "firebase/auth";
 import Alert from "./Alert";
 
 const SignOut = ({ setUser }) => {
-  const [value, setValue] = useState(localStorage.getItem("email") || "");
-    const [showAlert, setShowAlert] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
 
   const handleSignout = () => {
     setShowAlert(true);
