@@ -13,8 +13,8 @@ The platform also includes helpful features like:
 
 To accommodate different user preferences, Easylandlord offers three distinct themes and responsive for all IOS, enhancing usability and user experience.
 
-*🗣 Note: The platform currently supports the Thai language only, including client agreements.*
------------ Click here to use [Easylandlord](https://easylandlord-e3923.web.app/)----------- 
+*🗣 Note: The platform currently supports the Thai language only, including client agreements.*  
+----------- Click here to use [Easylandlord](https://easylandlord-e3923.web.app/) ----------- 
 <br>
 <br>
 <br>
