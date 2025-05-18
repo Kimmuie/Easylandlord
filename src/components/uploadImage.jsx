@@ -1,13 +1,21 @@
 import React, { useRef } from 'react';
 import axios from 'axios';
+import imageCompression from 'browser-image-compression';
 
 const UploadImage = ({ onUploadSuccess, children }) => {
   const inputRef = useRef();
 
   const handleUpload = async (e) => {
     const file = e.target.files[0];
+    if (!file) return;
+     const options = {
+    maxSizeMB: 0.8,         
+    maxWidthOrHeight: 1024, 
+    useWebWorker: true,
+  };
+    const compressedFile = await imageCompression(file, options);
     const data = new FormData();
-    data.append('file', file);
+    data.append('file', compressedFile);
     data.append('upload_preset', 'Easylandlord');
 
     try {
