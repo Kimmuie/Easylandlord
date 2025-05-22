@@ -114,7 +114,7 @@ const AppContent = () => {
           const minutes = String(now.getMinutes()).padStart(2, '0');
           const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}`;
           // ---------- CONTRACT DUE DATE NOTIFICATIONS ----------
-          if (daysLeft <= 30 && daysLeft >= 0) {
+          if (daysLeft <= 60 && daysLeft >= 0) {
             let description;
             if (daysLeft === 0) {
               description = `สัญญาเช่าจะหมดภายในวันนี้`;
@@ -368,11 +368,8 @@ const AppContent = () => {
   return (
     <>
       <LoadingScreen />
-      {!isRentalDetailPage && <Navbar />}
-      <div
-        className="navbar-container"
-        style={{ height: isRentalDetailPage ? "100%" : "calc(100% - 64px)" }}
-      >
+      <Navbar />
+      <div className="navbar-container">
         <Routes>
           <Route path="/" element={<Management />} />
           <Route path="/management" element={<Management />} />

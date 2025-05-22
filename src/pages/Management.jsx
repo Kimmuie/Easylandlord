@@ -27,44 +27,65 @@ const Management = () => {
     setSearchName(search);
   };
 
-  useEffect(() => { 
-    if (!currentUser) {
-      console.error("User not logged in");
-      return;
-    }
-        
-    const userDocRef = doc(db, "users", currentUser.email);
-    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const userData = docSnap.data();
-        if (userData.rental) {
-          setRentals(userData.rental);
-        }
-      }
-    }, (error) => {
-        console.error("Error fetching rentals:", error);
-      });
-      return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
+    if (!currentUser) {
+        console.error("User not logged in");
+        return;
+    }
+    const userDocRef = doc(db, "users", currentUser.email);
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const userData = docSnap.data();
+            console.log("Firebase userData:", userData);
+            if (userData.rental && Array.isArray(userData.rental)) { 
+                setRentals(userData.rental);
+            } else {
+                setRentals([]);
+                console.warn("userData.rental is not an array or is missing.", userData.rental);
+            }
+        } else {
+            console.log("User document does not exist for:", currentUser.email);
+            setRentals([]);
+        }
+    }, (error) => {
+        console.error("Error fetching rentals from Firestore:", error);
+        setRentals([]);
+    });
+    return () => unsubscribe();
+}, [currentUser]);
+
+useEffect(() => {
     let result = [...rentals];
     // Search Filter
     if (searchName && searchName.trim() !== ""){
-      result = result.filter(rental => rental.name.toLowerCase().includes(searchName.toLowerCase()));
+        result = result.filter(rental => {
+            if (!rental || typeof rental.name !== 'string') { 
+                console.error("Malformed rental object or missing name for search:", rental);
+                return false;
+            }
+            return rental.name.toLowerCase().includes(searchName.toLowerCase());
+        });
     }
     // Status Filter
     if (currentFilter === 'available') {
-      result = result.filter(rental => rental.status === "available");
+        result = result.filter(rental => rental && rental.status === "available");
     } else if (currentFilter === 'unavailable') {
-      result = result.filter(rental => rental.status === "unavailable");
+        result = result.filter(rental => rental && rental.status === "unavailable");
     }
     // Tag Filter
     if (selectedTags.length > 0) {
-      result = result.filter(rental => selectedTags.includes(rental.tag));
+        result = result.filter(rental => {
+            if (!rental || !rental.tag) { 
+                console.error("Malformed rental object or missing tag for filter:", rental);
+                return false; 
+            }
+            return selectedTags.includes(rental.tag);
+        });
     }
+    console.log("filteredRentals (before setting state):", result);
     setFilteredRentals(result);
-  }, [currentFilter, rentals, selectedTags, searchName]);
+}, [currentFilter, rentals, selectedTags, searchName]);
 
   const updateRental = async (rentalId, updateData) => {
     try {

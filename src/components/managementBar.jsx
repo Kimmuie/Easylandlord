@@ -3,9 +3,11 @@ import ThemeContext from "../contexts/ThemeContext";
 import { doc, getDoc, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
 import { db } from "../components/firebase";
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext'; 
 
 const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagFilterChange, handleSearch }) => {
     const { theme, icons } = useContext(ThemeContext);
+    const { currentUser } = useAuth();
     const navigate = useNavigate();
     const [showFilterTag, setShowFilterTag] = useState(false);
     const [showFilterTagBox, setShowFilterTagBox] = useState(false);
@@ -64,13 +66,12 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
 
     const handleCreateRental = async () => {
         try {
-            const userEmail = localStorage.getItem("email");
-            if (!userEmail) {
+            if (!currentUser) {
                 console.error("User not logged in");
                 navigate(`/account`)
                 return;
             }
-            const userDocRef = doc(db, "users", userEmail);
+            const userDocRef = doc(db, "users", currentUser.email);
             const docSnap = await getDoc(userDocRef);
             
             const userData = docSnap.data()
@@ -89,7 +90,10 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                 rentFrequency: "เดือน",
                 bedroom: 0,
                 restroom: 0,
+                squareMetreB: 0,
                 squareMetre: 0,
+                electricNumber: "",
+                waterNumber: "",
                 propertyDetails: {'วันประกาศ':false, 'ตกแต่งครบ': false, 'เครื่องปรับอากาศ': false, 'เครื่องทำน้ำอุ่น':false, 'เครื่องซักผ้า':false, 'อ่างอาบน้ำ':false, 'กล้องวงจรปิด':false, 'ลิฟต์':false, 'ระเบียง':false, 'สวน':false, 'ลานจอดรถ':false, 'สระว่ายน้ำ':false},
                 tenant: false,
                 tenantName: "",

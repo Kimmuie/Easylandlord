@@ -27,6 +27,9 @@ const RentalDetail = () => {
   const [rentalBedroom, setRentalBedroom] = useState(0);
   const [rentalRestroom, setRentalRestroom] = useState(0);
   const [rentalArea, setRentalArea] = useState('');
+  const [rentalAreaB, setRentalAreaB] = useState('');
+  const [electricUser, setElectricUser] = useState('');
+  const [waterUser, setWaterUser] = useState('');
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
   const [haveTenant, setHaveTenant] = useState(false);
@@ -39,9 +42,13 @@ const RentalDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showTagBox, setShowTagBox] = useState(false);
   const [showFrequencyBox, setShowFrequencyBox] = useState(false);
+  const [showAreaBox, setShowAreaBox] = useState(false);
+  const [showAreaBoxB, setShowAreaBoxB] = useState(false);
   const [showDetailsBox, setShowDetailsBox] = useState(false);
   const filterTagBoxRef = useRef(null);
   const filterFrequencyBoxRef = useRef(null);
+  const filterAreaBoxRef = useRef(null);
+  const filterAreaBoxBRef = useRef(null);
   const filterDetailsBoxRef = useRef(null);
   const [userIconImage, setUserIconImage] = useState("");
   const [tenantIconImage, setTenantIconImage] = useState("");
@@ -63,9 +70,13 @@ const RentalDetail = () => {
   const [currentImage, setCurrentImage] = useState(currentImageShow);
   const [selectedTag, setSelectedTag] = useState('');
   const [selectedFrequency, setSelectedFrequency] = useState('');
+  const [selectedArea, setSelectedArea] = useState('');
+  const [selectedAreaB, setSelectedAreaB] = useState('');
   const [selectedDetails, setSelectedDetails] = useState('');
+  const [daysSinceLastCheck, setDaysSinceLastCheck] = useState(0);
   const tagOptions = ['ไม่ได้ระบุแท็ก', 'บ้านเช่า', 'โกดัง', 'ตึกเเถว', 'ที่ดิน', 'คอนโด'];
   const frequencyOptions = ['วัน', 'อาทิตย์', 'เดือน', 'ปี'];
+  const areaOptions = ['ตร.ม', 'ตร.วา', 'ไร่'];
   const detailsOptions = {
     'วันประกาศ': false,
     'ตกแต่งครบ': false,
@@ -89,6 +100,12 @@ const RentalDetail = () => {
       if (filterFrequencyBoxRef.current && !filterFrequencyBoxRef.current.contains(event.target)) {
         setShowFrequencyBox(false);
       }
+      if (filterAreaBoxRef.current && !filterAreaBoxRef.current.contains(event.target)) {
+        setShowAreaBox(false);
+      }
+      if (filterAreaBoxBRef.current && !filterAreaBoxBRef.current.contains(event.target)) {
+        setShowAreaBoxB(false);
+      }
       if (filterDetailsBoxRef.current && !filterDetailsBoxRef.current.contains(event.target)) {
         setShowDetailsBox(false);
       }
@@ -100,16 +117,31 @@ const RentalDetail = () => {
   }, []);
 
   const handleChangeInput = (e, fieldType) => {
-    const input = e.target.value.replace(/,/g, '');
-    if (/^\d*$/.test(input)) {
-      const formatted = input ? Number(input).toLocaleString('en-US') : '';
+    let input = e.target.value.replace(/,/g, '');
+
+    // Allow only digits and a single decimal point
+    if (/^\d*\.?\d*$/.test(input)) {
+      // Format number with commas, preserving decimal
+      const parts = input.split('.');
+      let formatted = Number(parts[0]).toLocaleString('en-US');
+      if (parts.length === 2) {
+        formatted += '.' + parts[1];
+      }
+
       if (fieldType === 'area') {
         setRentalArea(formatted);
+      } else if (fieldType === 'areaB') {
+        setRentalAreaB(formatted);
       } else if (fieldType === 'fee') {
         setRentalFee(formatted);
+      } else if (fieldType === 'electric') {
+        setElectricUser(input);
+      } else if (fieldType === 'water') {
+        setWaterUser(input);
       }
     }
   };
+
 
   const handleBackClick = () => {
     if (isEditing){
@@ -176,6 +208,12 @@ const RentalDetail = () => {
     } else if (type === 'frequency') {
       setSelectedFrequency(value);
       setShowFrequencyBox(false);
+    } else if (type === 'area') {
+      setSelectedArea(value);
+      setShowAreaBox(false);
+    } else if (type === 'areaB') {
+      setSelectedAreaB(value);
+      setShowAreaBoxB(false);
     } else if (type === 'details') {
       const updatedDetails = { ...selectedDetails };
       updatedDetails[value] = !updatedDetails[value];
@@ -336,7 +374,7 @@ const handleShare = async () => {
 
           if (userData.rental) {
             const updatedRentals = userData.rental.map(r =>
-              r.id === rentalId ? { ...r, name: rentalName, location: rentalLocate, rentFee: rentalFee, bedroom: rentalBedroom, restroom: rentalRestroom, squareMetre: rentalArea, tenantName: nameTenant, tenantNumber: numberTenant, dueDate: tempoDate, rentFrequency: selectedFrequency,
+              r.id === rentalId ? { ...r, name: rentalName, location: rentalLocate, rentFee: rentalFee, bedroom: rentalBedroom, restroom: rentalRestroom, squareMetreB: rentalAreaB, squareMetre: rentalArea, electricNumber: electricUser, waterNumber: waterUser, tenantName: nameTenant, tenantNumber: numberTenant, dueDate: tempoDate, rentFrequency: selectedFrequency, areaUnitB: selectedAreaB, areaUnit: selectedArea,
               tenantImage: uploadedTenantImage ?? tenantIconImage,
               rentalImage1: uploadedRentalImage1 ?? rentalImage1,
               rentalImage2: uploadedRentalImage2 ?? rentalImage2,
@@ -355,11 +393,16 @@ const handleShare = async () => {
               rentFee: rentalFee,
               bedroom: rentalBedroom,
               restroom: rentalRestroom,
+              squareMetreB: rentalAreaB,
               squareMetre: rentalArea,
+              electricNumber: electricUser,
+              waterNumber: waterUser,
               tenantName: nameTenant,
               tenantNumber: numberTenant,
               dueDate: tempoDate,
               rentFrequency: selectedFrequency,
+              areaUnitB: selectedAreaB,
+              areaUnit: selectedArea,
               tenantImage: uploadedTenantImage || tenantIconImage,
               rentalImage1: uploadedRentalImage1 || rentalImage1,
               rentalImage2: uploadedRentalImage2 || rentalImage2,
@@ -378,6 +421,7 @@ const handleShare = async () => {
     fetchRentalDetail();
     setIsEditing(false);
     setExtendImage(false);
+    fetchRentalDetail()
   }
 
   // Get from firebase User DB
@@ -415,6 +459,18 @@ const handleShare = async () => {
         const userData = docSnap.data();
         if (userData.rental) {
           const currentRental = userData.rental.find(r => r.id === rentalId);
+          if (currentRental.checkDate) {
+            const now = new Date();
+            const checkDateObj = typeof currentRental.checkDate === 'number' 
+              ? new Date(currentRental.checkDate) 
+              : new Date(currentRental.checkDate);
+              
+            if (!isNaN(checkDateObj.getTime())) {
+              setDaysSinceLastCheck(Math.floor((now.getTime() - checkDateObj.getTime()) / (1000 * 3600 * 24)))
+              }
+            } else {
+              console.log(`Invalid checkDate format for rental ${currentRental.name || currentRental.id}`);
+          }
           if (currentRental) {
             setRental(currentRental);
             setRentalName(currentRental.name);
@@ -422,9 +478,14 @@ const handleShare = async () => {
             setRentalFee(currentRental.rentFee);
             setRentalBedroom(currentRental.bedroom);
             setRentalRestroom(currentRental.restroom);
+            setRentalAreaB(currentRental.squareMetreB);
             setRentalArea(currentRental.squareMetre);
+            setElectricUser(currentRental.electricNumber);
+            setWaterUser(currentRental.waterNumber);
             setSelectedTag(currentRental.tag);
             setSelectedFrequency(currentRental.rentFrequency);
+            setSelectedAreaB(currentRental.areaUnitB);
+            setSelectedArea(currentRental.areaUnit);
             setSelectedDetails(currentRental.propertyDetails);
             setHaveTenant(currentRental.tenant);
             setNameTenant(currentRental.tenantName);
@@ -593,20 +654,19 @@ const handleShare = async () => {
           Description="The data that has already been edited will not be saved if you leave this page without saving."          
         />
       )}
-      <div className="bg-ellWhite md:bg-transparent h-20 md:h-0 flex justify-between md:block items-center md:border-0 border-b border-b-ellDarkGray z-40 hiddenLandscapePhone">
-        <img src={iconBack} width="55" height="40" alt="back"
-          className='xl:top-2 md:top-0 xl:left-2 md:left-0 left-2 md:absolute relative m-0 xl:m-3 md:m-1 cursor-pointer border-1 border-transparent active:border-ellPrimary hover:border-ellPrimary p-2 rounded-full hiddenLandscapePhone z-20'
-          onClick={handleBackClick} />
-        <div className='md:hidden flex justify-center w-full z-10'>
-          <span className='text-ellPrimary text-lg font-prompt font-semibold'>ดูรายละเอียด</span>
+      {isEditing && (
+        <div className="TooltipMain fixed bottom-44 right-4 flex flex-col items-center justify-center z-50">
+          <div className="flex text-center w-22 justify-center bg-ellRed p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">ลบอสังหฯ</div>
+          <div className="absolute mb-14 w-4 h-4 bg-ellRed rotate-45 z-10 Tooltip"></div>
+          <button className="relative rounded-full bg-ellRed flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
+            onClick={() => setShowAlertDelete(true)}>
+            <img src="/img/trash-light.svg" width="40" height="40" alt="edit" />
+          </button>
         </div>
-        <img src={iconTrash} width="55" height="40" alt="trash"
-          className='xl:top-2 md:top-0 xl:right-2 md:right-0 right-2 md:absolute relative m-0 xl:m-3 md:m-1 cursor-pointer border-1 border-transparent active:border-ellPrimary hover:border-ellPrimary p-2 rounded-full hiddenLandscapePhone z-20'
-          onClick={() => setShowAlertDelete(true)} />
-      </div>
+      )}
         <div className="TooltipMain fixed bottom-24 right-4 flex flex-col items-center justify-center z-50">
-          <div className="flex text-center justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">ตรวจเช็ค</div>
-          <div className="absolute mb-14 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
+          <div className="flex text-center w-22 justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">ไม่ตรวจเช็ค<br/>มาแล้ว  {daysSinceLastCheck} วัน</div>
+          <div className="absolute mb-9 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
           <button className="relative rounded-full bg-ellBlack flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
             onClick={handleCheck}>
             <img src={iconCheck} width="40" height="40" alt="edit" />
@@ -614,7 +674,7 @@ const handleShare = async () => {
         </div>
       {isEditing ? (
         <div className="TooltipMain fixed bottom-4 right-4 flex flex-col items-center justify-center z-50">
-          <div className="flex text-center justify-center bg-ellGreen p-1 mb-2 rounded-lg font-prompt text-[#F7F7F7] text-sm z-20 Tooltip">บันทึก</div>
+          <div className="flex text-center w-22 justify-center bg-ellGreen p-1 mb-2 rounded-lg font-prompt text-[#F7F7F7] text-sm z-20 Tooltip">บันทึก</div>
           <div className="absolute mb-14 w-4 h-4 bg-ellGreen rotate-45 z-10 Tooltip"></div>
           <button className="relative rounded-full bg-ellGreen flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
             onClick={handleSave}>
@@ -623,7 +683,7 @@ const handleShare = async () => {
         </div>
       ) : (
         <div className="TooltipMain fixed bottom-4 right-4 flex flex-col items-center justify-center z-50">
-          <div className="flex text-center justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip border-t-2 border-x-2 border-ellWhite">แก้ไข</div>
+          <div className="flex text-center w-22 justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip border-t-2 border-x-2 border-ellWhite">แก้ไข</div>
           <div className="absolute mb-14 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
           <button className="relative rounded-full bg-ellBlack flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
             onClick={() => {
@@ -785,7 +845,7 @@ const handleShare = async () => {
         </UploadImage>
         }
         <div className={`flex flex-col xl:flex-row xl:w-fit md:w-full w-full pt-4 xl:px-0 px-4 ${isEditing ? "pb-1" : "pb-0"}`}>
-          <div className="flex flex-col justify-between xl:w-md md:w-full w-full">
+          <div className="flex flex-col xl:w-md md:w-full w-full">
             {isEditing ? (
               <>
                 <input
@@ -802,7 +862,7 @@ const handleShare = async () => {
                   maxLength={144}
                   value={rentalLocate}
                   onChange={(e) => setRentalLocate(e.target.value)}
-                  className="border-2 border-ellGray rounded-md px-2 py-0.5 mt-2 min-h-16 xl:w-110 md:w-full w-full font-prompt text-ellPrimary text-sm md:text-lg resize-none"
+                  className="mt-2 border-2 border-ellGray rounded-md px-2 py-0.5 h-full xl:w-110 md:w-full w-full font-prompt text-ellPrimary text-sm md:text-lg resize-none"
                   required
                 />
               </>
@@ -811,7 +871,7 @@ const handleShare = async () => {
                 <div className="flex items-center font-prompt font-semibold text-ellPrimary text-md md:text-xl xl:w-184 md:w-4xl w-56">
                   {rental.name}
                 </div>
-                <div className="font-prompt text-ellPrimary text-sm md:text-lg min-h-16 w-100 md:w-4xl xl:w-110 break-all">
+                <div className="font-prompt text-ellPrimary text-sm md:text-lg mt h-full w-100 md:w-4xl xl:w-110 break-all">
                   {rental.location}
                 </div>
               </>
@@ -821,59 +881,184 @@ const handleShare = async () => {
             <div className="flex flex-row gap-2">
               {isEditing ? (
                 <>
-                  {/* Bedroom */}
-                  <div className="xl:w-36 md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
-                    <img src="/img/plus-dark.svg" width="30" height="20" alt="add"
-                      className='border-2 border-[#333333] ml-0.5 rounded-sm cursor-pointer hover:scale-105 active:scale-98'
-                      onClick={() => setRentalBedroom(prev => Math.min(Math.max(prev + 1, 0), 50))} />
-                    <div className='w-full flex items-center justify-center'>
-                      <img src="/img/bed.svg" width="35" height="40" alt="bed" className='xl:mr-2 md:mr-2 mr-0' />
-                      {rentalBedroom}
+                <div className='flex flex-col w-full'>
+                  <div className='flex flex-row gap-2 xl:w-md w-full'>
+                    {/* Bedroom */}
+                    <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                      <img src="/img/plus-dark.svg" width="30" height="20" alt="add"
+                        className='border-2 border-[#333333] ml-0.5 rounded-sm cursor-pointer hover:scale-105 active:scale-98'
+                        onClick={() => setRentalBedroom(prev => Math.min(Math.max(prev + 1, 0), 50))} />
+                      <div className='w-full flex items-center justify-center'>
+                        <img src="/img/bed.svg" width="35" height="40" alt="bed" className='xl:mr-2 md:mr-2 mr-0' />
+                        {rentalBedroom}
+                      </div>
+                      <img src="/img/minus-dark.svg" width="30" height="20" alt="remove"
+                        className='border-2 border-[#333333] mr-0.75 rounded-sm cursor-pointer hover:scale-105 active:scale-98'
+                        onClick={() => setRentalBedroom(prev => Math.min(Math.max(prev - 1, 0), 50))} />
                     </div>
-                    <img src="/img/minus-dark.svg" width="30" height="20" alt="remove"
-                      className='border-2 border-[#333333] mr-0.75 rounded-sm cursor-pointer hover:scale-105 active:scale-98'
-                      onClick={() => setRentalBedroom(prev => Math.min(Math.max(prev - 1, 0), 50))} />
-                  </div>
-                  {/* Restroom */}
-                  <div className="xl:w-36 md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
-                    <img src="/img/plus-dark.svg" width="30" height="20" alt="add"
-                      className='border-2 border-[#333333] ml-0.5 rounded-sm cursor-pointer hover:scale-105 active:scale-98'
-                      onClick={() => setRentalRestroom(prev => Math.min(Math.max(prev + 1, 0), 50))} />
-                    <div className='w-full flex items-center justify-center'>
-                      <img src="/img/bath.svg" width="30" height="40" alt="bath" className='xl:mr-2 md:mr-2 mr-0' />
-                      {rentalRestroom}
+                    {/* Restroom */}
+                    <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                      <img src="/img/plus-dark.svg" width="30" height="20" alt="add"
+                        className='border-2 border-[#333333] ml-0.5 rounded-sm cursor-pointer hover:scale-105 active:scale-98'
+                        onClick={() => setRentalRestroom(prev => Math.min(Math.max(prev + 1, 0), 50))} />
+                      <div className='w-full flex items-center justify-center'>
+                        <img src="/img/bath.svg" width="30" height="40" alt="bath" className='xl:mr-2 md:mr-2 mr-0' />
+                        {rentalRestroom}
+                      </div>
+                      <img src="/img/minus-dark.svg" width="30" height="20" alt="remove"
+                        className='border-2 border-[#333333] mr-0.75 rounded-sm cursor-pointer hover:scale-105 active:scale-98'
+                        onClick={() => setRentalRestroom(prev => Math.min(Math.max(prev - 1, 0), 50))} />
                     </div>
-                    <img src="/img/minus-dark.svg" width="30" height="20" alt="remove"
-                      className='border-2 border-[#333333] mr-0.75 rounded-sm cursor-pointer hover:scale-105 active:scale-98'
-                      onClick={() => setRentalRestroom(prev => Math.min(Math.max(prev - 1, 0), 50))} />
                   </div>
-                  {/* Square Metre */}
-                    <div className="xl:w-36 md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
-                      <img src="/img/ruler.svg" width="33" height="40" alt="ruler" className='mx-2' />
+                  <div className="flex flex-row gap-2 mt-2">
+                  {/* Building Area*/}
+                    <div className="xl:w-full md:w-full w-full h-8 flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
                       <input
                         type="text"
-                        placeholder="กรอกพื้นที่"
-                        maxLength={6}
-                        value={rentalArea}
-                        onChange={(e) => handleChangeInput(e, 'area')}
-                        className="text-center border-2 border-[#333333]  rounded-md mr-2 px-2 py-0.5 w-full font-prompt font-semibold text-[#333333] xl:text-md text-sm"
+                        placeholder="กรอกพื้นที่อาคาร"
+                        maxLength={8}
+                        value={rentalAreaB}
+                        onChange={(e) => handleChangeInput(e, 'areaB')}
+                        className="text-center border-2 border-[#333333] ml-1 rounded-md px-2 py-0.5 w-full font-prompt font-semibold text-[#333333] xl:text-md text-sm"
                         required
                       />
+                      <div className="relative inline-block">
+                      <button className={`border-2 rounded-md px-2 py-0.5 mx-1 cursor-pointer ${showAreaBoxB ? "border-ellPrimary pointer-events-none" : "border-[#333333]"}`}
+                        onClick={() => setShowAreaBoxB(prev => !prev)}>
+                        {selectedAreaB || "ตร.ม"}
+                      </button>
+                      {showAreaBoxB &&
+                      <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-25 md:w-30 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl border-2 border-ellPrimary z-50"
+                        ref={filterAreaBoxBRef}>
+                        <div className="absolute -top-2.5 left-11.75 w-4 h-4 bg-ellBlack rotate-45 border-s-2 border-t-2 border-s-ellPrimary border-t-ellPrimary"></div>
+                        {areaOptions.map((area, index) => (
+                          <label key={index} className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="radio"
+                              checked={selectedAreaB === area}
+                              onChange={() => handleTagSelect(area, 'areaB')}
+                              className="appearance-none w-3 h-3 rounded-full border-2 border-ellSecondary checked:bg-ellSecondary checked:border-transparent cursor-pointer"
+                            />
+                            <span className="font-prompt font-medium text-ellSecondary text-xs"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleTagSelect(area, 'areaB');
+                              }}>
+                              {area}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                      }
+                      </div>
                     </div>
+                    {/* Land Area */}
+                    <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                      <input
+                        type="text"
+                        placeholder="กรอกพื้นที่ที่ดิน"
+                        maxLength={8}
+                        value={rentalArea}
+                        onChange={(e) => handleChangeInput(e, 'area')}
+                        className="text-center border-2 border-[#333333] ml-1 rounded-md px-2 py-0.5 w-full font-prompt font-semibold text-[#333333] xl:text-md text-sm"
+                        required
+                      />
+                      <div className="relative inline-block">
+                      <button className={`border-2 rounded-md px-2 py-0.5 mx-1 cursor-pointer ${showAreaBox ? "border-ellPrimary pointer-events-none" : "border-[#333333]"}`}
+                        onClick={() => setShowAreaBox(prev => !prev)}>
+                        {selectedArea || "ตร.ม"}
+                      </button>
+                      {showAreaBox &&
+                      <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-25 md:w-30 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl border-2 border-ellPrimary z-50"
+                        ref={filterAreaBoxRef}>
+                        <div className="absolute -top-2.5 left-11.75 w-4 h-4 bg-ellBlack rotate-45 border-s-2 border-t-2 border-s-ellPrimary border-t-ellPrimary"></div>
+                        {areaOptions.map((area, index) => (
+                          <label key={index} className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="radio"
+                              checked={selectedArea === area}
+                              onChange={() => handleTagSelect(area, 'area')}
+                              className="appearance-none w-3 h-3 rounded-full border-2 border-ellSecondary checked:bg-ellSecondary checked:border-transparent cursor-pointer"
+                            />
+                            <span className="font-prompt font-medium text-ellSecondary text-xs"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleTagSelect(area, 'area');
+                              }}>
+                              {area}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                      }
+                      </div>
+                    </div>
+                    </div>
+                    <div className="flex flex-row gap-2 mt-2">
+                    {/* Electric User*/}
+                      <div className="xl:w-full md:w-full w-full h-8 flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                        <img src="/img/electric-dark.svg" width="35" height="40" alt="bed" className='mx-2' />
+                        <input
+                          type="text"
+                          placeholder="กรอกเลขที่ผู้ใช้ไฟฟ้า"
+                          maxLength={12}
+                          value={electricUser}
+                          onChange={(e) => handleChangeInput(e, 'electric')}
+                          className="text-center border-2 border-[#333333] mx-1 rounded-md px-2 py-0.5 w-full font-prompt font-semibold text-[#333333] xl:text-md text-sm"
+                          required
+                        />
+                      </div>
+                    {/* Water User*/}
+                      <div className="xl:w-full md:w-full w-full h-8 flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                        <img src="/img/water-dark.svg" width="35" height="40" alt="bed" className='mx-2' />
+                        <input
+                          type="text"
+                          placeholder="กรอกเลขที่ผู้ใช้น้ำ"
+                          maxLength={12}
+                          value={waterUser}
+                          onChange={(e) => handleChangeInput(e, 'water')}
+                          className="text-center border-2 border-[#333333] mx-1 rounded-md px-2 py-0.5 w-full font-prompt font-semibold text-[#333333] xl:text-md text-sm"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </>
               ) : (
                 <>
-                  <div className="xl:w-36 md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
-                    <img src="/img/bed.svg" width="35" height="40" alt="bed" className='mr-2' />
-                    {rental.bedroom} ห้องนอน
-                  </div>
-                  <div className="xl:w-36 md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
-                    <img src="/img/bath.svg" width="30" height="40" alt="bath" className='mr-2' />
-                    {rental.restroom} ห้องน้ำ
-                  </div>
-                  <div className="xl:w-36 md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
-                    <img src="/img/ruler.svg" width="33" height="40" alt="ruler" className='mr-2' />
-                    {rental.squareMetre} ตร.ม
+                  <div className='flex flex-col w-full'>
+                    <div className='flex flex-row gap-2 xl:w-md w-full'>
+                      <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                        <img src="/img/bed.svg" width="35" height="40" alt="bed" className='mr-2' />
+                        {rental.bedroom} ห้องนอน
+                      </div>
+                      <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                        <img src="/img/bath.svg" width="30" height="40" alt="bath" className='mr-2' />
+                        {rental.restroom} ห้องน้ำ
+                      </div>
+                    </div>
+                    <div className='flex flex-row  gap-2 mt-2'>
+                      <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                        <img src="/img/ruler.svg" width="33" height="40" alt="ruler" className='mr-2' />
+                        ขนาดอาคาร {rental.squareMetreB || 0} {rental.areaUnitB || "ตร.ม"}
+                      </div>
+                      <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                        <img src="/img/ruler.svg" width="33" height="40" alt="ruler" className='mr-2' />
+                        ขนาดที่ดิน {rental.squareMetre || 0} {rental.areaUnit || "ตร.ม"}
+                      </div>
+                    </div>
+                    <div className='flex flex-row gap-2 xl:w-md w-full mt-2'>
+                      <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                        <img src="/img/electric-dark.svg" width="35" height="40" alt="bed" className='mr-2' />
+                        {rental.electricNumber || "เลขที่ผู้ใช้ไฟฟ้า"}
+                      </div>
+                      <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                        <img src="/img/water-dark.svg" width="30" height="40" alt="bath" className='mr-2' />
+                        {rental.waterNumber || "เลขที่ผู้ใช้น้ำ"} 
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
@@ -1081,7 +1266,7 @@ const handleShare = async () => {
               </div>
             ))}
           </div>
-          <div className='flex xl:flex-row flex-col-reverse w-full xl:w-4xl mb-2 mt-4 md:mt-auto xl:mt-auto self-center'>
+          <div className='flex xl:flex-row flex-col-reverse w-full xl:w-4xl mb-4 mt-4 md:mt-auto xl:mt-auto self-center '>
             {!isEditing &&
               <div className="bg-ellWhite xl:h-20 h-22 w-full md:w-full xl:w-xl flex flex-row items-center justify-start rounded-xl border-2 border-ConstantGray p-2">
                 <img src={userIconImage || "/img/iconSubstitute.png"} alt="icon" className="w-16 h-16 object-cover border-2 border-ellPrimary rounded-full ml-3" />
