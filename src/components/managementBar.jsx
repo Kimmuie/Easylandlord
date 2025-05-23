@@ -100,8 +100,6 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                 tenantNumber: "",
                 dueDate: "",
                 billDeposit: "",
-                billElectricity: "",
-                billWater: "",
                 createdAt: formattedDate,
                 tenantImage: "",
                 rentalImage1: "",

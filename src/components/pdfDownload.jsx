@@ -1,5 +1,4 @@
 import React from 'react';
-import UploadPDF from './uploadPdf';
 
 const PDFdownload = ({ pdfData, isEditing, handleUpload }) => {
   const handleDownload = () => {
@@ -19,7 +18,6 @@ const PDFdownload = ({ pdfData, isEditing, handleUpload }) => {
           height="60" 
           alt="PDF icon" 
           className="ml-3 cursor-pointer hover:scale-105 active:scale-95" 
-          onClick={handleDownload}
           title="Click to download PDF"
         />
         <div className='flex flex-col ml-3 w-full'>

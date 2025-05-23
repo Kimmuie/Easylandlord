@@ -6,7 +6,6 @@ import FinancialHistory from '../components/financialHistory';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../components/firebase';
 import UploadImage from '../components/uploadImage';
-import PDFdownload from '../components/pdfDownload';
 import html2canvas from "html2canvas";
 import { useAuth } from '../contexts/AuthContext'; 
 import ExtendImage from '../components/extendImage';
@@ -35,6 +34,8 @@ const RentalDetail = () => {
   const [haveTenant, setHaveTenant] = useState(false);
   const [nameTenant, setNameTenant] = useState('');
   const [numberTenant, setNumberTenant] = useState('');
+  const [fileName, setFileName] = useState('');
+  const [fileLink, setFileLink] = useState('');
   const [tempoDate, setTempoDate] = useState('');
   const [sentDelete, setSentDelete] = useState('');
   const [checkDate, setCheckDate] = useState('');
@@ -64,8 +65,6 @@ const RentalDetail = () => {
   const [uploadedExtendImage, setUploadedExtendImage] = useState(null);
   const [haveExtendImage, setHaveExtendImage] = useState(false);
   const [extendImage, setExtendImage] = useState(false);
-  const [rentalPDF, setRentalPDF] = useState("");
-  const [uploadedPDF, setUploadedPDF] = useState(null);
   const [currentImageShow, setCurrentImageShow] = useState('2');
   const [currentImage, setCurrentImage] = useState(currentImageShow);
   const [selectedTag, setSelectedTag] = useState('');
@@ -158,6 +157,8 @@ const RentalDetail = () => {
       setHaveTenant(false);
       setNameTenant("");
       setNumberTenant("");
+      setFileName("");
+      setFileLink("");
       setDueDate("");
       setSentDelete("all");
       await updateRentalField({ 
@@ -311,7 +312,7 @@ const RentalDetail = () => {
     }
   }, [rentalImage3, rentalImage4]);
 
-  // Save image/pdf to Cloudinary
+  // Save image to Cloudinary
   const handleUpload = (url, field) => {
     if (field === 'tenant') {
       console.log('Uploaded Image URL:', url);
@@ -331,9 +332,6 @@ const RentalDetail = () => {
     } else if (field === 'extend') {
       console.log('Uploaded Image (Extend) URL:', url);
       setUploadedExtendImage(url)
-    } else if (field === 'pdf') {
-      console.log('Uploaded PDF URL:', url);
-      setUploadedPDF(url)
     }
   };
 
@@ -374,13 +372,13 @@ const handleShare = async () => {
 
           if (userData.rental) {
             const updatedRentals = userData.rental.map(r =>
-              r.id === rentalId ? { ...r, name: rentalName, location: rentalLocate, rentFee: rentalFee, bedroom: rentalBedroom, restroom: rentalRestroom, squareMetreB: rentalAreaB, squareMetre: rentalArea, electricNumber: electricUser, waterNumber: waterUser, tenantName: nameTenant, tenantNumber: numberTenant, dueDate: tempoDate, rentFrequency: selectedFrequency, areaUnitB: selectedAreaB, areaUnit: selectedArea,
+              r.id === rentalId ? { ...r, name: rentalName, location: rentalLocate, rentFee: rentalFee, bedroom: rentalBedroom, restroom: rentalRestroom, squareMetreB: rentalAreaB, squareMetre: rentalArea, electricNumber: electricUser, waterNumber: waterUser, tenantName: nameTenant, tenantNumber: numberTenant, fileName: fileName, fileLink: fileLink, dueDate: tempoDate, rentFrequency: selectedFrequency, areaUnitB: selectedAreaB, areaUnit: selectedArea,
               tenantImage: uploadedTenantImage ?? tenantIconImage,
               rentalImage1: uploadedRentalImage1 ?? rentalImage1,
               rentalImage2: uploadedRentalImage2 ?? rentalImage2,
               rentalImage3: uploadedRentalImage3 ?? rentalImage3,
               rentalImage4: uploadedRentalImage4 ?? rentalImage4,
-              pdf: uploadedPDF ?? rentalPDF} : r
+            } : r
             );
             await updateDoc(userDocRef, {
               rental: updatedRentals
@@ -399,6 +397,8 @@ const handleShare = async () => {
               waterNumber: waterUser,
               tenantName: nameTenant,
               tenantNumber: numberTenant,
+              fileName: fileName,
+              fileLink: fileLink,
               dueDate: tempoDate,
               rentFrequency: selectedFrequency,
               areaUnitB: selectedAreaB,
@@ -408,7 +408,6 @@ const handleShare = async () => {
               rentalImage2: uploadedRentalImage2 || rentalImage2,
               rentalImage3: uploadedRentalImage3 || rentalImage3,
               rentalImage4: uploadedRentalImage4 || rentalImage4,
-              pdf: uploadedPDF || rentalPDF
             }));
 
             console.log("Other rental details updated successfully");
@@ -490,6 +489,8 @@ const handleShare = async () => {
             setHaveTenant(currentRental.tenant);
             setNameTenant(currentRental.tenantName);
             setNumberTenant(currentRental.tenantNumber);
+            setFileName(currentRental.fileName);
+            setFileLink(currentRental.fileLink);
             setDueDate(currentRental.dueDate);
             setCheckDate(currentRental.checkDate);
             setTenantIconImage(currentRental.tenantImage);
@@ -497,7 +498,6 @@ const handleShare = async () => {
             setRentalImage2(currentRental.rentalImage2);
             setRentalImage3(currentRental.rentalImage3);
             setRentalImage4(currentRental.rentalImage4);
-            setRentalPDF(currentRental.pdf);
             for (let i = 5; i <= 20; i++) {
               const key = `rentalImage${i}`;
               if (currentRental[key]) {
@@ -1176,11 +1176,39 @@ const handleShare = async () => {
                   สัญญาเช่า
                 </div>
                 <div className='flex flex-row'>
-                  <PDFdownload 
-                    pdfData={uploadedPDF || rentalPDF} 
-                    isEditing={isEditing} 
-                    handleUpload={handleUpload} 
-                  />
+                  <div className="bg-ellWhite xl:h-20 h-22 w-full md:w-4xl xl:w-80 flex flex-row items-center justify-between rounded-l-xl border-2 border-r-0 border-ConstantGray p-2">
+                      {!isEditing ? (
+                      <div className='flex flex-col ml-3 w-full'>
+                        <a href={fileLink || undefined}
+                          target="_blank">
+                          <button className='text-ellPrimary font-prompt text-md font-semibold cursor-pointer hover:scale-102'>
+                            {fileName || "ลิงค์สัญญา"}
+                          </button>
+                        </a>
+                        <span className='text-ellPrimary font-prompt opacity-80 text-sm'>
+                          {fileLink ? `มีลิงค์` : "ไม่มีลิงค์"}
+                        </span>
+                      </div>
+                      ) : (
+                      <div className='flex flex-col ml-3 w-full'>
+                        <input
+                          type="text"
+                          placeholder="กรอกชื่อ"
+                          maxLength={20}
+                          value={fileName}
+                          onChange={(e) => setFileName(e.target.value)}
+                          className="text-center border-2 border-ellGray  rounded-md mr-2 px-2 py-0.5 w-full font-prompt font-semibold text-ellPrimary xl:text-md text-sm mb-1"
+                        />
+                        <input
+                          type="text"
+                          placeholder="กรอกลิงค์"
+                          value={fileLink}
+                          onChange={(e) => setFileLink(e.target.value)}
+                          className="text-center border-2 border-ellGray  rounded-md mr-2 px-2 py-0.5 w-full font-prompt font-semibold text-ellPrimary xl:text-md text-sm mb-1"
+                        />
+                      </div>
+                    )}
+                  </div>
                   <div className="bg-ellWhite xl:h-20 h-22 w-40 md:w-sm xl:w-32 flex flex-col items-center justify-center rounded-r-xl border-2 border-ConstantGray py-2">
                       <span className='text-ellPrimary font-prompt text-md font-semibold items-center py-2'>วันครบกำหนด</span>
                       {isEditing ? (

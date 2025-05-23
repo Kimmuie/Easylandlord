@@ -24,7 +24,7 @@ const Navbar = () => {
   useEffect(() => {
     setInterval(() => {
       checkReaded();
-    }, 30000);
+    }, 50000);
 
     setTimeout(() => {
       checkReaded();

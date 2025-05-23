@@ -82,22 +82,10 @@ html, body, #root {
 
 .navbar-container {
   background: var(--color-ellWhite);
-  height: calc(100% - 64px);
+  height: calc(100% - 80px);
   overflow-y: auto;
 }
 
-.draggable-container table {
-  border-collapse: separate !important;
-  border-spacing: 0;
-}
-
-.draggable-container tbody tr {
-  pointer-events: auto !important;
-}
-
-.draggable-container tbody tr td {
-  pointer-events: auto !important;
-}
 
 ::-webkit-scrollbar {
   width: 6px;
