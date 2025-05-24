@@ -444,16 +444,16 @@ useEffect(() => {
           <table className="w-full">
             <thead className="bg-ellPrimary">
               <tr>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-default">รายรับ</th>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-default">รายจ่าย</th>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-default">รายการ</th>
-                <th className="w-20 py-3 font-prompt text-center hover:bg-ellGray bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-pointer" onClick={() => setDateSort(prev => !prev)}>
+                <th className="w-fit py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-default">รายรับ</th>
+                <th className="w-fit py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-default">รายจ่าย</th>
+                <th className="w-fit py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-default">รายการ</th>
+                <th className="w-fit py-3 font-prompt text-center hover:bg-ellGray bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-pointer" onClick={() => setDateSort(prev => !prev)}>
                   <div className="flex flex-row justify-center" >
                   <img src={icons.sign} width="18" height="40" alt="sign" className={`${!dateSort ? "rotate-0" : "rotate-180 mr-2"} md:block hidden`}/>วันชำระ
                   </div>
                 </th>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-default">ชื่ออสังหาฯ</th>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-default">หมายเหตุ</th>
+                <th className="w-fit py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-default">ชื่ออสังหาฯ</th>
+                <th className="w-fit py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray md:text-base text-sm text-ellPrimary uppercase tracking-wider cursor-default">หมายเหตุ</th>
               </tr>
             </thead>
             <tbody>
@@ -541,12 +541,12 @@ useEffect(() => {
                       </td>
                     </tr>
                       <tr>
-                      <td colSpan={5} className="bg-ellWhite text-center md:hidden ">
+                      <td colSpan={6} className="bg-ellWhite text-center md:hidden ">
                         <button
                           className="w-full bg-ellRed text-[#F7F7F7] active:bg-red-800 cursor-pointer font-prompt"
                           onClick={() => deleteRecord(allrecords.id)}
                         >
-                          ↑<br/>Delete
+                          ↑ Delete ↑
                         </button>
                       </td>
                     </tr>

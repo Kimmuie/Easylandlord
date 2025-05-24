@@ -5,7 +5,7 @@ import ManagementBar from '../components/managementBar'
 import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../components/firebase';
 import { useAuth } from '../contexts/AuthContext'; 
-
+import Adbanner from '../components/Adbanner';
 const Management = () => {
   const { currentUser } = useAuth();
   const { theme, icons } = useContext(ThemeContext);
@@ -114,28 +114,37 @@ useEffect(() => {
 
   return (
     <>
-      <div className="w-full h-fit bg-ellWhite flex items-center flex-col">
-        <ManagementBar
-          currentFilter={currentFilter} 
-          handleFilterChange={handleFilterChange} 
-          selectedTags={selectedTags}
-          onTagFilterChange={handleTagFilterChange}
-          handleSearch={handleSearchChange}
+    <div className='flex flex-row justify-between'>
+      <div className='bg-ellRed w-50 h-50 z-50'>
+        <Adbanner 
+          // data-ad-slot="2654056216"
+          // data-ad-format="auto"
         />
-        {filteredRentals.length === 0 ? (
-          <div className="h-screen pointer-events-none absolute flex flex-col justify-center items-center">
-            <img src={icons.inbox} width="90" height="90" alt="inbox" />
-            <div className="font-prompt text-ellPrimary font-semibold text-lg">ไม่พบอสังหาริมทรัพย์</div>   
-          </div>
-         ) : (
-          filteredRentals.map((rental) => (
-          <RentalCards 
-            key={rental.id} 
-            rental={rental} 
-            updateRental={updateRental} 
+      </div>
+        <div className="w-full h-fit bg-ellWhite flex items-center flex-col">
+          <ManagementBar
+            currentFilter={currentFilter} 
+            handleFilterChange={handleFilterChange} 
+            selectedTags={selectedTags}
+            onTagFilterChange={handleTagFilterChange}
+            handleSearch={handleSearchChange}
           />
-        ))
-      )}
+          {filteredRentals.length === 0 ? (
+            <div className="h-screen pointer-events-none absolute flex flex-col justify-center items-center">
+              <img src={icons.inbox} width="90" height="90" alt="inbox" />
+              <div className="font-prompt text-ellPrimary font-semibold text-lg">ไม่พบอสังหาริมทรัพย์</div>   
+            </div>
+          ) : (
+            filteredRentals.map((rental) => (
+            <RentalCards 
+              key={rental.id} 
+              rental={rental} 
+              updateRental={updateRental} 
+              className="flex flex-col"
+            />
+          ))
+        )}
+        </div>
       </div>
     </>
   )

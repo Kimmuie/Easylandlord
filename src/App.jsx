@@ -11,6 +11,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../src/components/firebase';
 import { useAuth, AuthProvider } from "./contexts/AuthContext";
+import Adsense from "./components/Adsense";
 
 const AppContent = () => {
   const { currentUser } = useAuth();
@@ -370,6 +371,7 @@ const AppContent = () => {
       <LoadingScreen />
       <Navbar />
       <div className="navbar-container">
+      <Adsense pId={import.meta.env.VITE_PUBID} />
         <Routes>
           <Route path="/" element={<Management />} />
           <Route path="/management" element={<Management />} />

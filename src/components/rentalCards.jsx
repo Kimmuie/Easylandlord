@@ -18,7 +18,7 @@ const RentalCards = ({ rental, updateRental }) => {
       };
 
   return (
-    <div className="relative w-96 xl:w-4xl md:w-3xl mb-6">
+    <div className="relative w-96 xl:w-4xl md:w-3xl mb-6 flex flex-col">
         {/* Black shadow behind the card */}
         <div className="absolute inset-0 bg-ellBlack rounded-2xl translate-x-1 md:translate-x-1.5 translate-y-1 md:translate-y-1.5"></div>
         {/* Main card */}

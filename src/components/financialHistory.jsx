@@ -5,8 +5,15 @@ import Alert from '../components/Alert';
 import { db } from '../components/firebase';
 import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext'; 
+import Flatpickr from "react-flatpickr";
+import "flatpickr/dist/themes/material_blue.css";
+import { Thai } from "flatpickr/dist/l10n/th.js";
+import {formatToThaiBuddhist, formatForStorage, formatIsoToThaiBuddhist, flatpickrThaiBuddhistFormatter} from "../components/dateUtils"
 
-  const FinancialHistory = ({ isEditing, setIsEditing, setDeleteAll }) => {
+const FinancialHistory = ({ isEditing, setDeleteAll }) => {
+  const [customOrder, setCustomOrder] = useState([]);
+  const [manuallyReordered, setManuallyReordered] = useState(false);
+  const [orderedRecords, setOrderedRecords] = useState([]);
   const { currentUser } = useAuth();
   const { theme, icons } = useContext(ThemeContext);
   const { rentalId } = useParams();
@@ -18,46 +25,160 @@ import { useAuth } from '../contexts/AuthContext';
   const [isSort, setIsSort] = useState(false);
   const [rentalName, setRentalName] = useState('');
   const [depositBill, setDepositBill] = useState('');
-  const [electricityBill, setElectricityBill] = useState('');
-  const [waterBill, setWaterBill] = useState('');
   const [formData, setFormData] = useState({
     moveInDate: '',
     dueInDate: '',
     rentalRate: '',
     paymentDate: '',
-    transactionCode: ''
+    transactionCode: '',
+    rentalNote: ''
   });
 
-const formatDateForDisplay = (isoDate) => {
-  if (!isoDate) return '';
-  const [year, month, day] = isoDate.split('-');
-  return `${day}/${month}/${year}`;
-};
-
-const formatDateForInput = (displayDate) => {
-  if (!displayDate) return '';
-  const [day, month, year] = displayDate.split('/');
-  return `${year}-${month}-${day}`;
-};
-
-const handleRecordFieldChange = (e, field, recordId) => {
-  let value;
-  
-  if (e.target.type === 'date') {
-    value = formatDateForDisplay(e.target.value);
-  } else {
-    value = e.target.innerText || e.target.value;
-  }
-  
-  setRecords(prevRecords => {
-    return prevRecords.map(record => {
-      if (record.id === recordId) {
-        return { ...record, [field]: value };
-      }
-      return record;
+useEffect(() => {
+  if (Array.isArray(records)) {
+    let sortedRecs;
+    
+    console.log('Reordering records:', {
+      recordsCount: records.length,
+      customOrderLength: customOrder.length,
+      manuallyReordered,
+      isSort
     });
-  });
+    
+    if (customOrder.length > 0 && manuallyReordered) {
+      sortedRecs = [...records].sort((a, b) => {
+        const indexA = customOrder.indexOf(a.id);
+        const indexB = customOrder.indexOf(b.id);
+        
+        if (indexA !== -1 && indexB !== -1) {
+          return indexA - indexB;
+        }
+        
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        
+        const idA = parseInt(a.id, 10);
+        const idB = parseInt(b.id, 10);
+        return isSort ? idB - idA : idA - idB;
+      });
+    } else {
+      sortedRecs = [...records].sort((a, b) => {
+        const idA = parseInt(a.id, 10);
+        const idB = parseInt(b.id, 10);
+        return isSort ? idB - idA : idA - idB;
+      });
+    }
+    
+    console.log('Final sorted records:', sortedRecs.map(r => r.id));
+    setOrderedRecords(sortedRecs);
+  }
+}, [records, isSort, manuallyReordered, customOrder]);
+
+// Move item up in the list
+const moveItemUp = async (index) => {
+  if (index === 0) return; // Already at the top
+  
+  const items = Array.from(orderedRecords);
+  const temp = items[index];
+  items[index] = items[index - 1];
+  items[index - 1] = temp;
+  
+  setOrderedRecords(items);
+  setManuallyReordered(true);
+  
+  const newCustomOrder = items.map(item => item.id);
+  setCustomOrder(newCustomOrder);
+  
+  await saveCustomOrderToFirebase(newCustomOrder);
 };
+
+// Move item down in the list
+const moveItemDown = async (index) => {
+  if (index === orderedRecords.length - 1) return; // Already at the bottom
+  
+  const items = Array.from(orderedRecords);
+  const temp = items[index];
+  items[index] = items[index + 1];
+  items[index + 1] = temp;
+  
+  setOrderedRecords(items);
+  setManuallyReordered(true);
+  
+  const newCustomOrder = items.map(item => item.id);
+  setCustomOrder(newCustomOrder);
+  
+  await saveCustomOrderToFirebase(newCustomOrder);
+};
+
+// Function to save custom order to Firebase
+const saveCustomOrderToFirebase = async (orderArray) => {
+  if (!currentUser) return;
+  
+  try {
+    const userDocRef = doc(db, "users", currentUser.email);
+    const docSnap = await getDoc(userDocRef);
+    
+    if (docSnap.exists()) {
+      const userData = docSnap.data();
+      
+      // Save the custom order array
+      // You might want to store this under a specific rental property
+      await updateDoc(userDocRef, {
+        [`customOrders.${rentalName}`]: orderArray
+        // Or store it in whatever structure makes sense for your app
+      });
+      
+      console.log("Custom order saved successfully");
+    }
+  } catch (error) {
+    console.error("Error saving custom order:", error);
+  }
+};
+
+// Function to load custom order when component mounts
+const loadCustomOrder = async () => {
+  if (!currentUser) return;
+  
+  try {
+    const userDocRef = doc(db, "users", currentUser.email);
+    const docSnap = await getDoc(userDocRef);
+    
+    if (docSnap.exists()) {
+      const userData = docSnap.data();
+      const savedOrder = userData.customOrders?.[rentalName];
+      
+      if (savedOrder && Array.isArray(savedOrder)) {
+        setCustomOrder(savedOrder);
+        setManuallyReordered(true);
+      }
+    }
+  } catch (error) {
+    console.error("Error loading custom order:", error);
+  }
+};
+
+// Call loadCustomOrder when component mounts
+useEffect(() => {
+  loadCustomOrder();
+}, [currentUser, rentalName]);
+
+
+  const handleRecordFieldChange = (date, field, recordId) => {
+    let value = '';
+    
+    if (date instanceof Date) {
+      value = formatForStorage(date);
+    } else if (typeof date === 'string') {
+      value = date;
+    }
+
+    setRecords(prevRecords =>
+      prevRecords.map(record =>
+        record.id === recordId ? { ...record, [field]: value } : record
+      )
+    );
+  };
+
 
   const handleFinancialSave = async () => {
     if (rental && currentUser) {
@@ -75,8 +196,6 @@ const handleRecordFieldChange = (e, field, recordId) => {
               userData.rental[rentalIndex] = {
                 ...userData.rental[rentalIndex],
                 billDeposit: depositBill,
-                billElectricity: electricityBill,
-                billWater: waterBill,
                 financialHistory: records
               };
               await updateDoc(userDocRef, { rental: userData.rental });
@@ -84,8 +203,6 @@ const handleRecordFieldChange = (e, field, recordId) => {
               setRental(prevRental => ({
                 ...prevRental,
                 billDeposit: depositBill,
-                billElectricity: electricityBill,
-                billWater: waterBill,
               }));
               
               console.log("All rental details updated successfully");
@@ -124,62 +241,85 @@ const handleRecordFieldChange = (e, field, recordId) => {
       fetchRentalDetail();
     }, [rentalId]);
 
-    const handleFinance = async () => {
-      if (!currentUser || records.length === 0) return;
-      try {
-        const userDocRef = doc(db, "users", currentUser.email);
-        const docSnap = await getDoc(userDocRef);
-        
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          const financeData = userData.finance || {};
-          const existingRecords = financeData.allRecords || [];
-          
-          const validRecords = Array.isArray(records)
-  ? records.filter(record => record.rentalRate && record.rentalRate !== "")
-  : [];
-
-console.log("Filtered records:", validRecords);
-
-          // Filter out records with empty rental rates and map the valid ones
-          const filteredRecords = records
-            .filter(record => record.rentalRate && record.rentalRate !== "")
-            .map(record => ({
-              paymentDate: record.paymentDate,
-              income: record.rentalRate,
-              outcome: "",
-              id: record.id,
-              note: "ค่าเช่าของ " + rentalName,
-              edited: false,
-            }));
-          if (filteredRecords.length === 0) {
-            console.log("No valid records to add (all had empty rental rates)");
-            return;
-          }
-          const updatedRecords = existingRecords.map(existingRecord => {
-            const matchingNewRecord = filteredRecords.find(newRecord => 
-              newRecord.id === existingRecord.id
-            );
-            return matchingNewRecord || existingRecord;
-          });
-          
-          const recordsToAdd = filteredRecords.filter(newRecord => 
-            !existingRecords.some(existingRecord => existingRecord.id === newRecord.id)
-          );
+const handleFinance = async () => {
+  if (!currentUser || records.length === 0) return;
+  
+  try {
+    const userDocRef = doc(db, "users", currentUser.email);
+    const docSnap = await getDoc(userDocRef);
     
-          await updateDoc(userDocRef, {
-            finance: {
-              ...financeData,
-              allRecords: [...updatedRecords, ...recordsToAdd]
-            }
-          });
-          
-          console.log("Finance data updated successfully");
-        }
-      } catch (error) {
-        console.error("Error updating finance data:", error);
+    if (docSnap.exists()) {
+      const userData = docSnap.data();
+      const financeData = userData.finance || {};
+      const existingRecords = financeData.allRecords || [];
+      
+      const validRecords = records.filter(record => {
+        return record && (
+          (record.rentalRate && record.rentalRate.toString().trim() !== "") ||
+          (record.paymentDate && record.paymentDate.toString().trim() !== "") 
+        );
+      });
+
+      console.log("Filtered valid records:", validRecords);
+
+      if (validRecords.length === 0) {
+        console.log("No valid records to add (all records are empty)");
+        return;
       }
-    };
+
+      // Map valid records to finance format
+      const mappedRecords = validRecords.map(record => ({
+        id: record.id,
+        paymentDate: record.paymentDate || "",
+        income: record.income || record.rentalRate || "",
+        outcome: record.outcome || "",
+        note: record.rentalNote || "",
+        list: record.transactionCode || "",
+        rental: record.rental || rentalName || "",
+        edited: false,
+      }));
+
+      const updatedExistingRecords = existingRecords.map(existingRecord => {
+        const matchingNewRecord = mappedRecords.find(newRecord => 
+          newRecord.id === existingRecord.id
+        );
+        if (existingRecord.edited === true) {
+            console.log(`Skipping update for record ${existingRecord.id} - already edited`);
+            return existingRecord;
+          }
+        if (matchingNewRecord) {
+          return {
+            ...existingRecord,
+            ...matchingNewRecord, 
+            list: matchingNewRecord.list || existingRecord.list || "",
+            edited: existingRecord.edited || matchingNewRecord.edited || false
+          };
+        }
+        
+        return existingRecord;
+      });
+      
+      const newRecords = mappedRecords.filter(newRecord => 
+        !existingRecords.some(existingRecord => existingRecord.id === newRecord.id)
+      );
+
+      const finalRecords = [...updatedExistingRecords, ...newRecords];
+      await updateDoc(userDocRef, {
+        finance: {
+          ...financeData,
+          allRecords: finalRecords,
+        }
+      });
+      
+      console.log(`Finance data updated successfully. Updated: ${mappedRecords.length - newRecords.length}, Added: ${newRecords.length}`);
+      
+    } else {
+      console.log("User document doesn't exist");
+    }
+  } catch (error) {
+    console.error("Error updating finance data:", error);
+  }
+};
   
 
   useEffect(() => {
@@ -206,8 +346,6 @@ console.log("Filtered records:", validRecords);
         
         if (rentalData) {
           setRental(rentalData);
-          setWaterBill(rentalData.billWater);
-          setElectricityBill(rentalData.billElectricity);
           setDepositBill(rentalData.billDeposit);
         }
       }
@@ -286,7 +424,8 @@ console.log("Filtered records:", validRecords);
               dueInDate: '',
               rentalRate: '',
               paymentDate: '',
-              transactionCode: ''
+              transactionCode: '',
+              rentalNote: ''
             });
             setShowAddForm(false);
             fetchRecords();
@@ -323,23 +462,17 @@ console.log("Filtered records:", validRecords);
               if (id === "all") {
                 userData.rental[rentalIndex].financialHistory = [];
 
-                setWaterBill("");
-                setElectricityBill("");
                 setDepositBill("");
                 if (rentalIndex !== -1) {
                   userData.rental[rentalIndex] = {
                     ...userData.rental[rentalIndex],
                     billDeposit: "",
-                    billElectricity: "",
-                    billWater: "",
                   };
                   await updateDoc(userDocRef, { rental: userData.rental });
                   
                   setRental(prevRental => ({
                     ...prevRental,
                     billDeposit: "",
-                    billElectricity: "",
-                    billWater: "",
                   }));
                   console.log("All rental details delete successfully");
                 }
@@ -370,28 +503,30 @@ console.log("Filtered records:", validRecords);
   const handleChangeInput = (e, fieldType) => {
     const input = e.target.value.replace(/,/g, '');
     const formatted = input ? Number(input).toLocaleString('en-US') : '';
-    if (fieldType === 'waterBill') {
-      setWaterBill(formatted);
-    } else if (fieldType === 'electricityBill') {
-      setElectricityBill(formatted);
-    } else if (fieldType === 'depositBill') {
+    if (fieldType === 'depositBill') {
       setDepositBill(formatted);
     }
   };
 
-  const handleChangeRecord = (e, fieldType, recordId) => {
-    const raw = e.target.innerText.replace(/,/g, '');
-    const formatted = raw ? Number(raw).toLocaleString('en-US') : '';
+const handleChangeRecord = (e, fieldType, recordId) => {
+  let value;
   
-    setRecords(prevRecords => {
-      return prevRecords.map(record => {
-        if (record.id === recordId) {
-          return { ...record, [fieldType]: formatted };
-        }
-        return record;
-      });
+  if (fieldType === "rentalRate") {
+    const raw = e.target.innerText.replace(/,/g, '');
+    value = raw ? Number(raw).toLocaleString('en-US') : '';
+  } else {
+    value = e.target.innerText.trim();
+  }
+
+  setRecords(prevRecords => {
+    return prevRecords.map(record => {
+      if (record.id === recordId) {
+        return { ...record, [fieldType]: value };
+      }
+      return record;
     });
-  };
+  });
+};
 
 
   const sortedRecords = [...(Array.isArray(records) ? records : [])].sort((a, b) => {
@@ -407,8 +542,8 @@ console.log("Filtered records:", validRecords);
 
   const iconSign = getFixedIconPath(icons.sign);
 
-  return (
-    <>
+return (
+  <>
     {showAlertDeleteHistory && (
       <Alert
         onConfirm={() => deleteRecord("all")}
@@ -417,54 +552,34 @@ console.log("Filtered records:", validRecords);
         Description="The data has already been imported to the Finance page, but your financial data in this rental will be deleted."          
       />
     )}
-        <div className="flex flex-col w-full h-full xl:pb-5 pb-22">
-          {/* Table */}
-          <div className='flex md:flex-row flex-col items-center w-full my-4'>
-              <div className="flex flex-col font-prompt font-semibold text-ellPrimary text-md md:text-xl justify-start w-full md:w-110 mr-auto">
-                <span className='w-120 xl:ml-0 ml-4 xl:px-0 py-1 xl:text-start text-start'>ประวัติการเงิน</span>
-                <div className='flex flex-row w-full'>
-                  <button className="w-full bg-blue-500 px-4 py-2 rounded hover:bg-blue-600  font-prompt font-medium text-[#F7F7F7] text-sm mt-4 cursor-pointer xl:ml-0 ml-4 xl:mr-0 mr-2" onClick={addRecord}>
-                    Add Record
-                  </button>
-                  <button className="xl:mr-0 md:mr-4 mr-4 w-full bg-ellRed px-4 py-2 rounded hover:bg-red-700 font-prompt font-medium text-[#F7F7F7] text-sm mt-4 cursor-pointer xl:ml-4 md:ml-2 ml-2"
-                   onClick={() => setShowAlertDeleteHistory(true)}>
-                    Clear History
-                  </button>
-                </div>
-              </div>          
-            {/* Controls */}
-              <table className="w-110 md:mt-0 mt-4">
-              <thead>
-                <tr>
-                  <th className="w-md py-2 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary tracking-wider">ค่าน้ำ</th>
-                  <th className="w-md py-2 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary tracking-wider">ค่าไฟ</th>
-                  <th className="w-md py-2 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary tracking-wider">ค่ามัดจำ</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-              {isEditing ? (
-                <tr>
-                  <td className="w-md py-2 whitespace-nowrap bg-ellWhite border-2 border-ellGray text-ellPrimary">
-                  <input
-                    type="text"
-                    placeholder="0"
-                    maxLength={6}
-                    value={waterBill}
-                    onChange={(e) => handleChangeInput(e, 'waterBill')}
-                    className="focus:outline-none whitespace-nowrap font-prompt text-center w-full"
-                  />
-                  </td>
-                  <td className="w-md py-2 whitespace-nowrap bg-ellWhite border-2 border-ellGray text-ellPrimary">
-                  <input
-                    type="text"
-                    placeholder="0"
-                    maxLength={6}
-                    value={electricityBill}
-                    onChange={(e) => handleChangeInput(e, 'electricityBill')}
-                    className="focus:outline-none whitespace-nowrap font-prompt text-center w-full"
-                  />
-                  </td>
-                  <td className="w-md py-2 whitespace-nowrap bg-ellWhite border-2 border-ellGray text-ellPrimary">
+    <div className="flex flex-col w-full h-full xl:pb-5 pb-22">
+      {/* Table */}
+      <div className='flex md:flex-row flex-col items-center w-full my-4'>
+        <div className="flex flex-col font-prompt font-semibold text-ellPrimary text-md md:text-xl justify-start w-full md:w-110 mr-auto">
+          <span className='w-120 xl:ml-0 ml-4 xl:px-0 py-1 xl:text-start text-start'>ประวัติการเงิน</span>
+          {isEditing && (
+            <div className='flex flex-row w-full'>
+              <button className="w-full bg-blue-500 px-4 py-2 rounded hover:bg-blue-600  font-prompt font-medium text-[#F7F7F7] text-sm mt-4 cursor-pointer xl:ml-0 ml-4 xl:mr-0 mr-2" onClick={addRecord}>
+                Add Record
+              </button>
+              <button className="xl:mr-0 md:mr-4 mr-4 w-full bg-ellRed px-4 py-2 rounded hover:bg-red-700 font-prompt font-medium text-[#F7F7F7] text-sm mt-4 cursor-pointer xl:ml-4 md:ml-2 ml-2"
+               onClick={() => setShowAlertDeleteHistory(true)}>
+                Clear History
+              </button>
+            </div>
+          )}
+        </div>          
+        {/* Controls */}
+        <table className="md:w-37.5 w-full md:mt-0 mt-4  mr-4">
+          <thead>
+            <tr>
+              <th className="w-md py-2 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary tracking-wider">ค่ามัดจำ</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {isEditing ? (
+              <tr>
+                <td className="w-md py-2 whitespace-nowrap bg-ellWhite border-2 border-ellGray text-ellPrimary">
                   <input
                     type="text"
                     placeholder="0"
@@ -473,73 +588,82 @@ console.log("Filtered records:", validRecords);
                     onChange={(e) => handleChangeInput(e, 'depositBill')}
                     className="focus:outline-none whitespace-nowrap font-prompt text-center w-full"
                   />
-                  </td>
-                </tr>
-              ):(
-
-                <tr>
-                  <td className="w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary">{waterBill.trim() === "" ? "-" : waterBill}</td>
-                  <td className="w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary">{electricityBill.trim() === "" ? "-" : electricityBill}</td>
-                  <td className="w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary">{depositBill.trim() === "" ? "-" : depositBill}</td>
-                </tr>
-              )}
-              </tbody>
-            </table>
-            </div>
-        {/* Desktop/Tablet View (Headers on Top) - Hidden on Mobile */}
-        <div className="hidden sm:block">
-          <table className="w-full">
-            <thead className="bg-ellPrimary">
-              <tr>
-                <th className="w-9 py-3 font-prompt hover:bg-ellGray text-center bg-ellWhite border-2 border-ellGray md:text-sm text-xs text-ellPrimary uppercase tracking-wider cursor-pointer"
-                    onClick={() => setIsSort(prev => !prev)}>
-                  <div className="flex flex-row justify-center" >
-                    <img src={iconSign} width="18" height="40" alt="sign" className={`${isSort ? "rotate-0" : "rotate-180 mr-2"} md:block hidden`}/>
-                    No.
-                  </div>
-                </th>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">วันที่เริ่มอยู่</th>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">วันครบกำหนด</th>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">อัตราค่าเช่า</th>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">วันชำระ</th>
-                <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">รหัสรายการ</th>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-ellPrimary border-2 border-ellGray">Loading...</td>
-                </tr>
-              ) : records.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-ellPrimary border-2 border-ellGray">No records found</td>
-                </tr>
-              ) : (
-                sortedRecords.map((record, index) => {
-                  const displayIndex = isSort ? sortedRecords.length - index : index + 1;
+            ) : (
+              <tr>
+                <td className="w-md py-2 whitespace-nowrap font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary">{depositBill.trim() === "" ? "-" : depositBill}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      
+      {/* Desktop/Tablet View (Headers on Top) - Hidden on Mobile */}
+      <div className="hidden sm:block">
+        <table className="lg:w-4xl w-full table-fixed">
+          <thead className="bg-ellPrimary">
+            <tr>
+              {isEditing && <th className='w-0'></th>}
+              <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">รายการ</th>
+              <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">ยอดชำระ</th>
+              <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">วันชำระ</th>
+              <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">หมายเหตุ</th>
+              <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">วันที่เริ่มอยู่</th>
+              <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">วันครบกำหนด</th>
+              {isEditing && <th className='w-0 bg-ellWhite'></th>}
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={isEditing ? "8" : "6"} className="px-6 py-4 text-center text-ellPrimary border-2 border-ellGray">Loading...</td>
+              </tr>
+            ) : records.length === 0 ? (
+              <tr>
+                <td colSpan={isEditing ? "8" : "6"} className="px-6 py-4 text-center text-ellPrimary border-2 border-ellGray">No records found</td>
+              </tr>
+            ) : (
+              orderedRecords.map((record, index) => (
+                <tr key={record.id}>
+                  {isEditing && (
+                    <td className="w-0 p-0 m-0 relative flex ">
+                      <div className="flex flex-col items-center justify-center space-y-1 absolute right-[10px]">
+                        <button
+                          onClick={() => moveItemUp(index)}
+                          disabled={index === 0}
+                          className={`px-2 py-1 text-xs rounded ${
+                            index === 0 
+                              ? 'bg-gray-200 text-ellDarkGray cursor-not-allowed' 
+                              : 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
+                          }`}
+                        >
+                          ▲
+                        </button>
+                        <button
+                          onClick={() => moveItemDown(index)}
+                          disabled={index === orderedRecords.length - 1}
+                          className={`px-2 py-1 text-xs rounded ${
+                            index === orderedRecords.length - 1 
+                              ? 'bg-gray-200 text-ellDarkGray cursor-not-allowed' 
+                              : 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
+                          }`}
+                        >
+                          ▼
+                        </button>
+                      </div>
+                    </td>
+                  )}
                   
-                  return isEditing ? (
-                    <tr key={record.id} className="relative">
-                      <td className="w-fit py-4 font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary">
-                        {displayIndex}
-                      </td>
-                      <td className="font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary relative">
-                        <input
-                          type="date"
-                          name="moveInDate"
-                          value={record.moveInDate ? formatDateForInput(record.moveInDate) : ''}
-                          onChange={(e) => handleRecordFieldChange(e, 'moveInDate', record.id)}
-                          className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text xl:text-md text-sm absolute inset-0"
-                        />
-                      </td>
-                      <td className="font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary relative">
-                        <input
-                          type="date"
-                          name="dueInDate"
-                          value={record.dueInDate ? formatDateForInput(record.dueInDate) : ''}
-                          onChange={(e) => handleRecordFieldChange(e, 'dueInDate', record.id)}
-                          className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text xl:text-md text-sm absolute inset-0"
-                        />
+                  {isEditing ? (
+                    <>
+                      <td 
+                        className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary"
+                        contentEditable="true"
+                        suppressContentEditableWarning={true}
+                        onBlur={(e) => handleChangeRecord(e, 'transactionCode', record.id)}
+                      >
+                        {record.transactionCode}
                       </td>
                       <td 
                         className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary"
@@ -550,202 +674,308 @@ console.log("Filtered records:", validRecords);
                         {record.rentalRate}
                       </td>
                       <td className="font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary relative">
-                        <input
-                          type="date"
-                          name="paymentDate"
-                          value={record.paymentDate ? formatDateForInput(record.paymentDate) : ''}
-                          onChange={(e) => handleRecordFieldChange(e, 'paymentDate', record.id)}
-                          className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text  xl:text-md text-sm absolute inset-0"
+                        <Flatpickr
+                          options={{
+                            locale: Thai,
+                            dateFormat: "d/m/Y",
+                            altInput: true,
+                            altFormat: "j M Y",
+                            formatDate: flatpickrThaiBuddhistFormatter
+                          }}
+                          placeholder="วัน/เดือน/ปี"
+                          value={record.paymentDate ? new Date(record.paymentDate) : null}
+                          onChange={([date]) => {handleRecordFieldChange(date, 'paymentDate', record.id);}}
+                          className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text text-center xl:text-md text-sm absolute inset-0"
                         />
                       </td>
                       <td 
                         className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary"
                         contentEditable="true"
                         suppressContentEditableWarning={true}
-                        onBlur={(e) => handleRecordFieldChange(e, 'transactionCode', record.id)}
+                        onBlur={(e) => handleChangeRecord(e, 'rentalNote', record.id)}
                       >
-                        {record.transactionCode}
+                        {record.rentalNote}
+                      </td>
+                      <td className="font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary relative">
+                        <Flatpickr
+                          options={{
+                            locale: Thai,
+                            dateFormat: "d/m/Y",
+                            altInput: true,
+                            altFormat: "j M Y",
+                            formatDate: flatpickrThaiBuddhistFormatter
+                          }}
+                          placeholder="วัน/เดือน/ปี"
+                          value={record.moveInDate ? new Date(record.moveInDate) : null || "วัน/เดือน/ปี"}
+                          onChange={([date]) => {handleRecordFieldChange(date, 'moveInDate', record.id);}}
+                          className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text text-center xl:text-md text-sm absolute inset-0"
+                        />
+                      </td>
+                      <td className="font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary relative">
+                        <Flatpickr
+                          options={{
+                            locale: Thai,
+                            dateFormat: "d/m/Y",
+                            altInput: true,
+                            altFormat: "j M Y",
+                            formatDate: flatpickrThaiBuddhistFormatter
+                          }}
+                          placeholder="วัน/เดือน/ปี"
+                          value={record.dueInDate ? new Date(record.dueInDate) : null}
+                          onChange={([date]) => {handleRecordFieldChange(date, 'dueInDate', record.id);}}
+                          className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text text-center xl:text-md text-sm absolute inset-0"
+                        />
                       </td>
                       <td className="w-0 p-0 m-0 relative">
-                        <div className="absolute right-[-80px] top-1/2 -translate-y-1/2 bg-ellWhite text-ellRed px-3 py-1 rounded-full cursor-pointer hover:bg-ellBlack"
-                            onClick={() => deleteRecord(record.id)}>
-                          Delete
+                        <div className="flex justify-center items-center">
+                          <button
+                            className="absolute xl:right-[-80px] md:right-[-70px] bg-ellWhite text-ellRed px-3 py-1 rounded-full cursor-pointer hover:bg-ellBlack"
+                            onClick={() => deleteRecord(record.id)}
+                          >
+                            Delete
+                          </button>
                         </div>
                       </td>
-                    </tr>
+                    </>
                   ) : (
-                    <tr key={record.id}>
-                      <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                        {displayIndex}
-                      </td>
-                      <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                        {record.moveInDate.trim() === "" ? "-" : record.moveInDate}
-                      </td>
-                      <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                        {record.dueInDate.trim() === "" ? "-" : record.dueInDate}
+                    <>
+                      <td className="py-4 w-20 font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis break-all">
+                        {record.transactionCode.trim() === "" ? "-" : record.transactionCode}
                       </td>
                       <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
                         {record.rentalRate.trim() === "" ? "-" : record.rentalRate}
                       </td>
                       <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                        {record.paymentDate.trim() === "" ? "-" : record.paymentDate}
+                        {formatIsoToThaiBuddhist(record.paymentDate) || "-"}
                       </td>
                       <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                        {record.transactionCode.trim() === "" ? "-" : record.transactionCode}
+                        {record.rentalNote?.trim() === "" ? "-" : record.rentalNote}
                       </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                      <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
+                        {formatIsoToThaiBuddhist(record.moveInDate) || "-"}
+                      </td>
+                      <td className="py-4 w-fit font-prompt text-center bg-ellWhite border-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
+                        {formatIsoToThaiBuddhist(record.dueInDate) || "-"}
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-        {/* Mobile View (Headers on Left) - Shown Only on Mobile */}
-        <div className="sm:hidden">
-          {isLoading ? (
-            <div className="px-6 py-4 text-center text-ellPrimary border-2 border-ellGray">Loading...</div>
-          ) : records.length === 0 ? (
-            <div className="px-6 py-4 text-center text-ellPrimary border-2 border-ellGray">No records found</div>
-          ) : (
-            sortedRecords.map((record, index) => {
-              const displayIndex = isSort ? sortedRecords.length - index : index + 1;
-              
-              return (
-                <div key={record.id} className="mb-6 border-2 border-ellGray rounded">
-                  <div className="bg-ellWhite border-b-2 border-ellGray p-3 flex justify-between items-center">
-                    <div className="flex items-center">
-                      <span className="font-prompt text-ellPrimary uppercase mr-2 font-bold">No. {displayIndex}</span>
-                    </div>
+      {/* Mobile View (Headers on Left) - Shown Only on Mobile */}
+      <div className="sm:hidden">
+        {isLoading ? (
+          <div className="px-6 py-4 text-center text-ellPrimary border-2 border-ellGray">Loading...</div>
+        ) : records.length === 0 ? (
+          <div className="px-6 py-4 text-center text-ellPrimary border-2 border-ellGray">No records found</div>
+        ) : (
+          sortedRecords.map((record, index) => {
+            const displayIndex = isSort ? sortedRecords.length - index : index + 1;
+            
+            return (
+              <div key={record.id} className="mb-6 border-2 border-ellGray rounded">
+                <div className="bg-ellWhite border-b-2 border-ellGray p-3 flex justify-between items-center">
+                  <div className="flex items-center">
+                    <span className="font-prompt text-ellPrimary uppercase mr-2 font-bold">No. {displayIndex}</span>
                     {isEditing && (
-                      <div 
-                        className="bg-ellWhite text-ellRed px-3 py-1 rounded-full cursor-pointer hover:bg-ellBlack"
-                        onClick={() => deleteRecord(record.id)}
-                      >
-                        Delete
+                      <div className="flex space-x-2 ml-4">
+                        <button
+                          onClick={() => moveItemUp(index)}
+                          disabled={index === 0}
+                          className={`px-2 py-1 text-xs rounded ${
+                            index === 0 
+                              ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                              : 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
+                          }`}
+                        >
+                          ▲
+                        </button>
+                        <button
+                          onClick={() => moveItemDown(index)}
+                          disabled={index === orderedRecords.length - 1}
+                          className={`px-2 py-1 text-xs rounded ${
+                            index === orderedRecords.length - 1 
+                              ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                              : 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
+                          }`}
+                        >
+                          ▼
+                        </button>
                       </div>
                     )}
                   </div>
-                  
-                  <table className="w-full">
-                    <tbody>
-                      {/* Move-in Date */}
-                      <tr>
-                        <th className="w-40 py-3 font-prompt text-left px-4 bg-ellWhite border-b-2 border-ellGray md:text-md text-xs text-ellPrimary uppercase tracking-wider">
-                          วันที่เริ่มอยู่
-                        </th>
-                        {isEditing ? (
-                          <td className="font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary relative p-2">
-                            <input
-                              type="date"
-                              name="moveInDate"
-                              value={record.moveInDate ? formatDateForInput(record.moveInDate) : ''}
-                              onChange={(e) => handleRecordFieldChange(e, 'moveInDate', record.id)}
-                              className="w-full px-2 text-ellPrimary focus:outline-none cursor-text"
-                            />
-                          </td>
-                        ) : (
-                          <td className="py-3 px-4 font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                            {record.moveInDate.trim() === "" ? "-" : record.moveInDate}
-                          </td>
-                        )}
-                      </tr>
-                      
-                      {/* Due Date */}
-                      <tr>
-                        <th className="w-40 py-3 font-prompt text-left px-4 bg-ellWhite border-b-2 border-ellGray md:text-md text-xs text-ellPrimary uppercase tracking-wider">
-                          วันครบกำหนด
-                        </th>
-                        {isEditing ? (
-                          <td className="font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary relative p-2">
-                            <input
-                              type="date"
-                              name="dueInDate"
-                              value={record.dueInDate ? formatDateForInput(record.dueInDate) : ''}
-                              onChange={(e) => handleRecordFieldChange(e, 'dueInDate', record.id)}
-                              className="w-full px-2 text-ellPrimary focus:outline-none cursor-text"
-                            />
-                          </td>
-                        ) : (
-                          <td className="py-3 px-4 font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                            {record.dueInDate.trim() === "" ? "-" : record.dueInDate}
-                          </td>
-                        )}
-                      </tr>
-                      
-                      {/* Rental Rate */}
-                      <tr>
-                        <th className="w-40 py-3 font-prompt text-left px-4 bg-ellWhite border-b-2 border-ellGray md:text-md text-xs text-ellPrimary uppercase tracking-wider">
-                          อัตราค่าเช่า
-                        </th>
-                        {isEditing ? (
-                          <td 
-                            className="py-3 px-4 font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary"
-                            contentEditable="true"
-                            suppressContentEditableWarning={true}
-                            onBlur={(e) => handleChangeRecord(e, 'rentalRate', record.id)}
-                          >
-                            {record.rentalRate}
-                          </td>
-                        ) : (
-                          <td className="py-3 px-4 font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                            {record.rentalRate.trim() === "" ? "-" : record.rentalRate}
-                          </td>
-                        )}
-                      </tr>
-                      
-                      {/* Payment Date */}
-                      <tr>
-                        <th className="w-40 py-3 font-prompt text-left px-4 bg-ellWhite border-b-2 border-ellGray md:text-md text-xs text-ellPrimary uppercase tracking-wider">
-                          วันชำระ
-                        </th>
-                        {isEditing ? (
-                          <td className="font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary relative p-2">
-                            <input
-                              type="date"
-                              name="paymentDate"
-                              value={record.paymentDate ? formatDateForInput(record.paymentDate) : ''}
-                              onChange={(e) => handleRecordFieldChange(e, 'paymentDate', record.id)}
-                              className="w-full px-2 text-ellPrimary focus:outline-none cursor-text"
-                            />
-                          </td>
-                        ) : (
-                          <td className="py-3 px-4 font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                            {record.paymentDate.trim() === "" ? "-" : record.paymentDate}
-                          </td>
-                        )}
-                      </tr>
-                      
-                      {/* Transaction Code */}
-                      <tr>
-                        <th className="w-40 py-3 font-prompt text-left px-4 bg-ellWhite border-ellGray md:text-md text-xs text-ellPrimary uppercase tracking-wider">
-                          รหัสรายการ
-                        </th>
-                        {isEditing ? (
-                          <td 
-                            className="py-3 px-4 font-prompt bg-ellWhite border-ellGray text-ellPrimary"
-                            contentEditable="true"
-                            suppressContentEditableWarning={true}
-                            onBlur={(e) => handleRecordFieldChange(e, 'transactionCode', record.id)}
-                          >
-                            {record.transactionCode}
-                          </td>
-                        ) : (
-                          <td className="py-3 px-4 font-prompt bg-ellWhite border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
-                            {record.transactionCode.trim() === "" ? "-" : record.transactionCode}
-                          </td>
-                        )}
-                      </tr>
-                    </tbody>
-                  </table>
+                  {isEditing && (
+                    <div 
+                      className="bg-ellWhite text-ellRed px-3 py-1 rounded-full cursor-pointer hover:bg-ellBlack"
+                      onClick={() => deleteRecord(record.id)}
+                    >
+                      Delete
+                    </div>
+                  )}
                 </div>
-              );
-            })
-          )}
-        </div>
-        </div>
-    </>
-  );
+                
+                <table className="w-full">
+                  <tbody>
+                    {/* transactionCode */}
+                    <tr>
+                      <th className="w-40 py-3 font-prompt text-left px-4 bg-ellWhite border-b-2 border-ellGray md:text-md text-xs text-ellPrimary uppercase tracking-wider">
+                        รายการ
+                      </th>
+                      {isEditing ? (
+                        <td 
+                          className="py-3 px-4 font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary"
+                          contentEditable="true"
+                          suppressContentEditableWarning={true}
+                          onBlur={(e) => handleChangeRecord(e, 'transactionCode', record.id)}
+                        >
+                          {record.transactionCode}
+                        </td>
+                      ) : (
+                        <td className="py-3 px-4 font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
+                          {record.transactionCode.trim() === "" ? "-" : record.transactionCode}
+                        </td>
+                      )}
+                    </tr>
+                    
+                    {/* rentalRate */}
+                    <tr>
+                      <th className="w-40 py-3 font-prompt text-left px-4 bg-ellWhite border-b-2 border-ellGray md:text-md text-xs text-ellPrimary uppercase tracking-wider">
+                        ยอดชำระ	
+                      </th>
+                      {isEditing ? (
+                        <td 
+                          className="py-3 px-4 font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary"
+                          contentEditable="true"
+                          suppressContentEditableWarning={true}
+                          onBlur={(e) => handleChangeRecord(e, 'rentalRate', record.id)}
+                        >
+                          {record.rentalRate}
+                        </td>
+                      ) : (
+                        <td className="py-3 px-4 font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
+                          {record.rentalRate.trim() === "" ? "-" : record.rentalRate}
+                        </td>
+                      )}
+                    </tr>
+                    
+                    {/* Payment Date */}
+                    <tr>
+                      <th className="w-40 py-3 font-prompt text-left px-4 bg-ellWhite border-b-2 border-ellGray md:text-md text-xs text-ellPrimary uppercase tracking-wider">
+                        วันชำระ
+                      </th>
+                      {isEditing ? (
+                        <td className="font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary relative p-2">
+                          <Flatpickr
+                            options={{
+                              locale: Thai,
+                              dateFormat: "d/m/Y",
+                              altInput: true,
+                              altFormat: "j M Y",
+                              formatDate: flatpickrThaiBuddhistFormatter
+                            }}
+                            placeholder="วัน/เดือน/ปี"
+                            value={record.paymentDate ? new Date(record.paymentDate) : null}
+                            onChange={([date]) => {handleRecordFieldChange(date, 'paymentDate', record.id);}}
+                            className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text text-center xl:text-md text-sm absolute inset-0"
+                          />
+                        </td>
+                      ) : (
+                        <td className="py-3 px-4 font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
+                          {formatIsoToThaiBuddhist(record.paymentDate) || "-"}
+                        </td>
+                      )}
+                    </tr>
+                    
+                    {/* rentalNote */}
+                    <tr>
+                      <th className="w-40 py-3 font-prompt text-left px-4 bg-ellWhite border-b-2 border-ellGray md:text-md text-xs text-ellPrimary uppercase tracking-wider">
+                        หมายเหตุ
+                      </th>
+                      {isEditing ? (
+                        <td 
+                          className="py-3 px-4 font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary"
+                          contentEditable="true"
+                          suppressContentEditableWarning={true}
+                          onBlur={(e) => handleChangeRecord(e, 'rentalNote', record.id)}
+                        >
+                          {record.rentalNote}
+                        </td>
+                      ) : (
+                        <td className="py-3 px-4 font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
+                          {record.rentalNote.trim() === "" ? "-" : record.rentalNote}
+                        </td>
+                      )}
+                    </tr>
+                    
+                    {/* moveInDate */}
+                    <tr>
+                      <th className="w-40 py-3 font-prompt text-left px-4 bg-ellWhite border-ellGray md:text-md text-xs text-ellPrimary uppercase tracking-wider">
+                        วันที่เริ่มอยู่
+                      </th>
+                      {isEditing ? (
+                        <td className="font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary relative p-2">
+                          <Flatpickr
+                            options={{
+                              locale: Thai,
+                              dateFormat: "d/m/Y",
+                              altInput: true,
+                              altFormat: "j M Y",
+                              formatDate: flatpickrThaiBuddhistFormatter
+                            }}
+                            placeholder="วัน/เดือน/ปี"
+                            value={record.moveInDate ? new Date(record.moveInDate) : null}
+                            onChange={([date]) => {handleRecordFieldChange(date, 'moveInDate', record.id);}}
+                            className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text text-center xl:text-md text-sm absolute inset-0"
+                          />
+                        </td>
+                      ) : (
+                        <td className="py-3 px-4 font-prompt bg-ellWhite border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
+                          {formatIsoToThaiBuddhist(record.moveInDate) || "-"}
+                        </td>
+                      )}
+                    </tr>
+                    
+                    {/* dueInDate */}
+                    <tr>
+                      <th className="w-40 py-3 font-prompt text-left px-4 bg-ellWhite border-ellGray md:text-md text-xs text-ellPrimary uppercase tracking-wider">
+                        วันครบกำหนด
+                      </th>
+                      {isEditing ? (
+                        <td className="font-prompt bg-ellWhite border-b-2 border-ellGray text-ellPrimary relative p-2">
+                          <Flatpickr
+                            options={{
+                              locale: Thai,
+                              dateFormat: "d/m/Y",
+                              altInput: true,
+                              altFormat: "j M Y",
+                              formatDate: flatpickrThaiBuddhistFormatter
+                            }}
+                            placeholder="วัน/เดือน/ปี"
+                            value={record.dueInDate ? new Date(record.dueInDate) : null}
+                            onChange={([date]) => {handleRecordFieldChange(date, 'dueInDate', record.id);}}
+                            className="w-full h-full px-4 text-ellPrimary focus:outline-none cursor-text text-center xl:text-md text-sm absolute inset-0"
+                          />
+                        </td>
+                      ) : (
+                        <td className="py-3 px-4 font-prompt bg-ellWhite border-ellGray text-ellPrimary overflow-hidden whitespace-nowrap text-ellipsis">
+                          {formatIsoToThaiBuddhist(record.dueInDate) || "-"}
+                        </td>
+                      )}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  </>
+);
 };
 
 export default FinancialHistory;
