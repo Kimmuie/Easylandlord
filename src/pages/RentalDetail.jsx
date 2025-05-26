@@ -8,7 +8,7 @@ import { db } from '../components/firebase';
 import UploadImage from '../components/uploadImage';
 import html2canvas from "html2canvas";
 import { useAuth } from '../contexts/AuthContext'; 
-import ExtendImage from '../components/extendImage';
+import SortableImageGallery from '../components/extendImage';
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/themes/material_blue.css";
 import { Thai } from "flatpickr/dist/l10n/th.js";
@@ -57,14 +57,6 @@ const RentalDetail = () => {
   const [userIconImage, setUserIconImage] = useState("");
   const [tenantIconImage, setTenantIconImage] = useState("");
   const [uploadedTenantImage, setUploadedTenantImage] = useState("");
-  const [rentalImage1, setRentalImage1] = useState("");
-  const [uploadedRentalImage1, setUploadedRentalImage1] = useState(null);
-  const [rentalImage2, setRentalImage2] = useState("");
-  const [uploadedRentalImage2, setUploadedRentalImage2] = useState(null);
-  const [rentalImage3, setRentalImage3] = useState("");
-  const [uploadedRentalImage3, setUploadedRentalImage3] = useState(null);
-  const [rentalImage4, setRentalImage4] = useState("");
-  const [uploadedRentalImage4, setUploadedRentalImage4] = useState(null);
   const [uploadedExtendImage, setUploadedExtendImage] = useState(null);
   const [haveExtendImage, setHaveExtendImage] = useState(false);
   const [extendImage, setExtendImage] = useState(false);
@@ -302,36 +294,11 @@ const RentalDetail = () => {
     }
   }
 
-  //Set Image Count
-  useEffect(() => {
-    if (rentalImage4) {
-      setCurrentImageShow("4")
-      setCurrentImage("4")
-    } else if (rentalImage3) {
-      setCurrentImageShow("3")
-      setCurrentImage("3")
-    } else {
-      setCurrentImageShow("2")
-    }
-  }, [rentalImage3, rentalImage4]);
-
   // Save image to Cloudinary
   const handleUpload = (url, field) => {
     if (field === 'tenant') {
       console.log('Uploaded Image URL:', url);
       setUploadedTenantImage(url)
-    } else if (field === 'rental1') {
-      console.log('Uploaded Image URL:', url);
-      setUploadedRentalImage1(url)
-    } else if (field === 'rental2') {
-      console.log('Uploaded Image URL:', url);
-      setUploadedRentalImage2(url)
-    } else if (field === 'rental3') {
-      console.log('Uploaded Image URL:', url);
-      setUploadedRentalImage3(url)
-    } else if (field === 'rental4') {
-      console.log('Uploaded Image URL:', url);
-      setUploadedRentalImage4(url)
     } else if (field === 'extend') {
       console.log('Uploaded Image (Extend) URL:', url);
       setUploadedExtendImage(url)
@@ -394,10 +361,6 @@ const handleShare = async () => {
               areaUnitB: selectedAreaB, 
               areaUnit: selectedArea,
               tenantImage: uploadedTenantImage ?? tenantIconImage,
-              rentalImage1: uploadedRentalImage1 ?? rentalImage1,
-              rentalImage2: uploadedRentalImage2 ?? rentalImage2,
-              rentalImage3: uploadedRentalImage3 ?? rentalImage3,
-              rentalImage4: uploadedRentalImage4 ?? rentalImage4,
             } : r
             );
             await updateDoc(userDocRef, {
@@ -424,10 +387,6 @@ const handleShare = async () => {
               areaUnitB: selectedAreaB,
               areaUnit: selectedArea,
               tenantImage: uploadedTenantImage || tenantIconImage,
-              rentalImage1: uploadedRentalImage1 || rentalImage1,
-              rentalImage2: uploadedRentalImage2 || rentalImage2,
-              rentalImage3: uploadedRentalImage3 || rentalImage3,
-              rentalImage4: uploadedRentalImage4 || rentalImage4,
             }));
 
             console.log("Other rental details updated successfully");
@@ -514,11 +473,7 @@ const handleShare = async () => {
             setDueDate(currentRental.dueDate);
             setCheckDate(currentRental.checkDate);
             setTenantIconImage(currentRental.tenantImage);
-            setRentalImage1(currentRental.rentalImage1);
-            setRentalImage2(currentRental.rentalImage2);
-            setRentalImage3(currentRental.rentalImage3);
-            setRentalImage4(currentRental.rentalImage4);
-            for (let i = 5; i <= 20; i++) {
+            for (let i = 3; i <= 20; i++) {
               const key = `rentalImage${i}`;
               if (currentRental[key]) {
                 setHaveExtendImage(true);
@@ -716,7 +671,7 @@ const handleShare = async () => {
             <div className={`rounded-full border-2 border-ellGray h-5 w-5 mr-2 ${rental.status === "available" ? "bg-ellGreen" : "bg-ellRed"}`}></div>
             {rental.status === "available" ? "ว่าง" : "ไม่ว่าง"}
           </div>
-          {isEditing && (
+          {/* {isEditing && (
           <div className='flex flex-row gap-1'>
             <button className={`font-prompt text-ellPrimary text-lg cursor-pointer rounded h-9 w-9 border-2 border-ellGray hover:border-ellPrimary flex items-center justify-center hover:scale-102 active:scale-97 ${currentImage === '2' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
               onClick={() => setCurrentImage("2")}>2</button>
@@ -725,7 +680,7 @@ const handleShare = async () => {
             <button className={`font-prompt text-ellPrimary text-lg cursor-pointer rounded h-9 w-9 border-2 border-ellGray hover:border-ellPrimary flex items-center justify-center hover:scale-102 active:scale-97 ${currentImage === '4' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
               onClick={() => setCurrentImage("4")}>4</button>
           </div>
-          )}
+          )} */}
           <div className="relative flex justify-end w-30">
             <button className={`flex justify-center rounded-sm px-1 font-prompt text-ellSecondary text-md md:text-lg bg-ellBlack h-8 cursor-pointer ${showTagBox && "pointer-events-none"}`}
               onClick={() => setShowTagBox(prev => !prev)}>
@@ -758,108 +713,24 @@ const handleShare = async () => {
             }
           </div>
         </div>
-        <div className='flex flex-row xl:pl-2 md:pl-4 pl-2 xl:pr-2 md:pr-4 pr-2'>
-          <div className='flex flex-col'>
-            {/* 1 */}            
-            <div className="relative inline-block">
-              <img src={uploadedRentalImage1 || rentalImage1 || "/img/sampleImage.jpg"} alt="image" className={`object-cover border-1 border-ellTertiary ${isEditing ? (currentImage === '2' ? 'w-112 md:h-70 h-35 rounded-l-lg' : currentImage === '3' ? "md:w-152 w-72 md:h-70 h-50 rounded-l-lg"  : "md:w-112 w-full md:h-60 h-30 rounded-tl-lg"):(currentImageShow === '2' ? 'w-112 md:h-70 h-35 rounded-l-lg' : currentImageShow === '3' ? "md:w-152 w-72 md:h-70 h-50 rounded-l-lg"  : "md:w-112 w-full md:h-60 h-30 rounded-tl-lg")}`}/>
-              <div className={`absolute right-1 bottom-1 flex flex-row ${!isEditing && "hidden"}`}>
-                <UploadImage onUploadSuccess={(url) => handleUpload(url, "rental1")}>
-                <button className="cursor-pointer rounded h-9 w-9 bg-blue-500 mr-1 flex items-center justify-center hover:scale-102 active:scale-97">
-                  <img src="/img/plus-light.svg" alt="edit" className="w-7" />
-                </button>
-                </UploadImage>
-                <button className={`cursor-pointer rounded h-9 w-9 bg-ellRed flex items-center justify-center hover:scale-102 active:scale-97 ${!rentalImage1 && "hidden"}`}
-                  onClick={() => {
-                    setUploadedRentalImage1("");
-                    setRentalImage1("/img/sampleImage.jpg");
-                  }}>
-                  <img src="/img/trash-light.svg" alt="edit" className="w-7" />
-                </button>
-              </div>
-            </div>
-            {/* 4 */}
-            <div className={`relative ${isEditing ? (currentImage === '2' ? 'hidden' : currentImage === '3' ? "hidden"  : "inline-block"):(currentImageShow === '2' ? 'hidden' : currentImageShow === '3' ? "hidden"  : "inline-block")}`}>
-              <img src={uploadedRentalImage4 || rentalImage4 || "/img/sampleImage.jpg"} alt="image" className={`object-cover border-1 border-ellTertiary ${isEditing ? (currentImage === '2' ? '' : currentImage === '3' ? ""  : "md:w-112 w-full md:h-60 h-30 rounded-bl-lg"):(currentImageShow === '2' ? '' : currentImageShow === '3' ? ""  : "md:w-112 w-full md:h-60 h-30 rounded-bl-lg")}`}/>
-              <div className={`absolute right-1 bottom-1 flex flex-row ${!isEditing && "hidden"}`}>
-                <UploadImage onUploadSuccess={(url) => handleUpload(url, "rental4")}>
-                <button className="cursor-pointer rounded h-9 w-9 bg-blue-500 mr-1 flex items-center justify-center hover:scale-102 active:scale-97">
-                  <img src="/img/plus-light.svg" alt="edit" className="w-7" />
-                </button>
-                </UploadImage>
-                <button className={`cursor-pointer rounded h-9 w-9 bg-ellRed flex items-center justify-center hover:scale-102 active:scale-97 ${!rentalImage4 && "hidden"}`}
-                  onClick={() => {
-                    setUploadedRentalImage4("");
-                    setRentalImage4("/img/sampleImage.jpg");
-                  }}>
-                  <img src="/img/trash-light.svg" alt="edit" className="w-7" />
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className='flex flex-col'>
-            {/* 2 */}
-            <div className="relative inline-block">
-              <img src={uploadedRentalImage2 || rentalImage2 || "/img/sampleImage.jpg"} alt="image" className={`object-cover border-1 border-ellTertiary ${isEditing ? (currentImage === '2' ? 'w-112 md:h-70 h-35 rounded-r-lg' : currentImage === '3' ? "md:w-72 w-40 md:h-35 h-25 rounded-tr-lg"  : "md:w-112 w-full md:h-60 h-30 rounded-tr-lg"):(currentImageShow === '2' ? 'w-112 md:h-70 h-35 rounded-r-lg' : currentImageShow === '3' ? "md:w-72 w-40 md:h-35 h-25 rounded-tr-lg"  : "md:w-112 w-full md:h-60 h-30 rounded-tr-lg")}`}/>
-              <div className={`absolute right-1 bottom-1 flex flex-row ${!isEditing && "hidden"}`}>
-                <UploadImage onUploadSuccess={(url) => handleUpload(url, "rental2")}>
-                <button className="cursor-pointer rounded h-9 w-9 bg-blue-500 mr-1 flex items-center justify-center hover:scale-102 active:scale-97">
-                  <img src="/img/plus-light.svg" alt="edit" className="w-7" />
-                </button>
-                </UploadImage>
-                <button className={`cursor-pointer rounded h-9 w-9 bg-ellRed flex items-center justify-center hover:scale-102 active:scale-97 ${!rentalImage2 && "hidden"}`}
-                  onClick={() => {
-                    setUploadedRentalImage2("");
-                    setRentalImage2("/img/sampleImage.jpg")
-                  }}>
-                  <img src="/img/trash-light.svg" alt="edit" className="w-7" />
-                </button>
-              </div>
-            </div>
-            {/* 3 */}
-            <div className={`relative ${isEditing ? (currentImage === '2' ? 'hidden' : currentImage === '3' ? "inline-block"  : "inline-block"):(currentImageShow === '2' ? 'hidden' : currentImageShow === '3' ? "inline-block"  : "inline-block")}`}>
-              <img src={uploadedRentalImage3 || rentalImage3 || "/img/sampleImage.jpg"} alt="image" className={`object-cover border-1 border-ellTertiary ${isEditing ? (currentImage === '2' ? '' : currentImage === '3' ? "md:w-72 w-40 md:h-35 h-25 rounded-br-lg"  : "md:w-112 w-full md:h-60 h-30 rounded-br-lg"):(currentImageShow === '2' ? '' : currentImageShow === '3' ? "md:w-72 w-40 md:h-35 h-25 rounded-br-lg"  : "md:w-112 w-full md:h-60 h-30 rounded-br-lg")}`}/>
-              <div className={`absolute right-1 bottom-1 flex flex-row ${!isEditing && "hidden"}`}>
-                <UploadImage onUploadSuccess={(url) => handleUpload(url, "rental3")}>
-                <button className="cursor-pointer rounded h-9 w-9 bg-blue-500 mr-1 flex items-center justify-center hover:scale-102 active:scale-97">
-                  <img src="/img/plus-light.svg" alt="edit" className="w-7" />
-                </button>
-                </UploadImage>
-                <button className={`cursor-pointer rounded h-9 w-9 bg-ellRed flex items-center justify-center hover:scale-102 active:scale-97 ${!rentalImage3 && "hidden"}`}
-                  onClick={() => {
-                    setUploadedRentalImage3("");
-                    setRentalImage3("/img/sampleImage.jpg")
-                  }}>
-                  <img src="/img/trash-light.svg" alt="edit" className="w-7" />
-                </button>
-              </div>
-              {haveExtendImage &&
-              <button className={`absolute right-2 bottom-2 cursor-pointer rounded-2xl h-9 w-20 mr-1 items-center justify-center font-prompt text-[#333333] bg-ConstantGray hover:scale-102 active:scale-97 xl:text-md text-sm font-semibold ${isEditing || extendImage ? "hidden" : "flex"}`}
-                onClick={() => setExtendImage(true)}>
-                  ดูทั้งหมด
-              </button>
-              }
-            </div>
-          </div>
-        </div>
-        {extendImage &&
-        <ExtendImage 
+        <div className="flex flex-col xl:pl-2 md:pl-4 pl-2 xl:pr-2 md:pr-4 pr-2">
+        <SortableImageGallery 
           currentUpload={uploadedExtendImage}   
           isEditing={isEditing}     
         />
-        }
-        {isEditing || extendImage &&
-        <button className="cursor-pointer rounded h-9 w-112 mt-2 font-prompt text-[#333333] bg-ConstantGray mr-1 flex items-center justify-center hover:scale-102 active:scale-97 xl:text-md text-sm font-semibold"
-            onClick={() => setExtendImage(false)}>
-           ย่อรูปภาพ
-        </button>
-          }
-        {isEditing && currentImage === "4" && <UploadImage onUploadSuccess={(url) => handleUpload(url, "extend")}>
-          <button className="cursor-pointer rounded h-9 w-112 mt-2 bg-blue-500 mr-1 flex items-center justify-center hover:scale-102 active:scale-97">
-            <img src="/img/plus-light.svg" alt="edit" className="w-7" />
-          </button>
-        </UploadImage>
-        }
+        
+        {/* Upload button for adding new images */}
+        {isEditing && (
+          <div className="mt-4 flex justify-center">
+            <UploadImage onUploadSuccess={(url) => handleUpload(url, "extend")}>
+              <button className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-[#F7F7F7] text-sm rounded font-prompt transition-colors cursor-pointer flex flex-row justify-center items-center">
+                <img src="/img/plus-light.svg" alt="add" className="w-6 h-6 mr-2" />
+                Add New Image
+              </button>
+            </UploadImage>
+          </div>
+        )}
+      </div>
         <div className={`flex flex-col xl:flex-row xl:w-fit md:w-full w-full pt-4 xl:px-0 px-4 ${isEditing ? "pb-1" : "pb-0"}`}>
           <div className="flex flex-col xl:w-md md:w-full w-full">
             {isEditing ? (
@@ -1229,14 +1100,6 @@ const handleShare = async () => {
                       <span className='text-ellPrimary font-prompt text-md font-semibold items-center py-2'>วันครบกำหนด</span>
                       {isEditing ? (
                       <>
-                      {/* <input
-                        type="date"
-                        name="dueDate"
-                        maxLength={12}
-                        value={tempoDate || dueDate}
-                        onChange={handleDateChange}
-                        className="xl:block md:flex flex justify-center focus:outline-none text-center rounded-br-lg px-2 py-2 w-full border-t-2 border-t-ConstantGray font-prompt font-medium text-ellPrimary text-sm"
-                      /> */}
                         <Flatpickr
                           options={{
                             locale: Thai,

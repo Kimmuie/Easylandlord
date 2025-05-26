@@ -561,7 +561,7 @@ return (
           )}
         </div>          
         {/* Controls */}
-        <table className="md:w-37.5 w-full md:mt-0 mt-4  mr-4">
+        <table className="md:w-37.5 w-full md:mt-0 mt-4 ">
           <thead>
             <tr>
               <th className="w-md py-2 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary tracking-wider">ค่ามัดจำ</th>
