@@ -71,7 +71,7 @@ const fetchRecords = async () => {
         <div className="relative h-56 w-full xl:w-4xl md:w-3xl rounded-2xl bg-ellWhite border-2 border-ellGray">
             <div className="flex-row flex py-3 pl-3">
                 <div className="flex flex-grow">
-                    <img src={rental.rentalImage0 || "./img/sampleImage.jpg"} alt="image" className="h-15 w-25 object-cover border-2 border-ellGray rounded-md"/>
+                    <img src={rental.coverRental || rental.rentalImage0 || "./img/sampleImage.jpg"} alt="image" className="h-15 w-25 object-cover border-2 border-ellGray rounded-md"/>
                     <div className="flex items-center pl-6 font-prompt font-semibold text-ellPrimary text-md md:text-xl w-lg">
                         {rental.name}
                     </div>  

@@ -200,7 +200,7 @@ const GoogleMap = () => {
             name: rental.name,
             location: rental.location,
             status: rental.status,
-            rentalImage0: rental.rentalImage0,
+            coverRental: rental.coverRental || rental.rentalImage0,
           }));
           setRentals(essentialRentalData);
         }
@@ -333,7 +333,7 @@ const GoogleMap = () => {
                   {open && selectedRentalId === rental.id && (
                     <InfoWindow anchor={markerRefs.current[rental.id]}>
                       <div className='flex justify-center items-center flex-col' ref={mapBoxRef}>
-                        <img src={rental.rentalImage0 || "./img/sampleImage.jpg"} alt="image" className="h-15 w-25 object-cover border-2 border-ellGray rounded-md mt-4"/>
+                        <img src={rental.coverRental || rental.rentalImage0 || "./img/sampleImage.jpg"} alt="image" className="h-15 w-25 object-cover border-2 border-ellGray rounded-md mt-4"/>
                         <h3 className="font-bold font-prompt">{rental.name}</h3>
                         <button className="mt-1 flex flex-row bg-[#333333] rounded-full items-center justify-center font-prompt text-[#F7F7F7] h-6 px-2 w-full text-xs cursor-pointer active:scale-98"
                           onClick={() => navigate(`/management/${rental.id}`)}>

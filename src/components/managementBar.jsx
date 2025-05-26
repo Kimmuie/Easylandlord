@@ -88,6 +88,8 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                 location: "",
                 rentFee: 0,
                 rentFrequency: "เดือน",
+                coverRental: "",
+                message: "",
                 bedroom: 0,
                 restroom: 0,
                 squareMetreB: 0,

@@ -671,16 +671,6 @@ const handleShare = async () => {
             <div className={`rounded-full border-2 border-ellGray h-5 w-5 mr-2 ${rental.status === "available" ? "bg-ellGreen" : "bg-ellRed"}`}></div>
             {rental.status === "available" ? "ว่าง" : "ไม่ว่าง"}
           </div>
-          {/* {isEditing && (
-          <div className='flex flex-row gap-1'>
-            <button className={`font-prompt text-ellPrimary text-lg cursor-pointer rounded h-9 w-9 border-2 border-ellGray hover:border-ellPrimary flex items-center justify-center hover:scale-102 active:scale-97 ${currentImage === '2' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
-              onClick={() => setCurrentImage("2")}>2</button>
-            <button className={`font-prompt text-ellPrimary text-lg cursor-pointer rounded h-9 w-9 border-2 border-ellGray hover:border-ellPrimary flex items-center justify-center hover:scale-102 active:scale-97 ${currentImage === '3' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
-              onClick={() => setCurrentImage("3")}>3</button>
-            <button className={`font-prompt text-ellPrimary text-lg cursor-pointer rounded h-9 w-9 border-2 border-ellGray hover:border-ellPrimary flex items-center justify-center hover:scale-102 active:scale-97 ${currentImage === '4' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
-              onClick={() => setCurrentImage("4")}>4</button>
-          </div>
-          )} */}
           <div className="relative flex justify-end w-30">
             <button className={`flex justify-center rounded-sm px-1 font-prompt text-ellSecondary text-md md:text-lg bg-ellBlack h-8 cursor-pointer ${showTagBox && "pointer-events-none"}`}
               onClick={() => setShowTagBox(prev => !prev)}>
@@ -1186,6 +1176,15 @@ const handleShare = async () => {
               </div>
             ))}
           </div>
+                          {/* <textarea
+                  placeholder="กรุณากรอกที่อยู่ตาม Google Maps"
+                  maxLength={144}
+                  value={rentalLocate}
+                  onChange={(e) => setRentalLocate(e.target.value)}
+                  className="mt-2 border-2 border-ellGray rounded-md px-2 py-0.5 h-full xl:w-110 md:w-full w-full font-prompt text-ellPrimary text-sm md:text-lg resize-none"
+                  required
+                /> */}
+
           <div className='flex xl:flex-row flex-col-reverse w-full xl:w-4xl mb-4 mt-4 md:mt-auto xl:mt-auto self-center '>
             {!isEditing &&
               <div className="bg-ellWhite xl:h-20 h-22 w-full md:w-full xl:w-xl flex flex-row items-center justify-start rounded-xl border-2 border-ConstantGray p-2">
