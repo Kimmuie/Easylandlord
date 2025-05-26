@@ -75,7 +75,7 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
             const docSnap = await getDoc(userDocRef);
             
             const userData = docSnap.data()
-            const rentalCount = userData.rental ? userData.rental.length : 0;
+            const rentalCount = userData.rental.length > 0 ? userData.rental.length : 0;
             const timestamp = Timestamp.now();
             const date = timestamp.toDate();
             const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
@@ -99,7 +99,11 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                 tenantName: "",
                 tenantNumber: "",
                 dueDate: "",
+                fileName: "",
+                fileLink: "",
                 billDeposit: "",
+                areaUnitB: "ตร.ม",
+                areaUnit: "ตร.ม",
                 createdAt: formattedDate,
                 tenantImage: "",
                 rentalImage1: "",

@@ -8,6 +8,7 @@ import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/themes/material_blue.css";
 import { Thai } from "flatpickr/dist/l10n/th.js";
 import {formatToThaiBuddhist, formatForStorage, formatIsoToThaiBuddhist, flatpickrThaiBuddhistFormatter} from "../components/dateUtils"
+import Adbanner from '../components/Adbanner';
 
   const Finance = () => {
   const { theme, icons } = useContext(ThemeContext);
@@ -361,7 +362,14 @@ useEffect(() => {
         <img src={icons.edit} width="40" height="40" alt="edit" />
       </button>
     </div>
-      )}
+      )}    
+<div className='flex flex-row justify-between w-full'>
+  <div className='xl:fixed relative w-50 h-full justify-center hidden xl:flex'>
+    <Adbanner 
+      dataAdSlot="2654056216"
+      dataAdFormat="auto"
+    />
+  </div>
     <div className='flex justify-center w-full h-full'>
         <div className="flex flex-col w-4xl h-full xl:pb-5 pb-22">
           {/* Table */}
@@ -582,8 +590,15 @@ useEffect(() => {
               )}
             </tbody>
           </table>
+           <div className="w-full flex justify-center xl:hidden mt-6">
+            <Adbanner
+              dataAdSlot="2654056216"
+              dataAdFormat="horizontal"
+            />
+          </div>
         </div>
       </div>
+  </div>
     </>
   );
 };

@@ -9,6 +9,10 @@ import UploadImage from '../components/uploadImage';
 import html2canvas from "html2canvas";
 import { useAuth } from '../contexts/AuthContext'; 
 import ExtendImage from '../components/extendImage';
+import Flatpickr from "react-flatpickr";
+import "flatpickr/dist/themes/material_blue.css";
+import { Thai } from "flatpickr/dist/l10n/th.js";
+import {formatToThaiBuddhist, formatForStorage, formatIsoToThaiBuddhist, flatpickrThaiBuddhistFormatter} from "../components/dateUtils"
 
 const RentalDetail = () => {
   const { currentUser } = useAuth();
@@ -36,10 +40,9 @@ const RentalDetail = () => {
   const [numberTenant, setNumberTenant] = useState('');
   const [fileName, setFileName] = useState('');
   const [fileLink, setFileLink] = useState('');
-  const [tempoDate, setTempoDate] = useState('');
   const [sentDelete, setSentDelete] = useState('');
   const [checkDate, setCheckDate] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  const [dueDateR, setDueDate] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [showTagBox, setShowTagBox] = useState(false);
   const [showFrequencyBox, setShowFrequencyBox] = useState(false);
@@ -372,7 +375,24 @@ const handleShare = async () => {
 
           if (userData.rental) {
             const updatedRentals = userData.rental.map(r =>
-              r.id === rentalId ? { ...r, name: rentalName, location: rentalLocate, rentFee: rentalFee, bedroom: rentalBedroom, restroom: rentalRestroom, squareMetreB: rentalAreaB, squareMetre: rentalArea, electricNumber: electricUser, waterNumber: waterUser, tenantName: nameTenant, tenantNumber: numberTenant, fileName: fileName, fileLink: fileLink, dueDate: tempoDate, rentFrequency: selectedFrequency, areaUnitB: selectedAreaB, areaUnit: selectedArea,
+              r.id === rentalId ? { ...r, 
+              name: rentalName, 
+              location: rentalLocate, 
+              rentFee: rentalFee, 
+              bedroom: rentalBedroom, 
+              restroom: rentalRestroom, 
+              squareMetreB: rentalAreaB, 
+              squareMetre: rentalArea, 
+              electricNumber: electricUser, 
+              waterNumber: waterUser, 
+              tenantName: nameTenant, 
+              tenantNumber: numberTenant, 
+              fileName: fileName, 
+              fileLink: fileLink, 
+              dueDate: dueDateR, 
+              rentFrequency: selectedFrequency, 
+              areaUnitB: selectedAreaB, 
+              areaUnit: selectedArea,
               tenantImage: uploadedTenantImage ?? tenantIconImage,
               rentalImage1: uploadedRentalImage1 ?? rentalImage1,
               rentalImage2: uploadedRentalImage2 ?? rentalImage2,
@@ -381,7 +401,7 @@ const handleShare = async () => {
             } : r
             );
             await updateDoc(userDocRef, {
-              rental: updatedRentals
+              rental: updatedRentals 
             });
 
             setRental(prevRental => ({
@@ -399,7 +419,7 @@ const handleShare = async () => {
               tenantNumber: numberTenant,
               fileName: fileName,
               fileLink: fileLink,
-              dueDate: tempoDate,
+              dueDate: dueDateR,
               rentFrequency: selectedFrequency,
               areaUnitB: selectedAreaB,
               areaUnit: selectedArea,
@@ -590,21 +610,17 @@ const handleShare = async () => {
     สระว่ายน้ำ: { id: 12, name: "สระว่ายน้ำ", icon: iconPool },
   }
 
-  function toDisplayDate(isoStr) {
-    if (!isoStr) return "";
-    const [year, month, day] = isoStr.split('-');
-    return `${day}/${month}/${year}`;
-  }
 
-  const handleDateChange = (e) => {
-    const isoDate = e.target.value;
-    setTempoDate(isoDate);
+  const handleDateChange = (date) => {
+    let value = '';
     
-    if (isoDate) {
-      setDueDate(toDisplayDate(isoDate));
-    } else {
-      setDueDate("");
+    if (date instanceof Date) {
+      value = formatForStorage(date);
+    } else if (typeof date === 'string') {
+      value = date;
     }
+    setDueDate(value);
+    console.log(dueDateR)
   };
 
   const rentalDetail = Object.entries(rental.propertyDetails)
@@ -1213,17 +1229,30 @@ const handleShare = async () => {
                       <span className='text-ellPrimary font-prompt text-md font-semibold items-center py-2'>วันครบกำหนด</span>
                       {isEditing ? (
                       <>
-                      <input
+                      {/* <input
                         type="date"
                         name="dueDate"
                         maxLength={12}
                         value={tempoDate || dueDate}
                         onChange={handleDateChange}
                         className="xl:block md:flex flex justify-center focus:outline-none text-center rounded-br-lg px-2 py-2 w-full border-t-2 border-t-ConstantGray font-prompt font-medium text-ellPrimary text-sm"
-                      />
+                      /> */}
+                        <Flatpickr
+                          options={{
+                            locale: Thai,
+                            dateFormat: "d/m/Y",
+                            altInput: true,
+                            altFormat: "j M Y",
+                            formatDate: flatpickrThaiBuddhistFormatter
+                          }}
+                          placeholder="วัน/เดือน/ปี"
+                          value={dueDateR ? new Date(dueDateR) : undefined}
+                          onChange={([date]) => {handleDateChange(date);}}
+                          className="xl:block md:flex flex justify-center focus:outline-none text-center rounded-br-lg px-2 py-2 w-full border-t-2 border-t-ConstantGray font-prompt font-medium text-ellPrimary text-sm"
+                        />
                       </>
                     ):(
-                      <span className='text-ellPrimary font-prompt text-sm font-semibold border-t-2 border-t-ConstantGray w-full text-center py-2'>{toDisplayDate(dueDate).trim() === "" ? "-" : toDisplayDate(dueDate)}</span>
+                      <span className='text-ellPrimary font-prompt text-sm font-semibold border-t-2 border-t-ConstantGray w-full text-center py-2'>{formatIsoToThaiBuddhist(dueDateR) || "-"}</span>
                     )}
                   </div>
                 </div>

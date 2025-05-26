@@ -38,13 +38,6 @@ useEffect(() => {
   if (Array.isArray(records)) {
     let sortedRecs;
     
-    console.log('Reordering records:', {
-      recordsCount: records.length,
-      customOrderLength: customOrder.length,
-      manuallyReordered,
-      isSort
-    });
-    
     if (customOrder.length > 0 && manuallyReordered) {
       sortedRecs = [...records].sort((a, b) => {
         const indexA = customOrder.indexOf(a.id);
@@ -69,7 +62,6 @@ useEffect(() => {
       });
     }
     
-    console.log('Final sorted records:', sortedRecs.map(r => r.id));
     setOrderedRecords(sortedRecs);
   }
 }, [records, isSort, manuallyReordered, customOrder]);
@@ -284,7 +276,6 @@ const handleFinance = async () => {
           newRecord.id === existingRecord.id
         );
         if (existingRecord.edited === true) {
-            console.log(`Skipping update for record ${existingRecord.id} - already edited`);
             return existingRecord;
           }
         if (matchingNewRecord) {

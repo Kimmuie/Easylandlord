@@ -6,6 +6,7 @@ import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../components/firebase';
 import { useAuth } from '../contexts/AuthContext'; 
 import Adbanner from '../components/Adbanner';
+
 const Management = () => {
   const { currentUser } = useAuth();
   const { theme, icons } = useContext(ThemeContext);
@@ -114,14 +115,14 @@ useEffect(() => {
 
   return (
     <>
-    <div className='flex flex-row justify-between'>
-      <div className='bg-ellRed w-50 h-50 z-50'>
-        <Adbanner 
-          // data-ad-slot="2654056216"
-          // data-ad-format="auto"
-        />
-      </div>
-        <div className="w-full h-fit bg-ellWhite flex items-center flex-col">
+    <div className='flex flex-row justify-between w-full'>
+        <div className='xl:fixed w-50 h-full justify-center hidden xl:flex'>
+          <Adbanner 
+            dataAdSlot="2654056216"
+            dataAdFormat="auto"
+          />
+        </div>
+        <div className=" w-full h-fit bg-ellWhite flex items-center flex-col">
           <ManagementBar
             currentFilter={currentFilter} 
             handleFilterChange={handleFilterChange} 
@@ -144,6 +145,12 @@ useEffect(() => {
             />
           ))
         )}
+          <div className="w-full flex justify-center xl:hidden">
+            <Adbanner
+              dataAdSlot="2654056216"
+              dataAdFormat="horizontal"
+            />
+          </div>
         </div>
       </div>
     </>

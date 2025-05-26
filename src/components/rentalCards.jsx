@@ -1,21 +1,67 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import ThemeContext from "../contexts/ThemeContext";
-import { useNavigate } from 'react-router-dom';
+import { db } from '../components/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext'; 
+import { useParams, useNavigate } from 'react-router-dom';
 
-const RentalCards = ({ rental, updateRental }) => {
+const RentalCards = ({ rental }) => {
+  const { currentUser } = useAuth();
+  const { rentalId } = useParams();
     const navigate = useNavigate();
     const { theme, icons } = useContext(ThemeContext);
-    const [name, setName] = useState(rental.name);
-    const [status, setStatus] = useState(rental.status);
+    const [records, setRecords] = useState([]);
+    const [depositLeft, setDepositLeft] = useState(0);
+    const [totalDeposit, setTotalDeposit] = useState(0);
 
     const handleDetailClick = () => {
         navigate(`/management/${rental.id}`);
       };
 
-    const handleSave = () => {
-        updateRental(rental.id, { name, status, propertyDetails, rentFee, rentFrequency });
-        setIsEditing(false);
-      };
+    useEffect(() => {
+        fetchRecords();
+    }, []);
+
+    const calculateTotalDeposit = (financialRecords) => {
+        const depositSum = financialRecords
+            .filter(record => record.transactionCode && record.transactionCode.includes("ค่ามัดจำ"))
+            .reduce((sum, record) => {
+                // Convert rentalRate to number, handle both string and number formats
+                const rate = typeof record.rentalRate === 'string' 
+                    ? parseFloat(record.rentalRate.replace(/,/g, ''))
+                    : parseFloat(record.rentalRate) || 0;
+                return sum + rate;
+            }, 0);
+        
+        return depositSum;
+    };
+
+const fetchRecords = async () => {
+    try {
+        const userDocRef = doc(db, "users", currentUser.email);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.rental) {
+                if (rental.financialHistory) {
+                    const depositTotal = calculateTotalDeposit(rental.financialHistory);
+                    setTotalDeposit(depositTotal);
+                    console.log(`Total deposit amount: ${depositTotal}`);
+                } else {
+                    console.log(`Rental with ID ${rental} not found or has no financial history`);
+                    setTotalDeposit(0);
+                }
+            }
+        } else {
+            console.log("User document does not exist");
+            setTotalDeposit(0);
+        }
+    } catch (error) {
+        console.error("Error fetching records:", error);
+        setTotalDeposit(0);
+    }
+};
 
   return (
     <div className="relative w-96 xl:w-4xl md:w-3xl mb-6 flex flex-col">
@@ -46,6 +92,12 @@ const RentalCards = ({ rental, updateRental }) => {
                     <div className="flex flex-row items-center font-prompt text-ellPrimary text-lg">
                         <div className={`rounded-full border-2 border-ellGray h-5 w-5 mr-2 ${rental.status === "available" ? "bg-ellGreen" : "bg-ellRed"}`}></div>
                         {rental.status === "available" ? "ว่าง" : "ไม่ว่าง"}
+                        {rental.status === "unavailable" && 
+                        <div className="font-prompt text-ellPrimary text-lg ml-12">
+                            มัดจำคงเหลือ 
+                            <span className={`ml-2 ${totalDeposit.toLocaleString() >= rental.billDeposit ? "text-ellGreen" : "text-ellRed"} `}>{totalDeposit.toLocaleString()}/{rental.billDeposit || "0"}</span>
+                        </div>
+                        }
                     </div>
                 </div>
                 <div className="flex flex-col items-center justify-end pr-3 pb-1">

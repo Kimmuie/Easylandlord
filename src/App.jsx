@@ -370,8 +370,8 @@ const AppContent = () => {
     <>
       <LoadingScreen />
       <Navbar />
-      <div className="navbar-container">
       <Adsense pId={import.meta.env.VITE_PUBID} />
+      <div className="navbar-container">
         <Routes>
           <Route path="/" element={<Management />} />
           <Route path="/management" element={<Management />} />

@@ -1,40 +1,59 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react';
 
-const Adbanner = () => {
+const Adbanner = ({ 
+  dataAdSlot = "2654056216", 
+  dataAdFormat = "auto",
+  dataAdClient = "ca-pub-5656951196117843",
+  style = { display: "block", backgroundColor: "#f0f0f0" }
+}) => {
   const adRef = useRef(null);
+  const hasTriedToLoad = useRef(false);
 
-    useEffect(() => {
-    if (window.adsbygoogle && adRef.current) {
+  useEffect(() => {
+    const loadAd = () => {
+      if (window.adsbygoogle && adRef.current && !hasTriedToLoad.current) {
         try {
-        window.adsbygoogle.push({});
+          hasTriedToLoad.current = true;
+          console.log("Pushing ad to AdSense"); // Debug log
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
         } catch (e) {
-        console.error("Ad push failed", e);
+          console.error("AdSense ad failed to load:", e);
+          hasTriedToLoad.current = false;
         }
-    }
-    }, []);
-    
-useEffect(() => {
-  if (!window.adsbygoogle) {
-    const script = document.createElement("script");
-    script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
-    script.async = true;
-    script.setAttribute("data-ad-client", "ca-pub-5656951196117843");
-    document.head.appendChild(script);
-  }
-}, []);
+      } else if (!window.adsbygoogle) {
+        console.log("AdSense not loaded yet, waiting..."); // Debug log
+      }
+    };
 
+    // Try to load ad immediately if script is ready
+    if (window.adsbygoogle) {
+      loadAd();
+    }
+
+    // Also try after a delay to ensure script is fully loaded
+    const timer = setTimeout(() => {
+      loadAd();
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <ins
+    <div style={{ border: "1px dashed #ccc", padding: "10px" }}>
+      <div style={{ fontSize: "12px", color: "#888", marginBottom: "5px" }}>
+        AdSense Ad Slot: {dataAdSlot}
+      </div>
+      <ins
         className="adsbygoogle"
-        style={{ display: "block" }}
-        data-ad-client="ca-pub-5656951196117843"
-        data-ad-slot="2654056216"
-        data-ad-format="auto"
-        data-full-width-responsive="true"
+        style={style}
+        data-ad-client={dataAdClient}
+        data-ad-slot={dataAdSlot}
+        data-ad-format={dataAdFormat}
+        data-full-width-responsive="false"
         ref={adRef}
-    ></ins>
-  )
-}
+      />
+    </div>
+  );
+};
 
-export default Adbanner
+export default Adbanner;
