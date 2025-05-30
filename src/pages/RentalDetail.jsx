@@ -26,6 +26,7 @@ const RentalDetail = () => {
   const [showAlertBackEdit, setShowAlertBackEdit] = useState(false);
   const [rentalName, setRentalName] = useState('');
   const [rentalLocate, setRentalLocate] = useState('');
+  const [rentalMessage, setRentalMessage] = useState('');
   const [rentalFee, setRentalFee] = useState('');
   const [rentalBedroom, setRentalBedroom] = useState(0);
   const [rentalRestroom, setRentalRestroom] = useState(0);
@@ -344,7 +345,8 @@ const handleShare = async () => {
             const updatedRentals = userData.rental.map(r =>
               r.id === rentalId ? { ...r, 
               name: rentalName, 
-              location: rentalLocate, 
+              location: rentalLocate,
+              message: rentalMessage, 
               rentFee: rentalFee, 
               bedroom: rentalBedroom, 
               restroom: rentalRestroom, 
@@ -371,6 +373,7 @@ const handleShare = async () => {
               ...prevRental,
               name: rentalName,
               location: rentalLocate,
+              message: rentalMessage, 
               rentFee: rentalFee,
               bedroom: rentalBedroom,
               restroom: rentalRestroom,
@@ -453,6 +456,7 @@ const handleShare = async () => {
             setRental(currentRental);
             setRentalName(currentRental.name);
             setRentalLocate(currentRental.location);
+            setRentalMessage(currentRental.message);
             setRentalFee(currentRental.rentFee);
             setRentalBedroom(currentRental.bedroom);
             setRentalRestroom(currentRental.restroom);
@@ -1159,7 +1163,7 @@ const handleShare = async () => {
               </>
             }
           </div>
-          <div className="grid xl:grid-cols-3 md:grid-cols-4 grid-cols-6 w-full min-h-27 [writing-mode:vertical-lr]">
+          <div className="grid xl:grid-cols-3 md:grid-cols-4 grid-cols-6 w-full  [writing-mode:vertical-lr]">
             {rentalDetail.map((item) => (
               <div
                 key={item.id}
@@ -1176,27 +1180,31 @@ const handleShare = async () => {
               </div>
             ))}
           </div>
-                          {/* <textarea
-                  placeholder="กรุณากรอกที่อยู่ตาม Google Maps"
-                  maxLength={144}
-                  value={rentalLocate}
-                  onChange={(e) => setRentalLocate(e.target.value)}
-                  className="mt-2 border-2 border-ellGray rounded-md px-2 py-0.5 h-full xl:w-110 md:w-full w-full font-prompt text-ellPrimary text-sm md:text-lg resize-none"
-                  required
-                /> */}
-
+          {isEditing ? (
+          <textarea
+            placeholder={`กรอกรายละเอียด${rental.tag === 'ไม่ได้ระบุแท็ก' ? '' : rental.tag}`}
+            value={rentalMessage}
+            onChange={(e) => setRentalMessage(e.target.value)}
+            className="mt-2 border-2 border-ellGray rounded-md px-2 py-0.5 min-h-27 xl:w-full md:w-full w-full font-prompt text-ellPrimary text-sm md:text-lg resize-none"
+            required
+          />
+          ):(              
+            <div className={`font-prompt text-ellPrimary text-sm md:text-lg my-2 w-100 md:w-4xl xl:w-full break-all ${rentalDetail.length === 0 ? "min-h-27" : ""}`}>
+              {rental.message}
+            </div>
+          )}
           <div className='flex xl:flex-row flex-col-reverse w-full xl:w-4xl mb-4 mt-4 md:mt-auto xl:mt-auto self-center '>
             {!isEditing &&
               <div className="bg-ellWhite xl:h-20 h-22 w-full md:w-full xl:w-xl flex flex-row items-center justify-start rounded-xl border-2 border-ConstantGray p-2">
                 <img src={userIconImage || "/img/iconSubstitute.png"} alt="icon" className="w-16 h-16 object-cover border-2 border-ellPrimary rounded-full ml-3" />
                 <div className='flex flex-col ml-3'>
-                  <div className="flex justify-center font-prompt text-ellLime bg-ellGreen rounded-2xl px-4 py-0.75 text-xs">เจ้าของ{rental.tag}</div>
+                  <div className="flex justify-center font-prompt text-ellLime bg-ellGreen rounded-2xl px-4 py-0.75 text-xs">เจ้าของ{rental.tag === 'ไม่ได้ระบุแท็ก' ? '' : rental.tag}</div>
                   <span className='text-ellPrimary font-prompt text-md font-semibold'>{name}</span>
                   <span className='text-ellPrimary font-prompt opacity-80 text-sm'>{number}</span>
                 </div>
               </div>
             }
-            <div className={`w-full md:w-full flex flex-row justify-between gap-2 xl:pl-2 pl-0 xl:pb-0 pb-2 ${isEditing ? "xl:flex-row xl:w-full" : "xl:flex-col xl:w-xl"}`}>
+            <div className={`w-full md:w-full flex flex-row justify-between gap-2 xl:pb-0 pb-2 mt-2 ${isEditing ? "xl:flex-row xl:w-full xl:pl-0 pl-0" : "xl:flex-col xl:w-xl xl:pl-2 pl-0"}`}>
               <button className="w-full xl:h-8.5 h-8 flex items-center justify-between font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray active:bg-ellDarkGray rounded-md text-md font-semibold cursor-pointer px-2"
                     onClick={() => updateRentalField({ tenant: true, status: "unavailable" })}>
                 <div className="flex items-center w-full">
