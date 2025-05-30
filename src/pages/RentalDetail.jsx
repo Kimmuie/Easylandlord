@@ -3,7 +3,7 @@ import ThemeContext from "../contexts/ThemeContext";
 import { useParams, useNavigate } from 'react-router-dom';
 import Alert from '../components/Alert';
 import FinancialHistory from '../components/financialHistory';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, Timestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../components/firebase';
 import UploadImage from '../components/uploadImage';
 import html2canvas from "html2canvas";
@@ -307,27 +307,25 @@ const RentalDetail = () => {
   };
 
 const handleShare = async () => {
-  const element = document.getElementById('capture-area'); 
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
-  const canvas = await html2canvas(element, {
-    useCORS: true, 
-    scale: 2,      
-    backgroundColor: null
+  const docRef = await addDoc(collection(db, 'sharedRentals'), {
+    rental,
+    name,
+    number,
+    userIconImage,
+    createdAt: Timestamp.now(),
   });
 
-  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  const shareUrl = `${window.location.origin}/shareRental/${docRef.id}`;
 
-  const file = new File([blob], rental.name + ".png", { type: 'image/png' });
-
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+  if (navigator.share) {
     await navigator.share({
-      title: 'Shared from my website',
-      text: 'Check this out!',
-      files: [file]
+      title: 'Shared Rental',
+      text: 'ดูรายละเอียดเช่าที่นี่',
+      url: shareUrl
     });
   } else {
-    alert('Sharing not supported on this device');
+    navigator.clipboard.writeText(shareUrl);
+    alert('แชร์ลิงก์ให้เพื่อน: ' + shareUrl);
   }
 };
 
@@ -1204,7 +1202,7 @@ const handleShare = async () => {
                 </div>
               </div>
             }
-            <div className={`w-full md:w-full flex flex-row justify-between gap-2 xl:pb-0 pb-2 mt-2 ${isEditing ? "xl:flex-row xl:w-full xl:pl-0 pl-0" : "xl:flex-col xl:w-xl xl:pl-2 pl-0"}`}>
+            <div className={`w-full md:w-full flex flex-row justify-between gap-2 xl:pb-0 pb-2 ${isEditing ? "xl:flex-row xl:w-full xl:pl-0 pl-0" : "xl:flex-col xl:w-xl xl:pl-2 pl-0"}`}>
               <button className="w-full xl:h-8.5 h-8 flex items-center justify-between font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray active:bg-ellDarkGray rounded-md text-md font-semibold cursor-pointer px-2"
                     onClick={() => updateRentalField({ tenant: true, status: "unavailable" })}>
                 <div className="flex items-center w-full">

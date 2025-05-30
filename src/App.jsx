@@ -7,6 +7,7 @@ import Financial from "./pages/Financial";
 import GoogleMap from "./pages/Map";
 import Account from "./pages/Account";
 import RentalDetail from "./pages/RentalDetail";
+import ShareRental from "./pages/ShareRental";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../src/components/firebase';
@@ -16,7 +17,7 @@ import Adsense from "./components/Adsense";
 const AppContent = () => {
   const { currentUser } = useAuth();
   const location = useLocation();
-  const isRentalDetailPage = /^\/management\/[^/]+$/.test(location.pathname);
+  const isShareRentalPage = /^\/shareRental\/[^/]+$/.test(location.pathname);
   const { rentalId } = useParams();
   const [records, setRecords] = useState([]);
 
@@ -145,7 +146,7 @@ const AppContent = () => {
                 id: notificationId,
                 date: formattedDate,
                 rawDate: now.toISOString(),
-                image: rental.rentalImage0 || "",
+                image: rental.coverRental || rental.rentalImage0 || "",
                 header: rental.name || `Rental ${rental.id}`,
                 description: description,
                 readed: false,
@@ -176,7 +177,7 @@ const AppContent = () => {
                 id: notificationId,
                 date: formattedDate,
                 rawDate: now.toISOString(),
-                image: rental.rentalImage0 || "",
+                image: rental.coverRental || rental.rentalImage0 || "",
                 header: rental.name || `Rental ${rental.id}`,
                 description: description,
                 readed: false,
@@ -217,7 +218,7 @@ const AppContent = () => {
                     id: notificationId,
                     date: formattedDate,
                     rawDate: now.toISOString(),
-                    image: rental.rentalImage0 || "",
+                    image: rental.coverRental || rental.rentalImage0 || "",
                     header: rental.name || `Rental ${rental.id}`,
                     description: description,
                     readed: false,
@@ -298,7 +299,7 @@ const AppContent = () => {
                     id: notificationId,
                     date: formattedDate,
                     rawDate: now.toISOString(),
-                    image: rental.rentalImage0 || "",
+                    image: rental.coverRental || rental.rentalImage0 || "",
                     header: rental.name || `Rental ${rental.id}`,
                     description: description,
                     readed: false,
@@ -331,7 +332,7 @@ const AppContent = () => {
                     id: notificationId,
                     date: formattedDate,
                     rawDate: now.toISOString(),
-                    image: rental.rentalImage0|| "",
+                    image: rental.coverRental || rental.rentalImage0|| "",
                     header: rental.name || `Rental ${rental.id}`,
                     description: description,
                     readed: false,
@@ -369,9 +370,12 @@ const AppContent = () => {
   return (
     <>
       <LoadingScreen />
-      <Navbar />
       <Adsense pId={import.meta.env.VITE_PUBID} />
-      <div className="navbar-container">
+      {!isShareRentalPage && <Navbar />}
+      <div
+        className="navbar-container"
+        style={{ height: isShareRentalPage ? "100%" : "calc(100% - 64px)" }}
+      >
         <Routes>
           <Route path="/" element={<Management />} />
           <Route path="/management" element={<Management />} />
@@ -379,6 +383,7 @@ const AppContent = () => {
           <Route path="/financial" element={<Financial />} />
           <Route path="/map" element={<GoogleMap />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/shareRental/:id" element={<ShareRental />} />
         </Routes>
       </div>
     </>
