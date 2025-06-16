@@ -103,11 +103,11 @@ html, body, #root {
   }
 }
 .TooltipMain:hover .Tooltip {
-  visibility: visible;
+  display: flex;
 }
 
 .Tooltip {
-  visibility: hidden;
+  display: none;
 }
 
 

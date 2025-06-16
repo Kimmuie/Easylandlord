@@ -628,8 +628,8 @@ const handleShare = async () => {
         />
       )}
       {isEditing && (
-        <div className="TooltipMain fixed bottom-44 right-4 flex flex-col items-center justify-center z-50">
-          <div className="flex text-center w-22 justify-center bg-ellRed p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">ลบอสังหฯ</div>
+        <div className="TooltipMain fixed bottom-44 right-7 hover:right-4 flex flex-col items-center justify-center z-50">
+          <div className="text-center w-22 justify-center bg-ellRed p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">ลบอสังหฯ</div>
           <div className="absolute mb-14 w-4 h-4 bg-ellRed rotate-45 z-10 Tooltip"></div>
           <button className="relative rounded-full bg-ellRed flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
             onClick={() => setShowAlertDelete(true)}>
@@ -637,8 +637,8 @@ const handleShare = async () => {
           </button>
         </div>
       )}
-        <div className="TooltipMain fixed bottom-24 right-4 flex flex-col items-center justify-center z-50">
-          <div className="flex text-center w-22 justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">ไม่ตรวจเช็ค<br/>มาแล้ว  {daysSinceLastCheck} วัน</div>
+        <div className="TooltipMain fixed bottom-24 right-7 hover:right-4 flex flex-col items-center justify-center z-50">
+          <div className="text-center w-22 justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">ไม่ตรวจเช็ค<br/>มาแล้ว  {daysSinceLastCheck} วัน</div>
           <div className="absolute mb-9 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
           <button className="relative rounded-full bg-ellBlack flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
             onClick={handleCheck}>
@@ -646,8 +646,8 @@ const handleShare = async () => {
           </button>
         </div>
       {isEditing ? (
-        <div className="TooltipMain fixed bottom-4 right-4 flex flex-col items-center justify-center z-50">
-          <div className="flex text-center w-22 justify-center bg-ellGreen p-1 mb-2 rounded-lg font-prompt text-[#F7F7F7] text-sm z-20 Tooltip">บันทึก</div>
+        <div className="TooltipMain fixed bottom-4 right-7 hover:right-4 flex flex-col items-center justify-center z-50">
+          <div className="text-center w-22 justify-center bg-ellGreen p-1 mb-2 rounded-lg font-prompt text-[#F7F7F7] text-sm z-20 Tooltip">บันทึก</div>
           <div className="absolute mb-14 w-4 h-4 bg-ellGreen rotate-45 z-10 Tooltip"></div>
           <button className="relative rounded-full bg-ellGreen flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
             onClick={handleSave}>
@@ -655,8 +655,8 @@ const handleShare = async () => {
           </button>
         </div>
       ) : (
-        <div className="TooltipMain fixed bottom-4 right-4 flex flex-col items-center justify-center z-50">
-          <div className="flex text-center w-22 justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip border-t-2 border-x-2 border-ellWhite">แก้ไข</div>
+        <div className="TooltipMain fixed bottom-4 right-7 hover:right-4 flex flex-col items-center justify-center z-50">
+          <div className="text-center w-22 justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip border-t-2 border-x-2 border-ellWhite">แก้ไข</div>
           <div className="absolute mb-14 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
           <button className="relative rounded-full bg-ellBlack flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
             onClick={() => {

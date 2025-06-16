@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import ThemeContext from "../contexts/ThemeContext";
 import { db } from '../components/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext'; 
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -14,9 +14,42 @@ const RentalCards = ({ rental }) => {
     const [depositLeft, setDepositLeft] = useState(0);
     const [totalDeposit, setTotalDeposit] = useState(0);
 
-    const handleDetailClick = () => {
-        navigate(`/management/${rental.id}`);
-      };
+    const handleDetailClick = async () => {
+        try {
+            if (!currentUser) {
+                console.error("User not logged in");
+                return;
+            }
+            
+            const userDocRef = doc(db, "users", currentUser.email);
+            const docSnap = await getDoc(userDocRef);
+            const userData = docSnap.data();
+            
+            // Find the highest current index
+            const maxIndex = Math.max(...userData.rental.map(r => r.index));
+            
+            // Update the rental array - set clicked rental to highest index + 1
+            const updatedRentals = userData.rental.map(r => {
+                if (r.id === rental.id) {
+                    return { ...r, index: maxIndex + 1 };
+                }
+                return r;
+            });
+            
+            // Update Firestore
+            await updateDoc(userDocRef, {
+                rental: updatedRentals
+            });
+            
+            // Navigate to the detail page
+            navigate(`/management/${rental.id}`);
+            
+        } catch (error) {
+            console.error("Error updating rental index:", error);
+            // Still navigate even if update fails
+            navigate(`/management/${rental.id}`);
+        }
+    };
 
     useEffect(() => {
         fetchRecords();

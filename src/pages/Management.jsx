@@ -84,6 +84,7 @@ useEffect(() => {
             return selectedTags.includes(rental.tag);
         });
     }
+    result.sort((a, b) => b.index - a.index);
     console.log("filteredRentals (before setting state):", result);
     setFilteredRentals(result);
 }, [currentFilter, rentals, selectedTags, searchName]);

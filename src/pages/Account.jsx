@@ -20,6 +20,7 @@ const Account = () => {
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
   const [iconImage, setIconImage] = useState("");
+  const [rental, setRental] = useState([]);
   const [showAlert, setShowAlert] = useState(false);
   const [uploadedImage, setUploadedImage] = useState("");
   const { theme: currentTheme, changeTheme, icons } = useTheme();
@@ -36,6 +37,7 @@ const Account = () => {
             setName(data.name || '');
             setNumber(data.number || '');
             setIconImage(data.profileImage);
+            setRental(data.rental || []);
             if (data.theme) {
               changeTheme(data.theme);
             }
@@ -61,6 +63,7 @@ const Account = () => {
         setShowAlert(false);
       })
       .catch((error) => console.error("Logout Failed", error));
+      setShowAlert(false)
   };
 
   const handleImageUpload = (url) => {
@@ -76,9 +79,10 @@ const Account = () => {
           number,
           theme: currentTheme,
           profileImage: uploadedImage || iconImage,
+          rental: rental,
         }, { merge: true });
         
-        console.log("Profile saved:", name, number, currentTheme, uploadedImage);
+        console.log("Profile saved:", name, number, rental, currentTheme, uploadedImage);
         setIsEditing(false);
       } catch (error) {
         console.error("Error updating profile:", error);
