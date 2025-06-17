@@ -440,56 +440,94 @@ const handleFinance = async () => {
 
   // Delete record
   const deleteRecord = async (id) => {
-      try {
-        const userDocRef = doc(db, "users", currentUser.email);
-        const userDoc = await getDoc(userDocRef);
-        
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          
-          if (userData.rental) {
-            const rentalIndex = userData.rental.findIndex(r => r.id === rentalId);
-            if (rentalIndex !== -1 && userData.rental[rentalIndex].financialHistory) {
-              if (id === "all") {
-                userData.rental[rentalIndex].financialHistory = [];
+  try {
+    const userDocRef = doc(db, "users", currentUser.email);
+    const userDoc = await getDoc(userDocRef);
+    
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      
+      if (userData.rental) {
+        const rentalIndex = userData.rental.findIndex(r => r.id === rentalId);
+        if (rentalIndex !== -1 && userData.rental[rentalIndex].financialHistory) {
+          if (id === "all") {
+            // Handle deleting all records
+            userData.rental[rentalIndex].financialHistory = [];
 
-                setDepositBill("");
-                if (rentalIndex !== -1) {
-                  userData.rental[rentalIndex] = {
-                    ...userData.rental[rentalIndex],
-                    billDeposit: "",
-                  };
-                  await updateDoc(userDocRef, { rental: userData.rental });
-                  
-                  setRental(prevRental => ({
-                    ...prevRental,
-                    billDeposit: "",
-                  }));
-                  console.log("All rental details delete successfully");
-                }
-              } else if (rentalIndex !== -1 && userData.rental[rentalIndex].financialHistory) {
-                if (Array.isArray(userData.rental[rentalIndex].financialHistory)) {
-                  userData.rental[rentalIndex].financialHistory = userData.rental[rentalIndex].financialHistory.filter(
-                    record => record.id !== id
-                  );
-                } else {
-                  console.warn("financialHistory is not an array:", userData.rental[rentalIndex].financialHistory);
-                }
-                
-              }
-              await updateDoc(userDocRef, {
-                rental: userData.rental
+            setDepositBill("");
+            if (rentalIndex !== -1) {
+              userData.rental[rentalIndex] = {
+                ...userData.rental[rentalIndex],
+                billDeposit: "",
+              };
+              
+              // Delete all non-edited finance records for this rental
+              const financeData = userData.finance || {};
+              const existingRecords = financeData.allRecords || [];
+              
+              const updatedFinanceRecords = existingRecords.filter(financeRecord => {
+                // Keep the record if it's edited OR if it doesn't belong to this rental
+                return financeRecord.edited === true || financeRecord.rental !== rentalName;
               });
               
-              fetchRecords();
-              setShowAlertDeleteHistory(false)
+              await updateDoc(userDocRef, { 
+                rental: userData.rental,
+                finance: {
+                  ...financeData,
+                  allRecords: updatedFinanceRecords,
+                }
+              });
+              
+              setRental(prevRental => ({
+                ...prevRental,
+                billDeposit: "",
+              }));
+              console.log("All rental details deleted successfully, and non-edited finance records removed");
+            }
+          } else {
+            // Handle deleting single record
+            if (rentalIndex !== -1 && userData.rental[rentalIndex].financialHistory) {
+              if (Array.isArray(userData.rental[rentalIndex].financialHistory)) {
+                userData.rental[rentalIndex].financialHistory = userData.rental[rentalIndex].financialHistory.filter(
+                  record => record.id !== id
+                );
+              } else {
+                console.warn("financialHistory is not an array:", userData.rental[rentalIndex].financialHistory);
+              }
+              
+              // Also delete from finance if edited is false
+              const financeData = userData.finance || {};
+              const existingRecords = financeData.allRecords || [];
+              
+              const updatedFinanceRecords = existingRecords.filter(financeRecord => {
+                // Remove the record if it matches the ID AND is not edited
+                if (financeRecord.id === id && financeRecord.edited === false) {
+                  return false; // Remove this record
+                }
+                return true; // Keep this record
+              });
+              
+              await updateDoc(userDocRef, {
+                rental: userData.rental,
+                finance: {
+                  ...financeData,
+                  allRecords: updatedFinanceRecords,
+                }
+              });
+              
+              console.log(`Record ${id} deleted from rental and finance (if not edited)`);
             }
           }
+          
+          fetchRecords();
+          setShowAlertDeleteHistory(false);
         }
-      } catch (error) {
-        console.error("Error deleting record:", error);
       }
-  };
+    }
+  } catch (error) {
+    console.error("Error deleting record:", error);
+  }
+};
 
   const handleChangeInput = (e, fieldType) => {
     const input = e.target.value.replace(/,/g, '');
