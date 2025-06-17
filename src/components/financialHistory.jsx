@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import ThemeContext from '../contexts/ThemeContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import Alert from '../components/Alert';
@@ -11,6 +11,8 @@ import { Thai } from "flatpickr/dist/l10n/th.js";
 import {formatToThaiBuddhist, formatForStorage, formatIsoToThaiBuddhist, flatpickrThaiBuddhistFormatter} from "../components/dateUtils"
 
 const FinancialHistory = ({ isEditing, setDeleteAll }) => {
+  const [editingStates, setEditingStates] = useState({});
+  const contentEditableRefs = useRef({});
   const [customOrder, setCustomOrder] = useState([]);
   const [manuallyReordered, setManuallyReordered] = useState(false);
   const [orderedRecords, setOrderedRecords] = useState([]);
@@ -34,126 +36,210 @@ const FinancialHistory = ({ isEditing, setDeleteAll }) => {
     rentalNote: ''
   });
 
-useEffect(() => {
-  if (Array.isArray(records)) {
-    let sortedRecs;
-    
-    if (customOrder.length > 0 && manuallyReordered) {
-      sortedRecs = [...records].sort((a, b) => {
-        const indexA = customOrder.indexOf(a.id);
-        const indexB = customOrder.indexOf(b.id);
+  // Improved preserve editing state function
+  const preserveEditingState = () => {
+    const currentStates = {};
+    Object.keys(contentEditableRefs.current).forEach(key => {
+      const element = contentEditableRefs.current[key];
+      if (element) {
+        // Always preserve the current content, whether it's focused or not
+        currentStates[key] = {
+          content: element.innerText || element.textContent || '',
+          isFocused: document.activeElement === element,
+          selection: null
+        };
         
-        if (indexA !== -1 && indexB !== -1) {
-          return indexA - indexB;
+        // If the element is focused, also preserve cursor position
+        if (document.activeElement === element) {
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            currentStates[key].selection = {
+              start: range.startOffset,
+              end: range.endOffset
+            };
+          }
         }
-        
-        if (indexA !== -1) return -1;
-        if (indexB !== -1) return 1;
-        
-        const idA = parseInt(a.id, 10);
-        const idB = parseInt(b.id, 10);
-        return isSort ? idB - idA : idA - idB;
-      });
-    } else {
-      sortedRecs = [...records].sort((a, b) => {
-        const idA = parseInt(a.id, 10);
-        const idB = parseInt(b.id, 10);
-        return isSort ? idB - idA : idA - idB;
-      });
-    }
-    
-    setOrderedRecords(sortedRecs);
-  }
-}, [records, isSort, manuallyReordered, customOrder]);
-
-// Move item up in the list
-const moveItemUp = async (index) => {
-  if (index === 0) return; // Already at the top
-  
-  const items = Array.from(orderedRecords);
-  const temp = items[index];
-  items[index] = items[index - 1];
-  items[index - 1] = temp;
-  
-  setOrderedRecords(items);
-  setManuallyReordered(true);
-  
-  const newCustomOrder = items.map(item => item.id);
-  setCustomOrder(newCustomOrder);
-  
-  await saveCustomOrderToFirebase(newCustomOrder);
-};
-
-// Move item down in the list
-const moveItemDown = async (index) => {
-  if (index === orderedRecords.length - 1) return; // Already at the bottom
-  
-  const items = Array.from(orderedRecords);
-  const temp = items[index];
-  items[index] = items[index + 1];
-  items[index + 1] = temp;
-  
-  setOrderedRecords(items);
-  setManuallyReordered(true);
-  
-  const newCustomOrder = items.map(item => item.id);
-  setCustomOrder(newCustomOrder);
-  
-  await saveCustomOrderToFirebase(newCustomOrder);
-};
-
-// Function to save custom order to Firebase
-const saveCustomOrderToFirebase = async (orderArray) => {
-  if (!currentUser) return;
-  
-  try {
-    const userDocRef = doc(db, "users", currentUser.email);
-    const docSnap = await getDoc(userDocRef);
-    
-    if (docSnap.exists()) {
-      const userData = docSnap.data();
-      
-      // Save the custom order array
-      // You might want to store this under a specific rental property
-      await updateDoc(userDocRef, {
-        [`customOrders.${rentalName}`]: orderArray
-        // Or store it in whatever structure makes sense for your app
-      });
-      
-      console.log("Custom order saved successfully");
-    }
-  } catch (error) {
-    console.error("Error saving custom order:", error);
-  }
-};
-
-// Function to load custom order when component mounts
-const loadCustomOrder = async () => {
-  if (!currentUser) return;
-  
-  try {
-    const userDocRef = doc(db, "users", currentUser.email);
-    const docSnap = await getDoc(userDocRef);
-    
-    if (docSnap.exists()) {
-      const userData = docSnap.data();
-      const savedOrder = userData.customOrders?.[rentalName];
-      
-      if (savedOrder && Array.isArray(savedOrder)) {
-        setCustomOrder(savedOrder);
-        setManuallyReordered(true);
       }
+    });
+    setEditingStates(currentStates);
+    return currentStates;
+  };
+
+  // Improved restore editing state function
+  const restoreEditingState = (states = null) => {
+    const statesToRestore = states || editingStates;
+    
+    // Use multiple timeouts to ensure DOM is fully updated
+    setTimeout(() => {
+      Object.keys(statesToRestore).forEach(key => {
+        const element = contentEditableRefs.current[key];
+        const state = statesToRestore[key];
+        
+        if (element && state) {
+          // Restore content
+          element.innerText = state.content;
+          
+          // Restore focus and cursor position if it was focused
+          if (state.isFocused) {
+            element.focus();
+            
+            if (state.selection && element.firstChild) {
+              try {
+                const range = document.createRange();
+                const selection = window.getSelection();
+                const textNode = element.firstChild;
+                const maxLength = textNode.textContent.length;
+                
+                range.setStart(textNode, Math.min(state.selection.start, maxLength));
+                range.setEnd(textNode, Math.min(state.selection.end, maxLength));
+                
+                selection.removeAllRanges();
+                selection.addRange(range);
+              } catch (error) {
+                console.warn('Could not restore cursor position:', error);
+              }
+            }
+          }
+        }
+      });
+      
+      // Clear the editing states after restoration
+      setEditingStates({});
+    }, 50);
+  };
+
+  useEffect(() => {
+    if (Array.isArray(records)) {
+      let sortedRecs;
+      
+      if (customOrder.length > 0 && manuallyReordered) {
+        sortedRecs = [...records].sort((a, b) => {
+          const indexA = customOrder.indexOf(a.id);
+          const indexB = customOrder.indexOf(b.id);
+          
+          if (indexA !== -1 && indexB !== -1) {
+            return indexA - indexB;
+          }
+          
+          if (indexA !== -1) return -1;
+          if (indexB !== -1) return 1;
+          
+          const idA = parseInt(a.id, 10);
+          const idB = parseInt(b.id, 10);
+          return isSort ? idB - idA : idA - idB;
+        });
+      } else {
+        sortedRecs = [...records].sort((a, b) => {
+          const idA = parseInt(a.id, 10);
+          const idB = parseInt(b.id, 10);
+          return isSort ? idB - idA : idA - idB;
+        });
+      }
+      
+      setOrderedRecords(sortedRecs);
     }
-  } catch (error) {
-    console.error("Error loading custom order:", error);
-  }
-};
+  }, [records, isSort, manuallyReordered, customOrder]);
 
-// Call loadCustomOrder when component mounts
-useEffect(() => {
-  loadCustomOrder();
-}, [currentUser, rentalName]);
+  // Move item up in the list
+  const moveItemUp = async (index) => {
+    if (index === 0) return; // Already at the top
+    
+    // Preserve current editing state before reordering
+    const currentStates = preserveEditingState();
+    
+    const items = Array.from(orderedRecords);
+    const temp = items[index];
+    items[index] = items[index - 1];
+    items[index - 1] = temp;
+    
+    setOrderedRecords(items);
+    setManuallyReordered(true);
+    
+    const newCustomOrder = items.map(item => item.id);
+    setCustomOrder(newCustomOrder);
+    
+    await saveCustomOrderToFirebase(newCustomOrder);
+    
+    // Restore editing state after reordering
+    restoreEditingState(currentStates);
+  };
 
+  // Move item down in the list
+  const moveItemDown = async (index) => {
+    if (index === orderedRecords.length - 1) return; // Already at the bottom
+    
+    // Preserve current editing state before reordering
+    const currentStates = preserveEditingState();
+    
+    const items = Array.from(orderedRecords);
+    const temp = items[index];
+    items[index] = items[index + 1];
+    items[index + 1] = temp;
+    
+    setOrderedRecords(items);
+    setManuallyReordered(true);
+    
+    const newCustomOrder = items.map(item => item.id);
+    setCustomOrder(newCustomOrder);
+    
+    await saveCustomOrderToFirebase(newCustomOrder);
+    
+    // Restore editing state after reordering
+    restoreEditingState(currentStates);
+  };
+
+  // Function to save custom order to Firebase
+  const saveCustomOrderToFirebase = async (orderArray) => {
+    if (!currentUser) return;
+    
+    try {
+      const userDocRef = doc(db, "users", currentUser.email);
+      const docSnap = await getDoc(userDocRef);
+      
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        
+        // Save the custom order array
+        // You might want to store this under a specific rental property
+        await updateDoc(userDocRef, {
+          [`customOrders.${rentalName}`]: orderArray
+          // Or store it in whatever structure makes sense for your app
+        });
+        
+        console.log("Custom order saved successfully");
+      }
+    } catch (error) {
+      console.error("Error saving custom order:", error);
+    }
+  };
+
+  // Function to load custom order when component mounts
+  const loadCustomOrder = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const userDocRef = doc(db, "users", currentUser.email);
+      const docSnap = await getDoc(userDocRef);
+      
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        const savedOrder = userData.customOrders?.[rentalName];
+        
+        if (savedOrder && Array.isArray(savedOrder)) {
+          setCustomOrder(savedOrder);
+          setManuallyReordered(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading custom order:", error);
+    }
+  };
+
+  // Call loadCustomOrder when component mounts
+  useEffect(() => {
+    loadCustomOrder();
+  }, [currentUser, rentalName]);
 
   const handleRecordFieldChange = (date, field, recordId) => {
     let value = '';
@@ -170,7 +256,6 @@ useEffect(() => {
       )
     );
   };
-
 
   const handleFinancialSave = async () => {
     if (rental && currentUser) {
@@ -383,20 +468,23 @@ const handleFinance = async () => {
     }
   };
 
-  // Add new record
+  // FIXED: Add new record with proper state preservation
   const addRecord = async (e) => {
     e.preventDefault();
+    
+    // Preserve editing states before making changes
+    const currentStates = preserveEditingState();
+    
     try {
-    const newRecord = {
+      const newRecord = {
         id: Date.now().toString(), 
         ...formData,
-        };
-    
-    const userDocRef = doc(db, "users", currentUser.email);
-    const userDoc = await getDoc(userDocRef);
+      };
+      
+      const userDocRef = doc(db, "users", currentUser.email);
+      const userDoc = await getDoc(userDocRef);
 
-
-    if (userDoc.exists()) {
+      if (userDoc.exists()) {
         const userData = userDoc.data();
         
         if (userData.rental) {
@@ -410,6 +498,7 @@ const handleFinance = async () => {
             await updateDoc(userDocRef, {
               rental: userData.rental
             });
+            
             setFormData({
               moveInDate: '',
               dueInDate: '',
@@ -419,7 +508,12 @@ const handleFinance = async () => {
               rentalNote: ''
             });
             setShowAddForm(false);
-            fetchRecords();
+            
+            // Update local state immediately to avoid refetch
+            setRecords(prevRecords => [...prevRecords, newRecord]);
+            
+            // Restore editing state after the update
+            restoreEditingState(currentStates);
           } else {
             console.error("Rental not found");
           }
@@ -440,94 +534,108 @@ const handleFinance = async () => {
 
   // Delete record
   const deleteRecord = async (id) => {
-  try {
-    const userDocRef = doc(db, "users", currentUser.email);
-    const userDoc = await getDoc(userDocRef);
+    // Preserve editing states before deletion
+    const currentStates = preserveEditingState();
     
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
+    try {
+      const userDocRef = doc(db, "users", currentUser.email);
+      const userDoc = await getDoc(userDocRef);
       
-      if (userData.rental) {
-        const rentalIndex = userData.rental.findIndex(r => r.id === rentalId);
-        if (rentalIndex !== -1 && userData.rental[rentalIndex].financialHistory) {
-          if (id === "all") {
-            // Handle deleting all records
-            userData.rental[rentalIndex].financialHistory = [];
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        
+        if (userData.rental) {
+          const rentalIndex = userData.rental.findIndex(r => r.id === rentalId);
+          if (rentalIndex !== -1 && userData.rental[rentalIndex].financialHistory) {
+            if (id === "all") {
+              // Handle deleting all records
+              userData.rental[rentalIndex].financialHistory = [];
 
-            setDepositBill("");
-            if (rentalIndex !== -1) {
-              userData.rental[rentalIndex] = {
-                ...userData.rental[rentalIndex],
-                billDeposit: "",
-              };
-              
-              // Delete all non-edited finance records for this rental
-              const financeData = userData.finance || {};
-              const existingRecords = financeData.allRecords || [];
-              
-              const updatedFinanceRecords = existingRecords.filter(financeRecord => {
-                // Keep the record if it's edited OR if it doesn't belong to this rental
-                return financeRecord.edited === true || financeRecord.rental !== rentalName;
-              });
-              
-              await updateDoc(userDocRef, { 
-                rental: userData.rental,
-                finance: {
-                  ...financeData,
-                  allRecords: updatedFinanceRecords,
-                }
-              });
-              
-              setRental(prevRental => ({
-                ...prevRental,
-                billDeposit: "",
-              }));
-              console.log("All rental details deleted successfully, and non-edited finance records removed");
-            }
-          } else {
-            // Handle deleting single record
-            if (rentalIndex !== -1 && userData.rental[rentalIndex].financialHistory) {
-              if (Array.isArray(userData.rental[rentalIndex].financialHistory)) {
-                userData.rental[rentalIndex].financialHistory = userData.rental[rentalIndex].financialHistory.filter(
-                  record => record.id !== id
-                );
-              } else {
-                console.warn("financialHistory is not an array:", userData.rental[rentalIndex].financialHistory);
+              setDepositBill("");
+              if (rentalIndex !== -1) {
+                userData.rental[rentalIndex] = {
+                  ...userData.rental[rentalIndex],
+                  billDeposit: "",
+                };
+                
+                // Delete all non-edited finance records for this rental
+                const financeData = userData.finance || {};
+                const existingRecords = financeData.allRecords || [];
+                
+                const updatedFinanceRecords = existingRecords.filter(financeRecord => {
+                  // Keep the record if it's edited OR if it doesn't belong to this rental
+                  return financeRecord.edited === true || financeRecord.rental !== rentalName;
+                });
+                
+                await updateDoc(userDocRef, { 
+                  rental: userData.rental,
+                  finance: {
+                    ...financeData,
+                    allRecords: updatedFinanceRecords,
+                  }
+                });
+                
+                setRental(prevRental => ({
+                  ...prevRental,
+                  billDeposit: "",
+                }));
+                
+                // Update local state immediately
+                setRecords([]);
+                
+                console.log("All rental details deleted successfully, and non-edited finance records removed");
               }
-              
-              // Also delete from finance if edited is false
-              const financeData = userData.finance || {};
-              const existingRecords = financeData.allRecords || [];
-              
-              const updatedFinanceRecords = existingRecords.filter(financeRecord => {
-                // Remove the record if it matches the ID AND is not edited
-                if (financeRecord.id === id && financeRecord.edited === false) {
-                  return false; // Remove this record
+            } else {
+              // Handle deleting single record
+              if (rentalIndex !== -1 && userData.rental[rentalIndex].financialHistory) {
+                if (Array.isArray(userData.rental[rentalIndex].financialHistory)) {
+                  userData.rental[rentalIndex].financialHistory = userData.rental[rentalIndex].financialHistory.filter(
+                    record => record.id !== id
+                  );
+                } else {
+                  console.warn("financialHistory is not an array:", userData.rental[rentalIndex].financialHistory);
                 }
-                return true; // Keep this record
-              });
-              
-              await updateDoc(userDocRef, {
-                rental: userData.rental,
-                finance: {
-                  ...financeData,
-                  allRecords: updatedFinanceRecords,
-                }
-              });
-              
-              console.log(`Record ${id} deleted from rental and finance (if not edited)`);
+                
+                // Also delete from finance if edited is false
+                const financeData = userData.finance || {};
+                const existingRecords = financeData.allRecords || [];
+                
+                const updatedFinanceRecords = existingRecords.filter(financeRecord => {
+                  // Remove the record if it matches the ID AND is not edited
+                  if (financeRecord.id === id && financeRecord.edited === false) {
+                    return false; // Remove this record
+                  }
+                  return true; // Keep this record
+                });
+                
+                await updateDoc(userDocRef, {
+                  rental: userData.rental,
+                  finance: {
+                    ...financeData,
+                    allRecords: updatedFinanceRecords,
+                  }
+                });
+                
+                // Update local state immediately
+                setRecords(prevRecords => prevRecords.filter(record => record.id !== id));
+                
+                console.log(`Record ${id} deleted from rental and finance (if not edited)`);
+              }
+            }
+            
+            setShowAlertDeleteHistory(false);
+            
+            // Restore editing state after deletion (for remaining records)
+            if (id !== "all") {
+              restoreEditingState(currentStates);
             }
           }
-          
-          fetchRecords();
-          setShowAlertDeleteHistory(false);
         }
       }
+    } catch (error) {
+      console.error("Error deleting record:", error);
     }
-  } catch (error) {
-    console.error("Error deleting record:", error);
-  }
-};
+  };
 
   const handleChangeInput = (e, fieldType) => {
     const input = e.target.value.replace(/,/g, '');
@@ -537,26 +645,25 @@ const handleFinance = async () => {
     }
   };
 
-const handleChangeRecord = (e, fieldType, recordId) => {
-  let value;
-  
-  if (fieldType === "rentalRate") {
-    const raw = e.target.innerText.replace(/,/g, '');
-    value = raw ? Number(raw).toLocaleString('en-US') : '';
-  } else {
-    value = e.target.innerText.trim();
-  }
+  const handleChangeRecord = (e, fieldType, recordId) => {
+    let value;
+    
+    if (fieldType === "rentalRate") {
+      const raw = e.target.innerText.replace(/,/g, '');
+      value = raw ? Number(raw).toLocaleString('en-US') : '';
+    } else {
+      value = e.target.innerText.trim();
+    }
 
-  setRecords(prevRecords => {
-    return prevRecords.map(record => {
-      if (record.id === recordId) {
-        return { ...record, [fieldType]: value };
-      }
-      return record;
+    setRecords(prevRecords => {
+      return prevRecords.map(record => {
+        if (record.id === recordId) {
+          return { ...record, [fieldType]: value };
+        }
+        return record;
+      });
     });
-  });
-};
-
+  };
 
   const sortedRecords = [...(Array.isArray(records) ? records : [])].sort((a, b) => {
     const idA = parseInt(a.id, 10);
