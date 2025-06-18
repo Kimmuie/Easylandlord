@@ -26,12 +26,12 @@ const RentalCards = ({ rental }) => {
             const userData = docSnap.data();
             
             // Find the highest current index
-            const maxIndex = Math.max(...userData.rental.map(r => r.index));
+            const maxIndex = Math.max(0, ...userData.rental?.map(r => r.zindex || 0) || []);
             
             // Update the rental array - set clicked rental to highest index + 1
             const updatedRentals = userData.rental.map(r => {
                 if (r.id === rental.id) {
-                    return { ...r, index: maxIndex + 1 };
+                    return { ...r, zindex: maxIndex + 1 };
                 }
                 return r;
             });

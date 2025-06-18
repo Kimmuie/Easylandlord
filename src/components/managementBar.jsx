@@ -76,12 +76,12 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
             
             const userData = docSnap.data()
             const rentalCount = userData.rental.length > 0 ? userData.rental.length : 0;
-            const maxIndex = Math.max(...userData.rental.map(r => r.index));
+            const maxIndex = Math.max(0, ...userData.rental?.map(r => r.zindex || 0) || []);
             const timestamp = Timestamp.now();
             const date = timestamp.toDate();
             const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
             const newRental = {
-                index: maxIndex + 1,
+                zindex: maxIndex + 1,
                 id: Date.now().toString(),
                 checkDate: Date.now(),
                 name: "Untitle " + (rentalCount + 1),
