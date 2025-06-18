@@ -69,6 +69,7 @@ const RentalDetail = () => {
   const [selectedAreaB, setSelectedAreaB] = useState('');
   const [selectedDetails, setSelectedDetails] = useState('');
   const [daysSinceLastCheck, setDaysSinceLastCheck] = useState(0);
+  const [uploadQueue, setUploadQueue] = useState([]);
   const tagOptions = ['ไม่ได้ระบุแท็ก', 'บ้านเช่า', 'โกดัง', 'ตึกเเถว', 'ที่ดิน', 'คอนโด'];
   const frequencyOptions = ['วัน', 'อาทิตย์', 'เดือน', 'ปี'];
   const areaOptions = ['ตร.ม', 'ตร.วา', 'ไร่'];
@@ -306,6 +307,13 @@ const RentalDetail = () => {
     }
   };
 
+   const handleMultipleUpload = (url) => {
+    setUploadQueue(prev => [
+      ...prev,
+      { url: url }
+    ]);
+  };
+  
 const handleShare = async () => {
   const docRef = await addDoc(collection(db, 'sharedRentals'), {
     rental,
@@ -707,14 +715,17 @@ const handleShare = async () => {
         </div>
         <div className="flex flex-col xl:pl-2 md:pl-4 pl-2 xl:pr-2 md:pr-4 pr-2">
         <SortableImageGallery 
-          currentUpload={uploadedExtendImage}   
+          currentUpload={uploadedExtendImage}  
+          uploadQueue={uploadQueue} 
           isEditing={isEditing}     
         />
         
         {/* Upload button for adding new images */}
         {isEditing && (
           <div className="mt-4 flex justify-center">
-            <UploadImage onUploadSuccess={(url) => handleUpload(url, "extend")}>
+            <UploadImage 
+              multiple={true}
+              onUploadSuccess={handleMultipleUpload}>
               <button className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-[#F7F7F7] text-sm rounded font-prompt transition-colors cursor-pointer flex flex-row justify-center items-center">
                 <img src="/img/plus-light.svg" alt="add" className="w-6 h-6 mr-2" />
                 Add New Image

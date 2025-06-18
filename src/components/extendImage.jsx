@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../components/firebase';
 
-const SortableImageGallery = ({ currentUpload, isEditing }) => {
+const SortableImageGallery = ({ currentUpload, uploadQueue, isEditing }) => {
   const { currentUser } = useAuth();
   const { rentalId } = useParams();
   const [images, setImages] = useState(Array(20).fill(""));
@@ -13,6 +13,7 @@ const SortableImageGallery = ({ currentUpload, isEditing }) => {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [rental, setRental] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const isMountedRef = useRef(true);
 
   // Cleanup on unmount
@@ -22,27 +23,45 @@ const SortableImageGallery = ({ currentUpload, isEditing }) => {
     };
   }, []);
 
-  // Modified save effect with better conditions
-  useEffect(() => {
-    // Only save if component is initialized and we're switching from editing to non-editing
-    if (isInitialized && isEditing === false && isMountedRef.current) {
-      // Add a small delay to ensure state is stable
-      const timeoutId = setTimeout(() => {
-        if (isMountedRef.current) {
-          saveAllImages(images);
-          if (coverImage) {
-            console.log(coverImage);
-            saveCoverImage();
-          }
-        }
-      }, 100);
+  // Store the latest images state in a ref to avoid stale closure issues
+  const latestImagesRef = useRef(images);
+  const latestCoverImageRef = useRef(coverImage);
 
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isEditing, isInitialized]);
+  // Update refs whenever state changes
+  useEffect(() => {
+    latestImagesRef.current = images;
+  }, [images]);
+
+  useEffect(() => {
+    latestCoverImageRef.current = coverImage;
+  }, [coverImage]);
+
+  // Modified save effect with better conditions
+useEffect(() => {
+  if (isInitialized && isEditing === false && hasUnsavedChanges && isMountedRef.current) {
+    const timeoutId = setTimeout(async () => {
+      if (isMountedRef.current) {
+        try {
+          await saveAllImages(latestImagesRef.current);
+          if (latestCoverImageRef.current) {
+            await saveCoverImage();
+          }
+          setHasUnsavedChanges(false); // Set after everything is saved
+        } catch (error) {
+          console.error("Failed to save data:", error);
+        }
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }
+}, [isEditing, isInitialized, hasUnsavedChanges]);
+
+
 
   const handlePinBackground = (index) => {
     setCoverImage(images[index]);
+    setHasUnsavedChanges(true);
   };
 
   const saveCoverImage = async () => {
@@ -69,24 +88,54 @@ const SortableImageGallery = ({ currentUpload, isEditing }) => {
               coverRental: coverImage,
             }));
           
-            console.log("Set Cover for Rentals");
+            console.log("Cover image saved successfully");
           }
         }
       } catch (error) {
-        console.error("Error updating rental:", error);
+        console.error("Error updating rental cover:", error);
       }
     }
   }
 
-  // Handle new upload - add to first empty slot
+  // FIXED: Handle multiple uploads by batch processing
+  const handleMultipleUploads = (urls) => {
+    if (!Array.isArray(urls) || urls.length === 0) return;
+
+    setImages(prevImages => {
+      const newImages = [...prevImages];
+      let emptySlotIndex = 0;
+      
+      urls.forEach(url => {
+        const actualUrl = typeof url === "object" && url.url ? url.url : url;
+        if (!actualUrl) return;
+        
+        // Find next empty slot starting from current position
+        while (emptySlotIndex < newImages.length && newImages[emptySlotIndex] !== "") {
+          emptySlotIndex++;
+        }
+        
+        if (emptySlotIndex < newImages.length) {
+          newImages[emptySlotIndex] = actualUrl;
+          emptySlotIndex++; // Move to next slot for next image
+        }
+      });
+      
+      return newImages;
+    });
+    setHasUnsavedChanges(true);
+  };
+
+  // Handle single upload - add to first empty slot
   const handleUploadToFirstEmptySlot = (uploadUrl) => {
     if (!uploadUrl) return;
-    
+
+    const url = typeof uploadUrl === "object" && uploadUrl.url ? uploadUrl.url : uploadUrl;
     const emptyIndex = images.findIndex(img => img === "");
     if (emptyIndex !== -1) {
       const newImages = [...images];
-      newImages[emptyIndex] = uploadUrl;
+      newImages[emptyIndex] = url;
       setImages(newImages);
+      setHasUnsavedChanges(true);
     }
   };
 
@@ -94,12 +143,7 @@ const SortableImageGallery = ({ currentUpload, isEditing }) => {
   const saveAllImages = async (imageArray) => {
     if (!currentUser || !isMountedRef.current) return;
     
-    // Validate that imageArray has actual content
-    const hasValidImages = imageArray.some(img => img && img !== "");
-    if (!hasValidImages) {
-      console.warn("Attempted to save empty image array - skipping save");
-      return;
-    }
+    console.log("Saving images array:", imageArray);
     
     try {
       const userDocRef = doc(db, "users", currentUser.email);
@@ -112,10 +156,18 @@ const SortableImageGallery = ({ currentUpload, isEditing }) => {
           const updatedRentals = userData.rental.map(r => {
             if (r.id === rentalId) {
               const updatedRental = { ...r };
-              // Save images as rentalImage0, rentalImage1, etc.
+              
+              // Clear all existing rental images first
+              for (let i = 0; i < 20; i++) {
+                updatedRental[`rentalImage${i}`] = "";
+              }
+              
+              // Save images in their new positions
               imageArray.forEach((img, index) => {
                 updatedRental[`rentalImage${index}`] = img || "";
               });
+              
+              console.log("Updated rental object:", updatedRental);
               return updatedRental;
             }
             return r;
@@ -125,7 +177,7 @@ const SortableImageGallery = ({ currentUpload, isEditing }) => {
             await updateDoc(userDocRef, {
               rental: updatedRentals
             });
-            console.log('All images saved successfully');
+            console.log('All images saved successfully with new positions');
           }
         }
       }
@@ -161,6 +213,7 @@ const SortableImageGallery = ({ currentUpload, isEditing }) => {
             if (isMountedRef.current) {
               setImages(imageArray);
               setIsInitialized(true);
+              console.log("Loaded images from Firebase:", imageArray);
             }
           } else if (isMountedRef.current) {
             setIsInitialized(true);
@@ -177,50 +230,87 @@ const SortableImageGallery = ({ currentUpload, isEditing }) => {
     fetchImages();
   }, [currentUser, rentalId]);
 
+  // FIXED: Better upload queue processing
+  const processedUploadsRef = useRef(new Set());
+  const lastUploadQueueLengthRef = useRef(0);
 
-  // Handle new upload from parent
   useEffect(() => {
-    if (currentUpload && isInitialized) {
-      handleUploadToFirstEmptySlot(currentUpload);
+    if (Array.isArray(uploadQueue) && isInitialized) {
+      // Check if new items were added to the queue
+      if (uploadQueue.length > lastUploadQueueLengthRef.current) {
+        const newUploads = uploadQueue.slice(lastUploadQueueLengthRef.current);
+        const validNewUploads = [];
+        
+        newUploads.forEach((item) => {
+          const url = typeof item === "string" ? item : item?.url;
+          if (url && !processedUploadsRef.current.has(url)) {
+            processedUploadsRef.current.add(url);
+            validNewUploads.push(url);
+          }
+        });
+        
+        if (validNewUploads.length > 0) {
+          console.log(`Processing ${validNewUploads.length} new uploads:`, validNewUploads);
+          if (validNewUploads.length === 1) {
+            handleUploadToFirstEmptySlot(validNewUploads[0]);
+          } else {
+            handleMultipleUploads(validNewUploads);
+          }
+        }
+      }
+      
+      lastUploadQueueLengthRef.current = uploadQueue.length;
     }
-  }, [currentUpload, isInitialized]);
+  }, [uploadQueue, isInitialized]);
 
   // Delete image
   const handleDelete = (index) => {
     const newImages = [...images];
     newImages[index] = "";
     setImages(newImages);
+    setHasUnsavedChanges(true);
   };
 
-  // Drag and drop handlers
+  // FIXED: Improved drag and drop handlers
   const handleDragStart = (e, index) => {
-    if (!isEditing) return; // Prevent dragging when not editing
+    if (!isEditing || !images[index]) return; // Prevent dragging empty slots
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
   };
 
   const handleDragOver = (e) => {
-    if (!isEditing) return; // Prevent drop when not editing
+    if (!isEditing) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (e, dropIndex) => {
-    if (!isEditing) return; // Prevent drop when not editing
+    if (!isEditing) return;
     e.preventDefault();
     
-    if (draggedIndex === null || draggedIndex === dropIndex) return;
+    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
+    
+    if (dragIndex === dropIndex || draggedIndex === null) {
+      setDraggedIndex(null);
+      return;
+    }
+    
+    console.log(`Moving image from position ${dragIndex} to position ${dropIndex}`);
     
     const newImages = [...images];
-    const draggedImage = newImages[draggedIndex];
+    const draggedImage = newImages[dragIndex];
+    const droppedImage = newImages[dropIndex];
     
-    // Remove dragged item
-    newImages.splice(draggedIndex, 1);
-    // Insert at new position
-    newImages.splice(dropIndex, 0, draggedImage);
+    // Swap the images
+    newImages[dragIndex] = droppedImage;
+    newImages[dropIndex] = draggedImage;
+    
+    console.log("New images order:", newImages);
     
     setImages(newImages);
     setDraggedIndex(null);
+    setHasUnsavedChanges(true);
   };
 
   const handleDragEnd = () => {
@@ -243,7 +333,7 @@ const SortableImageGallery = ({ currentUpload, isEditing }) => {
   const hasMoreImages = nonEmptyImages.length > 2;
 
   return (
-    <div className="lg:w-4xl md:w-full">
+    <div className="lg:w-4xl md:w-full">      
       {/* Image Grid Container */}
       <div className="relative">
         {/* Image Grid */}
@@ -262,7 +352,8 @@ const SortableImageGallery = ({ currentUpload, isEditing }) => {
                 onDragEnd={handleDragEnd}
                 style={{
                   cursor: isEditing && hasImage ? 'move' : 'default',
-                  opacity: draggedIndex === actualIndex ? 0.5 : 1
+                  opacity: draggedIndex === actualIndex ? 0.5 : 1,
+                  border: draggedIndex === actualIndex ? '2px dashed #3B82F6' : undefined
                 }}
               >
                 {hasImage ? (
@@ -278,7 +369,7 @@ const SortableImageGallery = ({ currentUpload, isEditing }) => {
                           onClick={() => handlePinBackground(actualIndex)}
                           className={`mr-1 ${image === coverImage ? "bg-ellRed" : "bg-blue-500"}  text-white p-1 rounded shadow-lg hover:scale-105 active:scale-95 transition-transform cursor-pointer`}
                         >
-                          <img src="/img/pin-light.svg" alt="delete" className="w-6 lg:w-7 h-6 lg:h-7" />
+                          <img src="/img/pin-light.svg" alt="pin" className="w-6 lg:w-7 h-6 lg:h-7" />
                         </button>
                         <button
                           onClick={() => handleDelete(actualIndex)}
@@ -290,7 +381,9 @@ const SortableImageGallery = ({ currentUpload, isEditing }) => {
                     )}
                   </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">Add Image</div>
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    {isEditing ? "Drop image here" : "Add Image"}
+                  </div>
                 )}
                 
                 {/* Image index indicator */}
