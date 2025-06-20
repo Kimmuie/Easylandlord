@@ -636,7 +636,7 @@ const handleShare = async () => {
         />
       )}
       {isEditing && (
-        <div className="TooltipMain fixed bottom-44 right-7 hover:right-4 flex flex-col items-center justify-center z-50">
+        <div className="TooltipMain fixed bottom-64 right-7 hover:right-4 flex flex-col items-center justify-center z-50">
           <div className="text-center w-22 justify-center bg-ellRed p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">ลบอสังหฯ</div>
           <div className="absolute mb-14 w-4 h-4 bg-ellRed rotate-45 z-10 Tooltip"></div>
           <button className="relative rounded-full bg-ellRed flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
@@ -645,6 +645,14 @@ const handleShare = async () => {
           </button>
         </div>
       )}
+        <div className="TooltipMain fixed bottom-44 right-7 hover:right-4 flex flex-col items-center justify-center z-50">
+          <div className="text-center w-22 justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">แชร์หน้านี้</div>
+          <div className="absolute mb-14 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
+          <button className="relative rounded-full bg-ellBlack flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
+            onClick={handleShare}>
+            <img src="/img/share-white.svg" width="40" height="40" alt="share" />
+          </button>
+        </div>
         <div className="TooltipMain fixed bottom-24 right-7 hover:right-4 flex flex-col items-center justify-center z-50">
           <div className="text-center w-22 justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">ไม่ตรวจเช็ค<br/>มาแล้ว  {daysSinceLastCheck} วัน</div>
           <div className="absolute mb-9 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
@@ -1005,7 +1013,110 @@ const handleShare = async () => {
             </div>
           </div>
         </div>
-        {haveTenant ? (
+        <div className='flex flex-col items-start justify-start xl:w-4xl w-full xl:px-0 px-4 flex-grow'>
+          <div className='flex flex-row items-center w-full mb-2'>
+            <div className="flex font-prompt font-semibold text-ellPrimary text-md md:text-xl md:justify-end justify-start">รายละเอียดของอสังหาฯ</div>
+            {isEditing &&
+              <>
+                <div className="relative inline-block">
+                  <button className="ml-3 py-1 px-3 flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray rounded-full xl:text-md text-sm font-semibold cursor-pointer"
+                    onClick={() => setShowDetailsBox(prev => !prev)}>
+                    <img src="/img/plus-dark.svg" width="20" height="40" alt="add" className='mr-1' />
+                    เพิ่ม
+                  </button>
+                  {showDetailsBox &&
+                    <div className="absolute top-1/2 mt-2 left-25 -translate-y-1/2 w-35 md:w-40 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl border-2 border-ellPrimary z-50"
+                      ref={filterDetailsBoxRef}>
+                      <div className="absolute top-1/2 -left-2.5 -translate-y-1/2 w-4 h-4 bg-ellBlack rotate-45 border-s-2 border-b-2 border-s-ellPrimary border-b-ellPrimary"></div>
+                      {Object.keys(detailsOptions).map((detail) => (
+                        <label key={detail} className="flex items-center gap-1 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedDetails?.[detail] || false}
+                            onChange={() => handleTagSelect(detail, 'details')}
+                            className="appearance-none h-3 w-3 rounded border-ellSecondary text-ellSecondary border-2 checked:bg-ellSecondary cursor-pointer"
+                          />
+                          <span
+                            className="font-prompt font-medium text-ellSecondary text-xs"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleTagSelect(detail, 'details');
+                            }}
+                          >
+                            {detail}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  }
+                </div>
+              </>
+            }
+          </div>
+          <div className="grid xl:grid-cols-3 md:grid-cols-4 grid-cols-6 w-full  [writing-mode:vertical-lr]">
+            {rentalDetail.map((item) => (
+              <div
+                key={item.id}
+                className="[writing-mode:horizontal-tb] flex flex-row items-center justify-start font-prompt text-ellPrimary text-md font-semibold pb-1"
+              >
+                <img
+                  src={item.icon}
+                  width="28"
+                  height="28"
+                  alt="propertyIcon"
+                  className="mr-2"
+                />
+                {item.name}
+              </div>
+            ))}
+          </div>
+          {isEditing ? (
+          <textarea
+            placeholder={`กรอกรายละเอียด${rental.tag === 'ไม่ได้ระบุแท็ก' ? '' : rental.tag}`}
+            value={rentalMessage}
+            onChange={(e) => setRentalMessage(e.target.value)}
+            className="mt-2 border-2 border-ellGray rounded-md px-2 py-0.5 min-h-27 xl:w-full md:w-full w-full font-prompt text-ellPrimary text-sm md:text-lg resize-none"
+            required
+          />
+          ):(              
+            <div className={`font-prompt text-ellPrimary text-sm md:text-lg my-2 w-100 md:w-4xl xl:w-full break-all ${rentalDetail.length === 0 ? "min-h-27" : ""}`}>
+              {rental.message}
+            </div>
+          )}
+          
+          {!haveTenant && (
+            <>
+          <div className='flex xl:flex-row flex-col-reverse w-full xl:w-4xl mb-4 mt-4 md:mt-auto xl:mt-auto self-center '>
+            {!isEditing &&
+              <div className="bg-ellWhite xl:h-20 h-22 w-full md:w-full xl:w-full flex flex-row items-center justify-start rounded-xl border-2 border-ConstantGray p-2">
+                <img src={userIconImage || "/img/iconSubstitute.png"} alt="icon" className="w-16 h-16 object-cover border-2 border-ellPrimary rounded-full ml-3" />
+                <div className='flex flex-col ml-3'>
+                  <div className="flex justify-center font-prompt text-ellLime bg-ellGreen rounded-2xl px-4 py-0.75 text-xs">เจ้าของ{rental.tag === 'ไม่ได้ระบุแท็ก' ? '' : rental.tag}</div>
+                  <span className='text-ellPrimary font-prompt text-md font-semibold'>{name}</span>
+                  <span className='text-ellPrimary font-prompt opacity-80 text-sm'>{number}</span>
+                </div>
+              </div>
+            }
+            <div className={`w-full md:w-full flex flex-row justify-between gap-2 xl:pb-0 pb-2 ${isEditing ? "xl:flex-row xl:w-full xl:pl-0 pl-0 mt-2 mb-2" : "xl:flex-col xl:w-xl xl:pl-2 pl-0"}`}>
+              <button className="w-full xl:h-full h-8 flex items-center justify-between font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray active:bg-ellDarkGray rounded-md text-md font-semibold cursor-pointer px-2"
+                    onClick={() => updateRentalField({ tenant: true, status: "unavailable" })}>
+                <div className="flex xl:flex-col flex-row items-center w-full">
+                  <img src="/img/plus-dark.svg" width="30" height="20" alt="add" />
+                  <span className="flex-1 text-center">เพิ่มผู้เช่า</span>
+                </div>
+              </button>
+              {/* <div className="w-full xl:h-8.5 h-8 flex items-center justify-between font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray active:bg-ellDarkGray rounded-md text-md font-semibold cursor-pointer px-2"
+                    onClick={handleShare}>
+                <img src="/img/share.svg" width="35" height="40" alt="share" />
+                <span className='flex-1 text-center'>แชร์หน้านี้</span>
+              </div> */}
+            </div>
+          </div>
+          </>
+          )}
+        </div>
+        {haveTenant && (
           <div className='flex flex-col xl:w-fit md:w-ful w-full'>
             <div className="flex flex-col xl:flex-row xl:w-fit md:w-full w-full pt-4 xl:px-0 px-4">
               <div className="flex flex-col justify-between xl:w-md md:w-full w-full xl:pr-2 md:pr-0">
@@ -1130,105 +1241,6 @@ const handleShare = async () => {
               setDeleteAll={sentDelete}
              />
           </div>
-        ):(
-        <div className='flex flex-col items-start justify-start xl:w-4xl w-full xl:px-0 px-4 flex-grow'>
-          <div className='flex flex-row items-center w-full mb-2'>
-            <div className="flex font-prompt font-semibold text-ellPrimary text-md md:text-xl md:justify-end justify-start">รายละเอียดของอสังหาฯ</div>
-            {isEditing &&
-              <>
-                <div className="relative inline-block">
-                  <button className="ml-3 py-1 px-3 flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray rounded-full xl:text-md text-sm font-semibold cursor-pointer"
-                    onClick={() => setShowDetailsBox(prev => !prev)}>
-                    <img src="/img/plus-dark.svg" width="20" height="40" alt="add" className='mr-1' />
-                    เพิ่ม
-                  </button>
-                  {showDetailsBox &&
-                    <div className="absolute top-1/2 mt-2 left-25 -translate-y-1/2 w-35 md:w-40 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl border-2 border-ellPrimary z-50"
-                      ref={filterDetailsBoxRef}>
-                      <div className="absolute top-1/2 -left-2.5 -translate-y-1/2 w-4 h-4 bg-ellBlack rotate-45 border-s-2 border-b-2 border-s-ellPrimary border-b-ellPrimary"></div>
-                      {Object.keys(detailsOptions).map((detail) => (
-                        <label key={detail} className="flex items-center gap-1 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedDetails?.[detail] || false}
-                            onChange={() => handleTagSelect(detail, 'details')}
-                            className="appearance-none h-3 w-3 rounded border-ellSecondary text-ellSecondary border-2 checked:bg-ellSecondary cursor-pointer"
-                          />
-                          <span
-                            className="font-prompt font-medium text-ellSecondary text-xs"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleTagSelect(detail, 'details');
-                            }}
-                          >
-                            {detail}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  }
-                </div>
-              </>
-            }
-          </div>
-          <div className="grid xl:grid-cols-3 md:grid-cols-4 grid-cols-6 w-full  [writing-mode:vertical-lr]">
-            {rentalDetail.map((item) => (
-              <div
-                key={item.id}
-                className="[writing-mode:horizontal-tb] flex flex-row items-center justify-start font-prompt text-ellPrimary text-md font-semibold pb-1"
-              >
-                <img
-                  src={item.icon}
-                  width="28"
-                  height="28"
-                  alt="propertyIcon"
-                  className="mr-2"
-                />
-                {item.name}
-              </div>
-            ))}
-          </div>
-          {isEditing ? (
-          <textarea
-            placeholder={`กรอกรายละเอียด${rental.tag === 'ไม่ได้ระบุแท็ก' ? '' : rental.tag}`}
-            value={rentalMessage}
-            onChange={(e) => setRentalMessage(e.target.value)}
-            className="mt-2 border-2 border-ellGray rounded-md px-2 py-0.5 min-h-27 xl:w-full md:w-full w-full font-prompt text-ellPrimary text-sm md:text-lg resize-none"
-            required
-          />
-          ):(              
-            <div className={`font-prompt text-ellPrimary text-sm md:text-lg my-2 w-100 md:w-4xl xl:w-full break-all ${rentalDetail.length === 0 ? "min-h-27" : ""}`}>
-              {rental.message}
-            </div>
-          )}
-          <div className='flex xl:flex-row flex-col-reverse w-full xl:w-4xl mb-4 mt-4 md:mt-auto xl:mt-auto self-center '>
-            {!isEditing &&
-              <div className="bg-ellWhite xl:h-20 h-22 w-full md:w-full xl:w-xl flex flex-row items-center justify-start rounded-xl border-2 border-ConstantGray p-2">
-                <img src={userIconImage || "/img/iconSubstitute.png"} alt="icon" className="w-16 h-16 object-cover border-2 border-ellPrimary rounded-full ml-3" />
-                <div className='flex flex-col ml-3'>
-                  <div className="flex justify-center font-prompt text-ellLime bg-ellGreen rounded-2xl px-4 py-0.75 text-xs">เจ้าของ{rental.tag === 'ไม่ได้ระบุแท็ก' ? '' : rental.tag}</div>
-                  <span className='text-ellPrimary font-prompt text-md font-semibold'>{name}</span>
-                  <span className='text-ellPrimary font-prompt opacity-80 text-sm'>{number}</span>
-                </div>
-              </div>
-            }
-            <div className={`w-full md:w-full flex flex-row justify-between gap-2 xl:pb-0 pb-2 ${isEditing ? "xl:flex-row xl:w-full xl:pl-0 pl-0" : "xl:flex-col xl:w-xl xl:pl-2 pl-0"}`}>
-              <button className="w-full xl:h-8.5 h-8 flex items-center justify-between font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray active:bg-ellDarkGray rounded-md text-md font-semibold cursor-pointer px-2"
-                    onClick={() => updateRentalField({ tenant: true, status: "unavailable" })}>
-                <div className="flex items-center w-full">
-                  <img src="/img/plus-dark.svg" width="30" height="20" alt="add" />
-                  <span className="flex-1 text-center">เพิ่มผู้เช่า</span>
-                </div>
-              </button>
-              <div className="w-full xl:h-8.5 h-8 flex items-center justify-between font-prompt text-[#333333] bg-ConstantGray hover:bg-ellDarkGray active:bg-ellDarkGray rounded-md text-md font-semibold cursor-pointer px-2"
-                    onClick={handleShare}>
-                <img src="/img/share.svg" width="35" height="40" alt="share" />
-                <span className='flex-1 text-center'>แชร์หน้านี้</span>
-              </div>
-            </div>
-          </div>
-        </div>
         )}
       </div>
     </>
