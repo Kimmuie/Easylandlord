@@ -191,8 +191,8 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                         <img src={icons.plus} width="40" height="40" alt="add"/>
                     </button>
                     {/* Phone Rental Add */}
-                    <div className="fixed bottom-4 right-4">
-                        <button className="md:hidden flex mt-4.5 bg-ellBlack rounded-full p-4 z-70 flex-row justify-center items-center cursor-pointer hover:scale-105 active:scale-98"
+                    <div className="fixed bottom-4 right-4 z-100">
+                        <button className="md:hidden flex mt-4.5 bg-ellBlack rounded-full p-4 flex-row justify-center items-center cursor-pointer hover:scale-105 active:scale-98"
                                 onClick={handleCreateRental}>
                             <img src={icons.plus} width="40" height="40" alt="add"/>
                         </button>

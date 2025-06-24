@@ -8,6 +8,7 @@ import GoogleMap from "./pages/Map";
 import Account from "./pages/Account";
 import RentalDetail from "./pages/RentalDetail";
 import ShareRental from "./pages/ShareRental";
+import NotFound from "./pages/Error";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../src/components/firebase';
@@ -384,6 +385,7 @@ const AppContent = () => {
           <Route path="/map" element={<GoogleMap />} />
           <Route path="/account" element={<Account />} />
           <Route path="/shareRental/:id" element={<ShareRental />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
     </>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import ThemeContext from '../contexts/ThemeContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../components/firebase';
@@ -27,6 +27,11 @@ import Adbanner from '../components/Adbanner';
   const [isEditing, setIsEditing] = useState(false);
   const [dateSort, setDateSort] = useState(true);
   const [openCalendar, setOpenCalendar] = useState(false);
+  const [showFilterTag, setShowFilterTag] = useState(false);
+  const [showFilterTagBox, setShowFilterTagBox] = useState(false);
+  const filterTagBoxRef = useRef(null);
+  const [tagFilters, setTagFilters] = useState({});
+  const [selectedTags, setSelectedTags] = useState([]);
   const navigate = useNavigate();
   const [dateRange, setDateRange] = useState({
     firstDate: '',
@@ -46,6 +51,61 @@ import Adbanner from '../components/Adbanner';
     const [day, month, year] = displayDate.split('/');
     return `${year}-${month}-${day}`;
   };
+
+useEffect(() => {
+  if (Array.isArray(allRecords)) {
+    const rentalNames = [...new Set(allRecords.map(rec => rec.rental).filter(Boolean))];
+    const newTagFilters = rentalNames.reduce((acc, name) => {
+      // Preserve existing selections when updating available tags
+      acc[name] = tagFilters[name] || false;
+      return acc;
+    }, {});
+    setTagFilters(newTagFilters);
+  }
+}, [allRecords]);
+
+
+  useEffect(() => {
+      function handleClickOutside(event) {
+          if (filterTagBoxRef.current && !filterTagBoxRef.current.contains(event.target)) {
+              setShowFilterTagBox(false);
+          }
+      }
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+          document.removeEventListener("mousedown", handleClickOutside);
+      };
+  }, []);
+
+  useEffect(() => {
+      if (selectedTags) {
+          const newTagFilters = { ...tagFilters };
+          Object.keys(newTagFilters).forEach(key => {
+              newTagFilters[key] = false;
+          });
+          selectedTags.forEach(tag => {
+              if (tag in newTagFilters) {
+                  newTagFilters[tag] = true;
+              }
+          });
+          setTagFilters(newTagFilters);
+      }
+  }, [selectedTags]);
+
+  useEffect(() => {
+      const hasActiveTags = Object.values(tagFilters).some(value => value);
+      setShowFilterTag(hasActiveTags);
+  }, [tagFilters]);
+
+  const handleTagFilterChange = (tag) => {
+  const updatedFilters = {
+    ...tagFilters,
+    [tag]: !tagFilters[tag],
+  };
+  setTagFilters(updatedFilters);
+  const activeTags = Object.keys(updatedFilters).filter(key => updatedFilters[key]);
+  setSelectedTags(activeTags);
+};
 
 const handleSortDate = (valueOrEvent, field) => {
   let newValue;
@@ -78,16 +138,32 @@ const handleFilterFinance = (filter) => {
   }
 };
 
+useEffect(() => {
+  const filtered = getFilteredRecords();
+  setFilteredRecords(filtered);
+}, [allRecords, tagFilters, currentFilter, dateRange]);
+
+// Updated getFilteredRecords function
 const getFilteredRecords = () => {
   if (!Array.isArray(allRecords) || allRecords.length === 0) {
     return [];
   }
-
+  
+  const activeTags = Object.keys(tagFilters).filter(tag => tagFilters[tag]);
   const today = new Date();
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
 
   return allRecords.filter(record => {
+    // First check rental filter
+    const matchRental = activeTags.length === 0 || activeTags.includes(record.rental);
+    
+    // If rental doesn't match, exclude this record
+    if (!matchRental) {
+      return false;
+    }
+    
+    // Then check date filter
     if (!record.paymentDate || record.paymentDate.trim() === '') {
       return currentFilter === 'all';
     }
@@ -182,7 +258,7 @@ useEffect(() => {
     setAllTotal(total);
     setProfitRate(profitRate);
   }
-}, [allRecords, currentFilter, dateRange, dateSort]);
+}, [allRecords, currentFilter, dateRange, dateSort, tagFilters]); // Added tagFilters here!
   
   const handleAddComma = (number) => {
     return number ? number.toLocaleString('en-US') : '';
@@ -426,6 +502,39 @@ useEffect(() => {
                 />
               </div>
               )}
+              </div>
+              <div className="relative inline-block" ref={filterTagBoxRef}>
+                <button className={`border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 w-15 md:w-13 flex flex-row justify-center items-center cursor-pointer ${showFilterTagBox ? 'border-ellPrimary' : "border-ellGray"} ${showFilterTag ? "bg-ellPrimary border-transparent" : "bg-transparent"}`}
+                        onClick={() => setShowFilterTagBox(prev => !prev)}>
+                    <img src={showFilterTag ? icons.filterOn : icons.filterOff} width="30" height="40" alt="filter"/>
+                </button>
+                {/* Filter TagBox */}
+                {showFilterTagBox && 
+                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-20 md:w-30 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl border-2 border-ellPrimary z-50">
+                    <div className="absolute -top-2.5 left-7 md:left-11.75 w-4 h-4 bg-ellBlack rotate-45 border-s-2 border-t-2 border-s-ellPrimary border-t-ellPrimary"></div>
+                {Object.keys(tagFilters).map((tag, index) => (
+                <label key={index} className="flex items-center gap-1 cursor-pointer">
+                    <input
+                    type="checkbox"
+                    checked={tagFilters[tag]}
+                    onChange={(e) => {
+                        e.stopPropagation();
+                        handleTagFilterChange(tag)
+                    }}
+                    className="appearance-none w-3 h-3 rounded-full border-2 border-ellSecondary checked:bg-ellSecondary checked:border-transparent cursor-pointer"
+                    />
+                    <span className="font-prompt text-ellSecondary text-xs"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleTagFilterChange(tag);
+                        }}>
+                        {tag}
+                    </span>
+                </label>
+                ))}
+                </div>
+                }
               </div>
             </div>
             {/* Controls */}

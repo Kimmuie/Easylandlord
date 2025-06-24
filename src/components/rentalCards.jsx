@@ -101,7 +101,7 @@ const fetchRecords = async () => {
         {/* Black shadow behind the card */}
         <div className="absolute inset-0 bg-ellBlack rounded-2xl translate-x-1 md:translate-x-1.5 translate-y-1 md:translate-y-1.5"></div>
         {/* Main card */}
-        <div className="relative h-56 w-full xl:w-4xl md:w-3xl rounded-2xl bg-ellWhite border-2 border-ellGray">
+        <div className="relative md:h-56 h-72 w-full xl:w-4xl md:w-3xl rounded-2xl bg-ellWhite border-2 border-ellGray">
             <div className="flex-row flex py-3 pl-3">
                 <div className="flex flex-grow">
                     <img src={rental.coverRental || rental.rentalImage0 || "./img/sampleImage.jpg"} alt="image" className="h-15 w-25 object-cover border-2 border-ellGray rounded-md"/>
@@ -118,7 +118,7 @@ const fetchRecords = async () => {
             <div className="flex flex-row">
                 <div className="flex flex-col flex-grow pl-3">
                     {/* Rental Location */}
-                    <div className="font-prompt text-ellPrimary text-sm md:text-lg min-h-22 w-full md:w-md break-all">
+                    <div className="font-prompt text-ellPrimary text-sm md:text-lg md:min-h-22 min-h-40 w-full md:w-md break-all">
                         {rental.location}
                     </div>
                     {/* Rental Description */}
@@ -126,10 +126,15 @@ const fetchRecords = async () => {
                         <div className={`rounded-full border-2 border-ellGray h-5 w-5 mr-2 ${rental.status === "available" ? "bg-ellGreen" : "bg-ellRed"}`}></div>
                         {rental.status === "available" ? "ว่าง" : "ไม่ว่าง"}
                         {rental.status === "unavailable" && 
-                        <div className="font-prompt text-ellPrimary text-lg ml-12">
+                        <>
+                        <div className="font-prompt text-ellPrimary text-lg ml-12 md:block hidden">
                             มัดจำคงเหลือ 
                             <span className={`ml-2 ${totalDeposit.toLocaleString() >= rental.billDeposit ? "text-ellGreen" : "text-ellRed"} `}>{totalDeposit.toLocaleString()}/{rental.billDeposit || "0"}</span>
                         </div>
+                        <div className="font-prompt text-ellPrimary text-lg flex flex-col ml-12 md:hidden">
+                            <span className={`ml-2 ${totalDeposit.toLocaleString() >= rental.billDeposit ? "text-ellGreen" : "text-ellRed"} `}>{totalDeposit.toLocaleString()}/{rental.billDeposit || "0"}</span>
+                        </div>
+                        </>
                         }
                     </div>
                 </div>
