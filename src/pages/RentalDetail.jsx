@@ -27,6 +27,7 @@ const RentalDetail = () => {
   const [rentalName, setRentalName] = useState('');
   const [rentalLocate, setRentalLocate] = useState('');
   const [rentalMessage, setRentalMessage] = useState('');
+  const [tenantNote, setTenantNote] = useState('');
   const [rentalFee, setRentalFee] = useState('');
   const [rentalBedroom, setRentalBedroom] = useState(0);
   const [rentalRestroom, setRentalRestroom] = useState(0);
@@ -34,6 +35,8 @@ const RentalDetail = () => {
   const [rentalAreaB, setRentalAreaB] = useState('');
   const [electricUser, setElectricUser] = useState('');
   const [waterUser, setWaterUser] = useState('');
+  const [indicatorUser, setIndicatorUser] = useState('');
+  const [categoryUser, setCategoryUser] = useState('');
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
   const [haveTenant, setHaveTenant] = useState(false);
@@ -134,6 +137,10 @@ const RentalDetail = () => {
         setElectricUser(input);
       } else if (fieldType === 'water') {
         setWaterUser(input);
+      } else if (fieldType === 'indicator') {
+        setIndicatorUser(input);
+      } else if (fieldType === 'category') {
+        setCategoryUser(input);
       }
     }
   };
@@ -353,6 +360,7 @@ const handleShare = async () => {
               name: rentalName, 
               location: rentalLocate,
               message: rentalMessage, 
+              tenantNote: tenantNote,
               rentFee: rentalFee, 
               bedroom: rentalBedroom, 
               restroom: rentalRestroom, 
@@ -360,6 +368,8 @@ const handleShare = async () => {
               squareMetre: rentalArea, 
               electricNumber: electricUser, 
               waterNumber: waterUser, 
+              indicatorCode: indicatorUser, 
+              unitType: categoryUser, 
               tenantName: nameTenant, 
               tenantNumber: numberTenant, 
               fileName: fileName, 
@@ -379,7 +389,8 @@ const handleShare = async () => {
               ...prevRental,
               name: rentalName,
               location: rentalLocate,
-              message: rentalMessage, 
+              message: rentalMessage,  
+              tenantNote: tenantNote,
               rentFee: rentalFee,
               bedroom: rentalBedroom,
               restroom: rentalRestroom,
@@ -387,6 +398,8 @@ const handleShare = async () => {
               squareMetre: rentalArea,
               electricNumber: electricUser,
               waterNumber: waterUser,
+              indicatorCode: indicatorUser, 
+              unitType: categoryUser, 
               tenantName: nameTenant,
               tenantNumber: numberTenant,
               fileName: fileName,
@@ -463,6 +476,7 @@ const handleShare = async () => {
             setRentalName(currentRental.name);
             setRentalLocate(currentRental.location);
             setRentalMessage(currentRental.message);
+            setTenantNote(currentRental.tenantNote);
             setRentalFee(currentRental.rentFee);
             setRentalBedroom(currentRental.bedroom);
             setRentalRestroom(currentRental.restroom);
@@ -470,6 +484,8 @@ const handleShare = async () => {
             setRentalArea(currentRental.squareMetre);
             setElectricUser(currentRental.electricNumber);
             setWaterUser(currentRental.waterNumber);
+            setIndicatorUser(currentRental.indicatorCode);
+            setCategoryUser(currentRental.unitType);
             setSelectedTag(currentRental.tag);
             setSelectedFrequency(currentRental.rentFrequency);
             setSelectedAreaB(currentRental.areaUnitB);
@@ -922,6 +938,34 @@ const handleShare = async () => {
                         />
                       </div>
                     </div>
+                    <div className="flex flex-row gap-2 mt-2">
+                    {/* indicator User*/}
+                      <div className="xl:w-full md:w-full w-full h-8 flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                        <img src="/img/indicator-dark.svg" width="35" height="40" alt="bed" className='mx-2' />
+                        <input
+                          type="text"
+                          placeholder="รหัสเครื่องวัด"
+                          maxLength={12}
+                          value={indicatorUser}
+                          onChange={(e) => handleChangeInput(e, 'indicator')}
+                          className="text-center border-2 border-[#333333] mx-1 rounded-md px-2 py-0.5 w-full font-prompt font-semibold text-[#333333] xl:text-md text-sm"
+                          required
+                        />
+                      </div>
+                    {/* category User*/}
+                      <div className="xl:w-full md:w-full w-full h-8 flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                        <img src="/img/category-dark.svg" width="35" height="40" alt="bed" className='mx-2' />
+                        <input
+                          type="text"
+                          placeholder="ประเภทอัตรา"
+                          maxLength={12}
+                          value={categoryUser}
+                          onChange={(e) => handleChangeInput(e, 'category')}
+                          className="text-center border-2 border-[#333333] mx-1 rounded-md px-2 py-0.5 w-full font-prompt font-semibold text-[#333333] xl:text-md text-sm"
+                          required
+                        />
+                      </div>
+                    </div>
                   </div>
                 </>
               ) : (
@@ -955,6 +999,16 @@ const handleShare = async () => {
                       <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
                         <img src="/img/water-dark.svg" width="30" height="40" alt="bath" className='mr-2' />
                         {rental.waterNumber || "เลขที่ผู้ใช้น้ำ"} 
+                      </div>
+                    </div>
+                    <div className='flex flex-row gap-2 xl:w-md w-full mt-2'>
+                      <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                        <img src="/img/indicator-dark.svg" width="35" height="40" alt="bed" className='mr-2' />
+                        {rental.indicatorCode || "รหัสเครื่องวัด"}
+                      </div>
+                      <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
+                        <img src="/img/category-dark.svg" width="30" height="40" alt="bath" className='mr-2' />
+                        {rental.unitType || "ประเภทอัตรา"} 
                       </div>
                     </div>
                   </div>
@@ -1117,7 +1171,7 @@ const handleShare = async () => {
           )}
         </div>
         {haveTenant && (
-          <div className='flex flex-col xl:w-fit md:w-ful w-full'>
+          <div className='flex flex-col xl:w-fit md:w-full w-full'>
             <div className="flex flex-col xl:flex-row xl:w-fit md:w-full w-full pt-4 xl:px-0 px-4">
               <div className="flex flex-col justify-between xl:w-md md:w-full w-full xl:pr-2 md:pr-0">
                 <div className="flex items-center font-prompt font-semibold text-ellPrimary text-md md:text-xl xl:w-full md:w-full w-56">
@@ -1141,7 +1195,7 @@ const handleShare = async () => {
                       <input
                         type="text"
                         placeholder="กรอกชื่อผู้เช่า"
-                        maxLength={20}
+                        maxLength={35}
                         value={nameTenant}
                         onChange={(e) => setNameTenant(e.target.value)}
                         className="text-center border-2 border-ellGray  rounded-md mr-2 px-2 py-0.5 w-full font-prompt font-semibold text-ellPrimary xl:text-md text-sm mb-1"
@@ -1235,6 +1289,33 @@ const handleShare = async () => {
                 </div>
               </div>
             </div>
+            {isEditing ? (
+              <div className="flex flex-col justify-between md:w-full w-full pt-2 xl:px-0 px-4">
+                <div className="flex items-center justify-start font-prompt font-semibold text-ellPrimary text-md md:text-xl xl:w-full md:w-4xl w-56 mb-2">
+                  โน๊ตเพิ่มเติมของผู้เช่า
+                </div>   
+                <textarea
+                  placeholder={`กรอกรายละเอียดผู้เช่าเพิ่มเติม`}
+                  value={tenantNote}
+                  onChange={(e) => setTenantNote(e.target.value)}
+                  className="flex border-2 border-ellGray rounded-md px-2 py-0.5 min-h-23 xl:w-full md:w-full w-full font-prompt text-ellPrimary text-sm md:text-lg resize-none"
+                  required
+                />
+              </div>
+            ):(       
+              <>
+                {rental.tenantNote != "" && (
+                <div className="flex flex-col justify-between md:w-full w-full pt-2 xl:px-0 px-4">
+                  <div className="flex items-center justify-start font-prompt font-semibold text-ellPrimary text-md md:text-xl xl:w-full md:w-4xl w-56 mb-2">
+                    โน๊ตเพิ่มเติมของผู้เช่า
+                  </div>      
+                  <div className={`border-2 border-ConstantGray rounded-xl px-4 py-1 font-prompt text-ellPrimary text-sm md:text-lg w-full md:w-full lg:w-full xl:w-4xl break-words overflow-wrap-break-word min-h-23`}>
+                    {rental.tenantNote}
+                  </div>
+                </div>
+                )}
+              </> 
+            )}
             <FinancialHistory
               isEditing={isEditing} 
               setIsEditing={setIsEditing}
