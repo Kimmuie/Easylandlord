@@ -926,7 +926,7 @@ const handleShare = async () => {
                       </div>
                     {/* Water User*/}
                       <div className="xl:w-full md:w-full w-full h-8 flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
-                        <img src="/img/water-dark.svg" width="35" height="40" alt="bed" className='mx-2' />
+                        <img src="/img/water-dark.svg" width="30" height="40" alt="bed" className='mx-2' />
                         <input
                           type="text"
                           placeholder="กรอกเลขที่ผู้ใช้น้ำ"
@@ -941,7 +941,7 @@ const handleShare = async () => {
                     <div className="flex flex-row gap-2 mt-2">
                     {/* indicator User*/}
                       <div className="xl:w-full md:w-full w-full h-8 flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
-                        <img src="/img/indicator-dark.svg" width="35" height="40" alt="bed" className='mx-2' />
+                        <img src="/img/indicator-dark.svg" width="30" height="40" alt="bed" className='mx-2' />
                         <input
                           type="text"
                           placeholder="รหัสเครื่องวัด"
@@ -1003,11 +1003,11 @@ const handleShare = async () => {
                     </div>
                     <div className='flex flex-row gap-2 xl:w-md w-full mt-2'>
                       <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
-                        <img src="/img/indicator-dark.svg" width="35" height="40" alt="bed" className='mr-2' />
+                        <img src="/img/indicator-dark.svg" width="30" height="40" alt="bed" className='mr-2' />
                         {rental.indicatorCode || "รหัสเครื่องวัด"}
                       </div>
                       <div className="xl:w-full md:w-full w-full flex flex-row items-center justify-center font-prompt text-[#333333] bg-ConstantGray rounded-md xl:text-md text-sm font-semibold">
-                        <img src="/img/category-dark.svg" width="30" height="40" alt="bath" className='mr-2' />
+                        <img src="/img/category-dark.svg" width="35" height="40" alt="bath" className='mr-2' />
                         {rental.unitType || "ประเภทอัตรา"} 
                       </div>
                     </div>
