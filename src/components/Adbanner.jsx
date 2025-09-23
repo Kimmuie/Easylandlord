@@ -49,7 +49,6 @@ const Adbanner = ({
         data-ad-client={dataAdClient}
         data-ad-slot={dataAdSlot}
         data-ad-format={dataAdFormat}
-        data-full-width-responsive="false"
         ref={adRef}
       />
     </div>

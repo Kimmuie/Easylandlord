@@ -355,74 +355,68 @@ const handleShare = async () => {
           const userData = docSnap.data();
 
           if (userData.rental) {
-            const updatedRentals = userData.rental.map(r =>
-              r.id === rentalId ? { ...r, 
-              name: rentalName, 
-              location: rentalLocate,
-              message: rentalMessage, 
-              tenantNote: tenantNote,
-              rentFee: rentalFee, 
-              bedroom: rentalBedroom, 
-              restroom: rentalRestroom, 
-              squareMetreB: rentalAreaB, 
-              squareMetre: rentalArea, 
-              electricNumber: electricUser, 
-              waterNumber: waterUser, 
-              indicatorCode: indicatorUser, 
-              unitType: categoryUser, 
-              tenantName: nameTenant, 
-              tenantNumber: numberTenant, 
-              fileName: fileName, 
-              fileLink: fileLink, 
-              dueDate: dueDateR, 
-              rentFrequency: selectedFrequency, 
-              areaUnitB: selectedAreaB, 
-              areaUnit: selectedArea,
-              tenantImage: uploadedTenantImage ?? tenantIconImage,
-            } : r
-            );
-            await updateDoc(userDocRef, {
-              rental: updatedRentals 
-            });
+             // Helper function to remove undefined values
+            const removeUndefined = (obj) => {
+              const cleaned = {};
+              Object.keys(obj).forEach(key => {
+                if (obj[key] !== undefined) {
+                  cleaned[key] = obj[key];
+                }
+              });
+              return cleaned;
+            };
 
-            setRental(prevRental => ({
-              ...prevRental,
-              name: rentalName,
-              location: rentalLocate,
-              message: rentalMessage,  
-              tenantNote: tenantNote,
-              rentFee: rentalFee,
-              bedroom: rentalBedroom,
-              restroom: rentalRestroom,
-              squareMetreB: rentalAreaB,
-              squareMetre: rentalArea,
-              electricNumber: electricUser,
-              waterNumber: waterUser,
-              indicatorCode: indicatorUser, 
-              unitType: categoryUser, 
-              tenantName: nameTenant,
-              tenantNumber: numberTenant,
-              fileName: fileName,
-              fileLink: fileLink,
-              dueDate: dueDateR,
-              rentFrequency: selectedFrequency,
-              areaUnitB: selectedAreaB,
-              areaUnit: selectedArea,
-              tenantImage: uploadedTenantImage || tenantIconImage,
-            }));
+            const updateData = removeUndefined({
+            name: rentalName,
+            location: rentalLocate,
+            message: rentalMessage,
+            tenantNote: tenantNote,
+            rentFee: rentalFee,
+            bedroom: rentalBedroom,
+            restroom: rentalRestroom,
+            squareMetreB: rentalAreaB,
+            squareMetre: rentalArea,
+            electricNumber: electricUser,
+            waterNumber: waterUser,
+            indicatorCode: indicatorUser,
+            unitType: categoryUser,
+            tenantName: nameTenant,
+            tenantNumber: numberTenant,
+            fileName: fileName,
+            fileLink: fileLink,
+            dueDate: dueDateR,
+            rentFrequency: selectedFrequency,
+            areaUnitB: selectedAreaB,
+            areaUnit: selectedArea,
+            tenantImage: uploadedTenantImage ?? tenantIconImage,
+          });
 
-            console.log("Other rental details updated successfully");
-          }
+          const updatedRentals = userData.rental.map(r =>
+            r.id === rentalId ? { ...r, ...updateData } : r
+          );
+
+          await updateDoc(userDocRef, {
+            rental: updatedRentals
+          });
+
+          // Update local state with the same cleaned data
+          setRental(prevRental => ({
+            ...prevRental,
+            ...updateData
+          }));
+
+          console.log("Rental details updated successfully");
         }
-      } catch (error) {
-        console.error("Error updating rental:", error);
       }
+    } catch (error) {
+      console.error("Error updating rental:", error);
     }
-    fetchRentalDetail();
-    setIsEditing(false);
-    setExtendImage(false);
-    fetchRentalDetail()
   }
+  
+  setIsEditing(false);
+  setExtendImage(false);
+  fetchRentalDetail(); // Only call this once at the end
+};
 
   // Get from firebase User DB
   useEffect(() => {
@@ -556,6 +550,7 @@ const handleShare = async () => {
   const iconError = getFixedIconPath(icons.error);
   const iconBack = getFixedIconPath(icons.back);
   const iconTrash = getFixedIconPath(icons.trash);
+  const iconShare = getFixedIconPath(icons.share);
   const iconCheck = getFixedIconPath(icons.check);
   const iconEdit = getFixedIconPath(icons.edit);
   const iconSave = getFixedIconPath(icons.save);
@@ -662,15 +657,15 @@ const handleShare = async () => {
         </div>
       )}
         <div className="TooltipMain fixed bottom-44 right-7 hover:right-4 flex flex-col items-center justify-center z-50">
-          <div className="text-center w-22 justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">แชร์หน้านี้</div>
+          <div className="text-center w-22 justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip border-t-2 border-x-2 border-ellWhite">แชร์หน้านี้</div>
           <div className="absolute mb-14 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
           <button className="relative rounded-full bg-ellBlack flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
             onClick={handleShare}>
-            <img src="/img/share-white.svg" width="40" height="40" alt="share" />
+            <img src={iconShare} width="40" height="40" alt="share" />
           </button>
         </div>
         <div className="TooltipMain fixed bottom-24 right-7 hover:right-4 flex flex-col items-center justify-center z-50">
-          <div className="text-center w-22 justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip">ไม่ตรวจเช็ค<br/>มาแล้ว  {daysSinceLastCheck} วัน</div>
+          <div className="text-center w-22 justify-center bg-ellBlack p-1 mb-2 rounded-lg font-prompt text-ellSecondary text-sm z-20 Tooltip border-t-2 border-x-2 border-ellWhite">ไม่ตรวจเช็ค<br/>มาแล้ว  {daysSinceLastCheck} วัน</div>
           <div className="absolute mb-9 w-4 h-4 bg-ellBlack rotate-45 z-10 Tooltip"></div>
           <button className="relative rounded-full bg-ellBlack flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
             onClick={handleCheck}>
@@ -679,7 +674,7 @@ const handleShare = async () => {
         </div>
       {isEditing ? (
         <div className="TooltipMain fixed bottom-4 right-7 hover:right-4 flex flex-col items-center justify-center z-50">
-          <div className="text-center w-22 justify-center bg-ellGreen p-1 mb-2 rounded-lg font-prompt text-[#F7F7F7] text-sm z-20 Tooltip">บันทึก</div>
+          <div className="text-center w-22 justify-center bg-ellGreen p-1 mb-2 rounded-lg font-prompt text-[#F7F7F7] text-sm z-20 Tooltip border-t-2 border-x-2 border-ellWhite">บันทึก</div>
           <div className="absolute mb-14 w-4 h-4 bg-ellGreen rotate-45 z-10 Tooltip"></div>
           <button className="relative rounded-full bg-ellGreen flex items-center justify-center cursor-pointer active:scale-98 hover:scale-105 p-3 z-20"
             onClick={handleSave}>
