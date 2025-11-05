@@ -14,6 +14,7 @@ const Management = () => {
   const [currentFilter, setCurrentFilter] = useState('all');
   const [filteredRentals, setFilteredRentals] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
+  const [selectedAppearanceTags, setSelectedAppearanceTags] = useState("list");
   const [searchName, setSearchName] = useState("");
 
   const handleFilterChange = (filter) => {
@@ -22,6 +23,10 @@ const Management = () => {
 
   const handleTagFilterChange = (tags) => {
     setSelectedTags(tags);
+  };
+  
+  const handleTagAppearanceChange = (tags) => {
+    setSelectedAppearanceTags(tags);
   };
 
   const handleSearchChange = (search) => {
@@ -84,10 +89,11 @@ useEffect(() => {
             return selectedTags.includes(rental.tag);
         });
     }
+    console.log(selectedAppearanceTags)
     result.sort((a, b) => b.zindex - a.zindex);
     console.log("filteredRentals (before setting state):", result);
     setFilteredRentals(result);
-}, [currentFilter, rentals, selectedTags, searchName]);
+}, [currentFilter, rentals, selectedTags, selectedAppearanceTags, searchName]);
 
   const updateRental = async (rentalId, updateData) => {
     try {
@@ -128,7 +134,9 @@ useEffect(() => {
             currentFilter={currentFilter} 
             handleFilterChange={handleFilterChange} 
             selectedTags={selectedTags}
+            selectedAppearanceTags={selectedAppearanceTags}
             onTagFilterChange={handleTagFilterChange}
+            onTagAppearanceChange={handleTagAppearanceChange}
             handleSearch={handleSearchChange}
           />
           {filteredRentals.length === 0 ? (
@@ -137,14 +145,16 @@ useEffect(() => {
               <div className="font-prompt text-ellPrimary font-semibold text-lg">ไม่พบอสังหาริมทรัพย์</div>   
             </div>
           ) : (
-            filteredRentals.map((rental) => (
-            <RentalCards 
-              key={rental.id} 
-              rental={rental} 
-              updateRental={updateRental} 
-              className="flex flex-col"
-            />
-          ))
+          <div className={`w-4xl ${selectedAppearanceTags === "grid" ? "grid grid-cols-3" : "flex flex-col"}`}>
+              {filteredRentals.map((rental) => (
+                <RentalCards 
+                  key={rental.id} 
+                  rental={rental} 
+                  selectedAppearanceTags={selectedAppearanceTags}
+                  updateRental={updateRental} 
+                />
+              ))}
+          </div>
         )}
           <div className="w-full flex justify-center xl:hidden">
             <Adbanner

@@ -5,13 +5,16 @@ import { db } from "../components/firebase";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext'; 
 
-const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagFilterChange, handleSearch }) => {
+const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, selectedAppearanceTags, onTagFilterChange, onTagAppearanceChange, handleSearch }) => {
     const { theme, icons } = useContext(ThemeContext);
     const { currentUser } = useAuth();
     const navigate = useNavigate();
     const [showFilterTag, setShowFilterTag] = useState(false);
     const [showFilterTagBox, setShowFilterTagBox] = useState(false);
     const filterTagBoxRef = useRef(null);
+    const [showAppearanceTag, setShowAppearanceTag] = useState(false);
+    const [showAppearanceTagBox, setShowAppearanceTagBox] = useState(false)
+    const appearanceTagBoxRef = useRef(null);
     const [tagFilters, setTagFilters] = useState({
         'บ้านเช่า': false,
         'โกดัง': false,
@@ -19,11 +22,17 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
         'ที่ดิน': false,
         'คอนโด': false
     });
+    const [tagAppearance, setTagAppearance] = useState({
+        'list': true,
+        'grid': false,
+    });
 
     useEffect(() => {
         function handleClickOutside(event) {
             if (filterTagBoxRef.current && !filterTagBoxRef.current.contains(event.target)) {
                 setShowFilterTagBox(false);
+            } else if (appearanceTagBoxRef.current && !appearanceTagBoxRef.current.contains(event.target)) {
+                setShowAppearanceTagBox(false);
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
@@ -48,9 +57,31 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
     }, [selectedTags]);
 
     useEffect(() => {
+        if (selectedAppearanceTags) {
+            const newTagFilters = { ...tagFilters };
+            Object.keys(newTagFilters).forEach(key => {
+                newTagFilters[key] = false;
+            });
+            selectedTags.forEach(tag => {
+                if (tag in newTagFilters) {
+                    newTagFilters[tag] = true;
+                }
+            });
+            setTagFilters(newTagFilters);
+        }
+    }, [selectedTags]);
+
+    useEffect(() => {
         const hasActiveTags = Object.values(tagFilters).some(value => value);
         setShowFilterTag(hasActiveTags);
     }, [tagFilters]);
+
+
+    useEffect(() => {
+        const hasActiveTags = Object.values(tagAppearance).some(value => value);
+        setShowAppearanceTag(hasActiveTags);
+    }, [tagAppearance]);
+
     const handleTagFilterChange = (tag) => {
         const updatedFilters = {
             ...tagFilters,
@@ -60,6 +91,18 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
         const activeTags = Object.keys(updatedFilters).filter(key => updatedFilters[key]);
         if (onTagFilterChange) {
             onTagFilterChange(activeTags);
+        }
+    };
+
+    const handleTagAppearanceChange = (tag) => {
+        const updatedAppearance = {
+            list: tag === 'list',
+            grid: tag === 'grid'
+        };
+        setTagAppearance(updatedAppearance);
+        
+        if (onTagAppearanceChange) {
+            onTagAppearanceChange(tag);
         }
     };
 
@@ -137,7 +180,7 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                         placeholder="ค้นหาบ้านเช่าของคุณ"   
                         maxLength={32}
                         onChange={(e) => handleSearch(e.target.value)}
-                        className="border-2 border-ellGray rounded-2xl px-4 py-2 w-96 xl:min-w-116 md:w-83 font-prompt text-ellPrimary text-lg mr-2"
+                        className="border-2 border-ellGray rounded-2xl px-4 py-2 w-96 xl:min-w-100 md:w-83 font-prompt text-ellPrimary text-lg mr-2"
                     />
                 </div>
                 <div className="flex justify-center">
@@ -178,6 +221,39 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, onTagF
                                     e.preventDefault();
                                     e.stopPropagation();
                                     handleTagFilterChange(tag);
+                                }}>
+                                {tag}
+                            </span>
+                        </label>
+                        ))}
+                        </div>
+                        }
+                    </div>
+                    <div className="relative inline-block" ref={appearanceTagBoxRef}>
+                        <button className={`mt-4.5 border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 w-15 md:w-13 flex flex-row justify-center items-center cursor-pointer`}
+                                onClick={() => setShowAppearanceTagBox(prev => !prev)}>
+                            <img src={tagAppearance.grid ? icons.grid : icons.list} width="30" height="40" alt="appearance"/>
+                        </button>
+                        {/* Box Appearance */}
+                        {showAppearanceTagBox && 
+                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-20 md:w-30 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl border-2 border-ellPrimary z-50">
+                            <div className="absolute -top-2.5 left-7 md:left-11.75 w-4 h-4 bg-ellBlack rotate-45 border-s-2 border-t-2 border-s-ellPrimary border-t-ellPrimary"></div>
+                        {Object.keys(tagAppearance).map((tag, index) => (
+                        <label key={index} className="flex items-center gap-1 cursor-pointer">
+                            <input
+                            type="radio"
+                            checked={tagAppearance[tag]}
+                            onChange={(e) => {
+                                e.stopPropagation();
+                                handleTagAppearanceChange(tag)
+                            }}
+                            className="appearance-none w-3 h-3 rounded-full border-2 border-ellSecondary checked:bg-ellSecondary checked:border-transparent cursor-pointer"
+                            />
+                            <span className="font-prompt text-ellSecondary text-xs"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleTagAppearanceChange(tag);
                                 }}>
                                 {tag}
                             </span>

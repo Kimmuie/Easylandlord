@@ -5,7 +5,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext'; 
 import { useParams, useNavigate } from 'react-router-dom';
 
-const RentalCards = ({ rental }) => {
+const RentalCards = ({ rental, selectedAppearanceTags }) => {
   const { currentUser } = useAuth();
   const { rentalId } = useParams();
     const navigate = useNavigate();
@@ -97,30 +97,44 @@ const fetchRecords = async () => {
 };
 
   return (
-    <div className="relative w-96 xl:w-4xl md:w-3xl mb-6 flex flex-col">
+    <div className={`relative w-96 md:w-3xl mb-6 flex flex-col ${selectedAppearanceTags == "list" ? "xl:w-4xl" : "xl:w-70"}`}>
         {/* Black shadow behind the card */}
-        <div className="absolute inset-0 bg-ellBlack rounded-2xl translate-x-1 md:translate-x-1.5 translate-y-1 md:translate-y-1.5"></div>
+        <div className={`absolute inset-0 bg-ellBlack rounded-2xl ${selectedAppearanceTags == "list" ? "translate-x-1 md:translate-x-1.5 translate-y-1 md:translate-y-1.5" : "translate-x-1 translate-y-1"}`}></div>
         {/* Main card */}
-        <div className="relative md:h-56 h-72 w-full xl:w-4xl md:w-3xl rounded-2xl bg-ellWhite border-2 border-ellGray">
+        <div className={`relative md:h-56 h-72 w-full md:w-3xl rounded-2xl bg-ellWhite border-2 border-ellGray  ${selectedAppearanceTags == "list" ? "xl:w-4xl" : "xl:w-70 flex flex-col"}`}>
             <div className="flex-row flex py-3 pl-3">
-                <div className="flex flex-grow">
+                <div className={`flex ${selectedAppearanceTags == "list" ? "flex-grow" : ""}`}>
+                    <div className="flex flex-col">
                     <img src={rental.coverRental || rental.rentalImage0 || "./img/sampleImage.jpg"} alt="image" className="h-15 w-25 object-cover border-2 border-ellGray rounded-md"/>
-                    <div className="flex items-center pl-6 font-prompt font-semibold text-ellPrimary text-md md:text-xl w-lg">
+                    {selectedAppearanceTags == "grid" &&
+                        <div className="flex justify-center rounded-sm px-1 font-prompt text-ellSecondary text-sm bg-ellBlack h-5">
+                            {rental.tag}
+                        </div>
+                    }
+                    </div>
+                    <div className={`flex font-prompt items-center font-semibold text-ellPrimary text-md md:text-xl break-all ${selectedAppearanceTags == "list" ? " pl-6 xl:w-lg" : "justify-center pl-2 xl:w-45"}`}>
                         {rental.name}
                     </div>  
                 </div>
+                {selectedAppearanceTags == "list" ? (
                 <div className="flex justify-end">
                     <div className="flex justify-center rounded-sm mr-3 px-1 font-prompt text-ellSecondary text-md md:text-lg bg-ellBlack h-8">
                         {rental.tag}
                     </div>
                 </div>
+                ):(
+                <div className="flex justify-end">
+                    <div className={`rounded-full border-2 border-ellGray h-5 w-5 mr-3 ${rental.status === "available" ? "bg-ellGreen" : "bg-ellRed"}`}></div>
+                </div>
+                )}
             </div>
-            <div className="flex flex-row">
+            <div className={`flex flex-row flex-grow ${selectedAppearanceTags == "list" ? "" : "justify-center"}`}>
+                {selectedAppearanceTags == "list" &&
                 <div className="flex flex-col flex-grow pl-3">
                     {/* Rental Location */}
-                    <div className="font-prompt text-ellPrimary text-sm md:text-lg md:min-h-22 min-h-40 w-full md:w-md break-all">
-                        {rental.location}
-                    </div>
+                        <div className="font-prompt text-ellPrimary text-sm md:text-lg md:min-h-22 min-h-40 w-full md:w-md break-all">
+                            {rental.location}
+                        </div>
                     {/* Rental Description */}
                     <div className="flex flex-row items-center font-prompt text-ellPrimary text-lg">
                         <div className={`rounded-full border-2 border-ellGray h-5 w-5 mr-2 ${rental.status === "available" ? "bg-ellGreen" : "bg-ellRed"}`}></div>
@@ -138,7 +152,8 @@ const fetchRecords = async () => {
                         }
                     </div>
                 </div>
-                <div className="flex flex-col items-center justify-end pr-3 pb-1">
+                }
+                <div className={`flex flex-col items-center justify-end pr-3 ${selectedAppearanceTags == "list" ? "pb-1" : "pb-4"}`}>
                     {/* Rental Price */}
                     <div className="font-prompt text-ellPrimary font-semibold text-md md:text-lg">
                         {rental.rentFee}/{rental.rentFrequency}
