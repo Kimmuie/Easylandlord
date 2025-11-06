@@ -97,13 +97,13 @@ const fetchRecords = async () => {
 };
 
   return (
-    <div className={`relative w-96 md:w-3xl mb-6 flex flex-col ${selectedAppearanceTags == "list" ? "xl:w-4xl" : "xl:w-70"}`}>
+    <div className={`relative mb-6 flex flex-col ${selectedAppearanceTags == "list" ? "w-96  md:w-3xl xl:w-4xl" : "w-32 md:w-60 xl:w-70"}`}>
         {/* Black shadow behind the card */}
         <div className={`absolute inset-0 bg-ellBlack rounded-2xl ${selectedAppearanceTags == "list" ? "translate-x-1 md:translate-x-1.5 translate-y-1 md:translate-y-1.5" : "translate-x-1 translate-y-1"}`}></div>
         {/* Main card */}
-        <div className={`relative md:h-56 h-72 w-full md:w-3xl rounded-2xl bg-ellWhite border-2 border-ellGray  ${selectedAppearanceTags == "list" ? "xl:w-4xl" : "xl:w-70 flex flex-col"}`}>
-            <div className="flex-row flex py-3 pl-3">
-                <div className={`flex ${selectedAppearanceTags == "list" ? "flex-grow" : ""}`}>
+        <div className={`relative md:h-56 h-72 rounded-2xl bg-ellWhite border-2 border-ellGray  ${selectedAppearanceTags == "list" ? " w-full md:w-3xl xl:w-4xl" : " w-33 md:w-60 xl:w-70 flex items-center flex-col"}`}>
+            <div className={`flex-row flex py-3 ${selectedAppearanceTags == "list" ? "pl-3 md:pl-3" : "pl-0 md:pl-3"}`}>
+                <div className={`flex ${selectedAppearanceTags == "list" ? "flex-grow" : "md:flex-row flex-col"}`}>
                     <div className="flex flex-col">
                     <img src={rental.coverRental || rental.rentalImage0 || "./img/sampleImage.jpg"} alt="image" className="h-15 w-25 object-cover border-2 border-ellGray rounded-md"/>
                     {selectedAppearanceTags == "grid" &&
@@ -112,7 +112,7 @@ const fetchRecords = async () => {
                         </div>
                     }
                     </div>
-                    <div className={`flex font-prompt items-center font-semibold text-ellPrimary text-md md:text-xl break-all ${selectedAppearanceTags == "list" ? " pl-6 xl:w-lg" : "justify-center pl-2 xl:w-45"}`}>
+                    <div className={`flex font-prompt items-center font-semibold text-ellPrimary text-md break-all ${selectedAppearanceTags == "list" ? " pl-6 w-full xl:w-lg md:text-xl" : "md:text-sm justify-center pl-2 w-24 xl:w-45"}`}>
                         {rental.name}
                     </div>  
                 </div>
@@ -124,7 +124,7 @@ const fetchRecords = async () => {
                 </div>
                 ):(
                 <div className="flex justify-end">
-                    <div className={`rounded-full border-2 border-ellGray h-5 w-5 mr-3 ${rental.status === "available" ? "bg-ellGreen" : "bg-ellRed"}`}></div>
+                    <div className={`rounded-full border-2 border-ellGray h-5 w-5 xl:mr-3 mr-0 absolute md:relative ${rental.status === "available" ? "bg-ellGreen" : "bg-ellRed"}`}></div>
                 </div>
                 )}
             </div>
@@ -153,7 +153,7 @@ const fetchRecords = async () => {
                     </div>
                 </div>
                 }
-                <div className={`flex flex-col items-center justify-end pr-3 ${selectedAppearanceTags == "list" ? "pb-1" : "pb-4"}`}>
+                <div className={`flex flex-col items-center justify-end ${selectedAppearanceTags == "list" ? "pb-1 pr-3 " : "pb-4 md:pr-3 pr-0"}`}>
                     {/* Rental Price */}
                     <div className="font-prompt text-ellPrimary font-semibold text-md md:text-lg">
                         {rental.rentFee}/{rental.rentFrequency}

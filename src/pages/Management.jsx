@@ -145,7 +145,7 @@ useEffect(() => {
               <div className="font-prompt text-ellPrimary font-semibold text-lg">ไม่พบอสังหาริมทรัพย์</div>   
             </div>
           ) : (
-          <div className={`w-4xl ${selectedAppearanceTags === "grid" ? "grid grid-cols-3" : "flex flex-col"}`}>
+          <div className={`gap-3 md:gap-6 ${selectedAppearanceTags === "grid" ? "grid grid-cols-3" : "flex flex-col"}`}>
               {filteredRentals.map((rental) => (
                 <RentalCards 
                   key={rental.id} 

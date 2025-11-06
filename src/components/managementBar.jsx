@@ -31,7 +31,8 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, select
         function handleClickOutside(event) {
             if (filterTagBoxRef.current && !filterTagBoxRef.current.contains(event.target)) {
                 setShowFilterTagBox(false);
-            } else if (appearanceTagBoxRef.current && !appearanceTagBoxRef.current.contains(event.target)) {
+            }
+            if (appearanceTagBoxRef.current && !appearanceTagBoxRef.current.contains(event.target)) {
                 setShowAppearanceTagBox(false);
             }
         }
@@ -184,14 +185,14 @@ const ManagementBar = ({ currentFilter, handleFilterChange, selectedTags, select
                     />
                 </div>
                 <div className="flex justify-center">
-                    <button className={`mt-4.5 border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 w-25 md:w-22 font-prompt text-ellPrimary ${currentFilter === 'all' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
+                    <button className={`mt-4.5 border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 w-19 md:w-22 font-prompt text-ellPrimary ${currentFilter === 'all' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
                             onClick={() => handleFilterChange("all")}>ทั้งหมด</button>
-                    <button className={`mt-4.5 border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 w-25 md:w-22 font-prompt text-ellPrimary flex flex-row justify-center items-center ${currentFilter === 'unavailable' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
+                    <button className={`mt-4.5 border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 w-19 md:w-22 font-prompt text-ellPrimary flex flex-row justify-center items-center ${currentFilter === 'unavailable' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
                             onClick={() => handleFilterChange("unavailable")}>
                         <div className="rounded-full border-2 border-ellGray h-5 w-5 bg-ellRed mr-2"></div>
                         ไม่ว่าง
                     </button>
-                    <button className={`mt-4.5 border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 w-25 md:w-22 font-prompt text-ellPrimary flex flex-row justify-center items-center ${currentFilter === 'available' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
+                    <button className={`mt-4.5 border-2 border-ellGray hover:border-ellPrimary rounded-2xl py-2 mr-2 w-19 md:w-22 font-prompt text-ellPrimary flex flex-row justify-center items-center ${currentFilter === 'available' ? 'bg-ellPrimary text-ellTertiary border-transparent cursor-default' : "cursor-pointer"}`}
                             onClick={() => handleFilterChange("available")}>
                         <div className="rounded-full border-2 border-ellGray h-5 w-5 bg-ellGreen mr-2"></div>
                         ว่าง
