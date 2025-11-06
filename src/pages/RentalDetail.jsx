@@ -280,10 +280,11 @@ const RentalDetail = () => {
 
         if (docSnap.exists()) {
           const userData = docSnap.data();
-          setCheckDate(Date.now())
+          const newCheckDate = Date.now();
+          setCheckDate(newCheckDate);
           if (userData.rental) {
             const updatedRentals = userData.rental.map(r =>
-              r.id === rentalId ? { ...r, checkDate: checkDate } : r
+              r.id === rentalId ? { ...r, checkDate: newCheckDate } : r
             );
             await updateDoc(userDocRef, {
               rental: updatedRentals
@@ -291,10 +292,10 @@ const RentalDetail = () => {
 
             setRental(prevRental => ({
               ...prevRental,
-              checkDate: checkDate
+              checkDate: newCheckDate
             }));
-
             console.log("Check rental successfully");
+            await fetchRentalDetail()
           }
         }
       } catch (error) {
