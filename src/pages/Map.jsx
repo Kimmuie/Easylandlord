@@ -12,7 +12,7 @@ const GeocodingComponent = ({ rentals, setRentalsWithCoordinates, onGeocodingCom
   const { currentUser } = useAuth();
   const geocodingLibrary = useMapsLibrary("geocoding");
   const [isGeocoding, setIsGeocoding] = useState(false);
-
+  
   useEffect(() => {
     if (!geocodingLibrary || !rentals || rentals.length === 0 || isGeocoding) return;
     const geocoder = new geocodingLibrary.Geocoder();

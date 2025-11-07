@@ -27,6 +27,7 @@ const FinancialHistory = ({ isEditing, setDeleteAll }) => {
   const [isSort, setIsSort] = useState(false);
   const [rentalName, setRentalName] = useState('');
   const [depositBill, setDepositBill] = useState('');
+  const [draggedIndex, setDraggedIndex] = useState(null);
   const [formData, setFormData] = useState({
     moveInDate: '',
     dueInDate: '',
@@ -141,52 +142,27 @@ const FinancialHistory = ({ isEditing, setDeleteAll }) => {
     }
   }, [records, isSort, manuallyReordered, customOrder]);
 
-  // Move item up in the list
-  const moveItemUp = async (index) => {
-    if (index === 0) return; // Already at the top
+  const moveItemUp = (index) => {
+    if (index === 0) return;
     
-    // Preserve current editing state before reordering
-    const currentStates = preserveEditingState();
-    
-    const items = Array.from(orderedRecords);
+    const items = [...records];
     const temp = items[index];
     items[index] = items[index - 1];
     items[index - 1] = temp;
     
-    setOrderedRecords(items);
-    setManuallyReordered(true);
-    
-    const newCustomOrder = items.map(item => item.id);
-    setCustomOrder(newCustomOrder);
-    
-    await saveCustomOrderToFirebase(newCustomOrder);
-    
-    // Restore editing state after reordering
-    restoreEditingState(currentStates);
+    setRecords(items);
   };
 
-  // Move item down in the list
-  const moveItemDown = async (index) => {
-    if (index === orderedRecords.length - 1) return; // Already at the bottom
+  // Move item down (for mobile/button interface)
+  const moveItemDown = (index) => {
+    if (index === records.length - 1) return;
     
-    // Preserve current editing state before reordering
-    const currentStates = preserveEditingState();
-    
-    const items = Array.from(orderedRecords);
+    const items = [...records];
     const temp = items[index];
     items[index] = items[index + 1];
     items[index + 1] = temp;
     
-    setOrderedRecords(items);
-    setManuallyReordered(true);
-    
-    const newCustomOrder = items.map(item => item.id);
-    setCustomOrder(newCustomOrder);
-    
-    await saveCustomOrderToFirebase(newCustomOrder);
-    
-    // Restore editing state after reordering
-    restoreEditingState(currentStates);
+    setRecords(items);
   };
 
   // Function to save custom order to Firebase
@@ -212,6 +188,39 @@ const FinancialHistory = ({ isEditing, setDeleteAll }) => {
     } catch (error) {
       console.error("Error saving custom order:", error);
     }
+  };
+
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    // Make the drag image slightly transparent
+    e.currentTarget.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e) => {
+    e.currentTarget.style.opacity = '1';
+    setDraggedIndex(null);
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    
+    if (draggedIndex === null || draggedIndex === index) return;
+
+    const items = [...records];
+    const draggedItem = items[draggedIndex];
+    
+    // Remove dragged item
+    items.splice(draggedIndex, 1);
+    // Insert at new position
+    items.splice(index, 0, draggedItem);
+    
+    setRecords(items);
+    setDraggedIndex(index);
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
   };
 
   // Function to load custom order when component mounts
@@ -760,33 +769,20 @@ return (
                 <td colSpan={isEditing ? "8" : "6"} className="px-6 py-4 text-center text-ellPrimary border-2 border-ellGray">No records found</td>
               </tr>
             ) : (
-              orderedRecords.map((record, index) => (
-                <tr key={record.id}>
+              records.map((record, index) => (
+                <tr
+                  key={record.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragEnter={handleDragEnter}
+                  className={`transition-all ${draggedIndex === index ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'}`}
+                >
                   {isEditing && (
-                    <td className="w-0 p-0 m-0 relative flex ">
-                      <div className="flex flex-col items-center justify-center space-y-1 absolute right-[10px]">
-                        <button
-                          onClick={() => moveItemUp(index)}
-                          disabled={index === 0}
-                          className={`px-2 py-1 text-xs rounded ${
-                            index === 0 
-                              ? 'bg-gray-200 text-ellDarkGray cursor-not-allowed' 
-                              : 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
-                          }`}
-                        >
-                          ▲
-                        </button>
-                        <button
-                          onClick={() => moveItemDown(index)}
-                          disabled={index === orderedRecords.length - 1}
-                          className={`px-2 py-1 text-xs rounded ${
-                            index === orderedRecords.length - 1 
-                              ? 'bg-gray-200 text-ellDarkGray cursor-not-allowed' 
-                              : 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
-                          }`}
-                        >
-                          ▼
-                        </button>
+                    <td className="w-0 p-0 m-0 relative flex justify-center">
+                      <div className="cursor-move text-gray-400 hover:text-gray-600 text-xl leading-none select-none absolute top-[15px] right-[10px]">
+                        ⋮⋮
                       </div>
                     </td>
                   )}
@@ -909,7 +905,7 @@ return (
         ) : records.length === 0 ? (
           <div className="px-6 py-4 text-center text-ellPrimary border-2 border-ellGray">No records found</div>
         ) : (
-          sortedRecords.map((record, index) => {
+          records.map((record, index) => {
             const displayIndex = isSort ? sortedRecords.length - index : index + 1;
             
             return (
