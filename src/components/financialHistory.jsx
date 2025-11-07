@@ -28,6 +28,8 @@ const FinancialHistory = ({ isEditing, setDeleteAll }) => {
   const [rentalName, setRentalName] = useState('');
   const [depositBill, setDepositBill] = useState('');
   const [draggedIndex, setDraggedIndex] = useState(null);
+  const [touchStartY, setTouchStartY] = useState(null);
+  const [touchDraggingIndex, setTouchDraggingIndex] = useState(null);
   const [formData, setFormData] = useState({
     moveInDate: '',
     dueInDate: '',
@@ -190,38 +192,74 @@ const FinancialHistory = ({ isEditing, setDeleteAll }) => {
     }
   };
 
-  const handleDragStart = (e, index) => {
+// Desktop drag handlers
+const handleDragStart = (e, index) => {
+  setDraggedIndex(index);
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.style.opacity = '0.5';
+};
+
+const handleDragEnd = (e) => {
+  e.currentTarget.style.opacity = '1';
+  setDraggedIndex(null);
+  setTouchStartY(null);
+  setTouchDraggingIndex(null);
+};
+
+const handleDragOver = (e, index) => {
+  // e.preventDefault();
+  if (draggedIndex === null || draggedIndex === index) return;
+
+  const items = [...records];
+  const draggedItem = items[draggedIndex];
+  items.splice(draggedIndex, 1);
+  items.splice(index, 0, draggedItem);
+
+  setRecords(items);
+  setDraggedIndex(index);
+};
+
+const handleDragEnter = (e) => {
+  e.preventDefault();
+};
+
+    // ✅ Touch equivalents (for iPad)
+  const handleTouchStart = (e, index) => {
+    setTouchStartY(e.touches[0].clientY);
+    setTouchDraggingIndex(index);
     setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-    // Make the drag image slightly transparent
     e.currentTarget.style.opacity = '0.5';
   };
 
-  const handleDragEnd = (e) => {
+  const ROW_HEIGHT = 50;
+  const DEAD_ZONE = 20; 
+
+  const handleTouchMove = (e, originalIndex) => {
+    if (touchStartY === null || touchDraggingIndex === null) return;
+    
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartY; // Total distance moved from start
+
+    if (Math.abs(deltaY) < DEAD_ZONE) {
+        return;
+    }
+    const rowsMoved = Math.round(deltaY / ROW_HEIGHT); 
+    let newTargetIndex = originalIndex + rowsMoved; 
+    
+    const clampedIndex = Math.max(0, Math.min(records.length - 1, newTargetIndex));
+
+    if (clampedIndex !== touchDraggingIndex) {
+      handleDragOver(e, clampedIndex);
+      const newTouchY = touchStartY + (clampedIndex - originalIndex) * ROW_HEIGHT;
+      setTouchStartY(newTouchY);
+    }
+  };
+
+  const handleTouchEnd = (e) => {
     e.currentTarget.style.opacity = '1';
-    setDraggedIndex(null);
+    handleDragEnd(e);
   };
 
-  const handleDragOver = (e, index) => {
-    e.preventDefault();
-    
-    if (draggedIndex === null || draggedIndex === index) return;
-
-    const items = [...records];
-    const draggedItem = items[draggedIndex];
-    
-    // Remove dragged item
-    items.splice(draggedIndex, 1);
-    // Insert at new position
-    items.splice(index, 0, draggedItem);
-    
-    setRecords(items);
-    setDraggedIndex(index);
-  };
-
-  const handleDragEnter = (e) => {
-    e.preventDefault();
-  };
 
   // Function to load custom order when component mounts
   const loadCustomOrder = async () => {
@@ -745,11 +783,11 @@ return (
       </div>
       
       {/* Desktop/Tablet View (Headers on Top) - Hidden on Mobile */}
-      <div className="hidden sm:block">
-        <table className="lg:w-4xl w-full table-fixed">
+      <div className={`hidden sm:block ${isEditing ? "ml-10 xl:ml-0" : "ml-0"}`}>
+        <table className="lg:w-4xl w-full table-fixed ">
           <thead className="bg-ellPrimary">
             <tr>
-              {isEditing && <th className='w-0'></th>}
+              {isEditing && <th className='w-0 '></th>}
               <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">รายการ</th>
               <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">ยอดชำระ</th>
               <th className="w-20 py-3 font-prompt text-center bg-ellWhite border-2 border-ellGray text-md text-ellPrimary uppercase tracking-wider cursor-default">วันชำระ</th>
@@ -777,11 +815,15 @@ return (
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => handleDragOver(e, index)}
                   onDragEnter={handleDragEnter}
-                  className={`transition-all ${draggedIndex === index ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'}`}
+                  // iPad/touch support
+                  onTouchStart={(e) => handleTouchStart(e, index)}
+                  onTouchMove={(e) => handleTouchMove(e, index)}
+                  onTouchEnd={(e) => handleTouchEnd(e)}
+                  className={`transition-all touch-none ${draggedIndex === index ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'}`}
                 >
                   {isEditing && (
-                    <td className="w-0 p-0 m-0 relative flex justify-center">
-                      <div className="cursor-move text-gray-400 hover:text-gray-600 text-xl leading-none select-none absolute top-[15px] right-[10px]">
+                    <td className="w-0 p-0 m-0 relative">
+                      <div className="touch-none cursor-move text-gray-400 hover:text-gray-600 text-xl leading-none select-none space-y-1 absolute top-[15px] right-[10px]">
                         ⋮⋮
                       </div>
                     </td>
