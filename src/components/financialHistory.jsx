@@ -10,7 +10,7 @@ import "flatpickr/dist/themes/material_blue.css";
 import { Thai } from "flatpickr/dist/l10n/th.js";
 import {formatToThaiBuddhist, formatForStorage, formatIsoToThaiBuddhist, flatpickrThaiBuddhistFormatter} from "../components/dateUtils"
 
-const FinancialHistory = ({ isEditing, setDeleteAll }) => {
+const FinancialHistory = ({ isEditing, setDeleteAll, savePrevious }) => {
   const [editingStates, setEditingStates] = useState({});
   const contentEditableRefs = useRef({});
   const [customOrder, setCustomOrder] = useState([]);
@@ -20,6 +20,7 @@ const FinancialHistory = ({ isEditing, setDeleteAll }) => {
   const { theme, icons } = useContext(ThemeContext);
   const { rentalId } = useParams();
   const [showAlertDeleteHistory, setShowAlertDeleteHistory] = useState(false);
+  const [showAlertDeleteHistorySpecificTenant, setShowAlertDeleteHistorySpecificTenant] = useState(false);
   const [rental, setRental] = useState(null);
   const [records, setRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,6 +31,10 @@ const FinancialHistory = ({ isEditing, setDeleteAll }) => {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [touchStartY, setTouchStartY] = useState(null);
   const [touchDraggingIndex, setTouchDraggingIndex] = useState(null);
+  const [showTagBox, setShowTagBox] = useState(false);  
+  const [tagOptions, setTagOptions] = useState(['ผู้เช่าปัจจุบัน']);
+  const filterTagBoxRef = useRef(null);
+  const [selectedTag, setSelectedTag] = useState('ผู้เช่าปัจจุบัน');
   const [formData, setFormData] = useState({
     moveInDate: '',
     dueInDate: '',
@@ -38,6 +43,53 @@ const FinancialHistory = ({ isEditing, setDeleteAll }) => {
     transactionCode: '',
     rentalNote: ''
   });
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (filterTagBoxRef.current && !filterTagBoxRef.current.contains(event.target)) {
+        setShowTagBox(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleTagSelect = async (value, type) => {
+    try {
+      setIsLoading(true);
+      const userDocRef = doc(db, "users", currentUser.email);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.rental) {
+          const rental = userData.rental.find(r => r.id === rentalId);
+          if (type === 'tag') {
+            setSelectedTag(value);
+            setShowTagBox(false);
+            
+            if (value === "ผู้เช่าปัจจุบัน") {
+              setRecords(rental.financialHistory);
+            } else {
+              // Use bracket notation to access the property with the variable value
+              setRecords(rental.previousFinance[value] || []);
+            }
+          }
+        } else {
+          setRecords([]);
+        }
+      } else {
+        setRecords([]);
+      }
+    } catch (error) {
+      console.error("Error fetching records:", error);
+      setRecords([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   // Improved preserve editing state function
   const preserveEditingState = () => {
@@ -304,6 +356,104 @@ const handleDragEnter = (e) => {
     );
   };
 
+  const saveToPreviousFinance = async () => {
+    console.log("asdasdsadsad");
+  if (!currentUser || !rentalId) {
+    console.log("Missing user or rental ID");
+    return;
+  }
+  
+  try {
+    const userDocRef = doc(db, "users", currentUser.email);
+    const docSnap = await getDoc(userDocRef);
+    
+    if (docSnap.exists()) {
+      const userData = docSnap.data();
+      
+      if (userData.rental) {
+        const rentalIndex = userData.rental.findIndex(r => r.id === rentalId);
+        
+        if (rentalIndex !== -1) {
+          const currentRental = userData.rental[rentalIndex];
+          const financialHistory = currentRental.financialHistory || [];
+          
+          if (financialHistory.length === 0) {
+            console.log("No financial history to save");
+            return { success: false };
+          }
+
+          // Get the tenant name from the current rental
+          const tenantName = currentRental.tenantName || "Unknown Tenant";
+
+          console.log("Current rental before update:", currentRental);
+
+          // Get existing previousFinance for this rental (if any)
+          const existingPreviousFinance = currentRental.previousFinance || {};
+          
+          // Get existing records for this tenant (if any)
+          const existingTenantRecords = existingPreviousFinance[tenantName] || [];
+          
+          // Merge with existing records for this tenant
+          const updatedTenantRecords = [...existingTenantRecords, ...financialHistory];
+          
+          // Update the previousFinance structure
+          const updatedPreviousFinance = {
+            ...existingPreviousFinance,
+            [tenantName]: updatedTenantRecords
+          };
+
+          console.log("Updated previousFinance object:", updatedPreviousFinance);
+
+          // Update the rental with previousFinance (same pattern as handleFinancialSave)
+          userData.rental[rentalIndex] = {
+            ...userData.rental[rentalIndex],
+            previousFinance: updatedPreviousFinance
+          };
+
+          console.log("Rental after update:", userData.rental[rentalIndex]);
+          console.log("Full rental array being sent:", userData.rental);
+
+          // Save to Firestore
+          await updateDoc(userDocRef, { rental: userData.rental });
+          
+          console.log("✓ UpdateDoc completed");
+
+          // Verify immediately after
+          const verifySnap = await getDoc(userDocRef);
+          const verifyData = verifySnap.data();
+          console.log("Verified rental from Firestore:", verifyData.rental[rentalIndex]);
+          console.log("Verified previousFinance:", verifyData.rental[rentalIndex]?.previousFinance);
+          
+          console.log(`Saved ${financialHistory.length} records to previous finance for tenant: ${tenantName}`);
+          
+          return { success: true, recordsSaved: financialHistory.length };
+        } else {
+          console.log("Rental not found for ID:", rentalId);
+          return { success: false };
+        }
+      } else {
+        console.log("No rentals found");
+        return { success: false };
+      }
+    } else {
+      console.log("User document doesn't exist");
+      return { success: false };
+    }
+  } catch (error) {
+    console.error("Error saving to previous finance:", error);
+    console.error("Full error:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+
+  useEffect(() => {
+    if (savePrevious === true) {
+      console.log("Running saveToPreviousFinance"); // Debug log
+      saveToPreviousFinance();
+    }
+  }, [savePrevious]);
+
   const handleFinancialSave = async () => {
     if (rental && currentUser) {
       try {
@@ -446,9 +596,11 @@ const handleFinance = async () => {
   
 
   useEffect(() => {
+    handleTagSelect("ผู้เช่าปัจจุบัน", 'tag')
     if (isEditing === false) {
       handleFinancialSave();
       handleFinance();
+      setTimeout(() => fetchRecords(), 200);;
     }
   }, [isEditing]);
 
@@ -470,7 +622,16 @@ const handleFinance = async () => {
         if (rentalData) {
           setRental(rentalData);
           setDepositBill(rentalData.billDeposit);
-        }
+          const dynamicTags = ['ผู้เช่าปัจจุบัน'];
+
+          if (rentalData.previousFinance) {
+            const tenantNames = Object.keys(rentalData.previousFinance);
+            dynamicTags.push(...tenantNames);
+          }
+
+          setTagOptions(dynamicTags);
+
+          }
       }
     } catch (error) {
       console.error("Error fetching rental:", error);
@@ -684,6 +845,70 @@ const handleFinance = async () => {
     }
   };
 
+  const deletePreviousFinanceRecord = async (transactionCode, recordId) => {
+  try {
+    const userDocRef = doc(db, "users", currentUser.email);
+    const userDoc = await getDoc(userDocRef);
+    
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      
+      if (userData.rental) {
+        const rentalIndex = userData.rental.findIndex(r => r.id === rentalId);
+        
+        if (rentalIndex !== -1 && userData.rental[rentalIndex].previousFinance) {
+          const previousFinance = userData.rental[rentalIndex].previousFinance;
+          
+          if (recordId === "all") {
+            // Delete the entire tenant (transaction code) completely
+            if (previousFinance[transactionCode]) {
+              delete userData.rental[rentalIndex].previousFinance[transactionCode];
+              
+              await updateDoc(userDocRef, {
+                rental: userData.rental
+              });
+              
+              // Update local state
+              setRecords([]);
+              setSelectedTag("ผู้เช่าปัจจุบัน"); // Reset to current tenant
+              
+              console.log(`Tenant ${transactionCode} deleted completely from previousFinance`);
+            }
+          } else {
+            // Delete single record from specific transaction code
+            if (previousFinance[transactionCode] && Array.isArray(previousFinance[transactionCode])) {
+              userData.rental[rentalIndex].previousFinance[transactionCode] = 
+                previousFinance[transactionCode].filter(record => record.id !== recordId);
+              
+              // Remove the tenant key if array becomes empty after deletion
+              if (userData.rental[rentalIndex].previousFinance[transactionCode].length === 0) {
+                delete userData.rental[rentalIndex].previousFinance[transactionCode];
+                // Reset to current tenant since this tenant no longer exists
+                setSelectedTag("ผู้เช่าปัจจุบัน");
+              }
+              
+              await updateDoc(userDocRef, {
+                rental: userData.rental
+              });
+              
+              // Update local state
+              setRecords(prevRecords => prevRecords.filter(record => record.id !== recordId));
+              
+              console.log(`Record ${recordId} deleted from ${transactionCode}`);
+            }
+          }
+          
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error deleting previous finance record:", error);
+  }
+  setShowAlertDeleteHistorySpecificTenant(false);
+  handleTagSelect("ผู้เช่าปัจจุบัน", 'tag')
+  fetchRental();
+};
+
   const handleChangeInput = (e, fieldType) => {
     const input = e.target.value.replace(/,/g, '');
     const formatted = input ? Number(input).toLocaleString('en-US') : '';
@@ -735,12 +960,21 @@ return (
         Description="The data has already been imported to the Finance page, but your financial data in this rental will be deleted."          
       />
     )}
+    {showAlertDeleteHistorySpecificTenant && (
+      <Alert
+        onConfirm={() => deletePreviousFinanceRecord(selectedTag, "all")}
+        onCancel={() => setShowAlertDeleteHistorySpecificTenant(false)}
+        Header="You're about to remove this tenant's history"
+        Description="The data will be permanently deleted and cannot be recovered, please confirm you wish to continue this action."          
+      />
+    )}
     <div className="flex flex-col w-full h-full xl:pb-5 pb-22">
       {/* Table */}
       <div className='flex md:flex-row flex-col items-center w-full my-4'>
-        <div className="flex flex-col font-prompt font-semibold text-ellPrimary text-md md:text-xl justify-start w-full md:w-110 mr-auto">
-          <span className='w-120 xl:ml-0 ml-4 xl:px-0 py-1 xl:text-start text-start'>ประวัติการเงิน</span>
-          {isEditing && (
+        <div className={`flex font-prompt font-semibold text-ellPrimary text-md md:text-xl justify-start w-full md:w-110 mr-auto ${isEditing ? "flex-col" : "flex-row"}`}>
+          <span className='xl:ml-0 ml-4 xl:px-0 py-1 xl:text-start text-start'>ประวัติการเงิน</span>
+
+          {isEditing ? (
             <div className='flex flex-row w-full'>
               <button className="w-full bg-blue-500 px-4 py-2 rounded hover:bg-blue-600  font-prompt font-medium text-[#F7F7F7] text-sm mt-4 cursor-pointer xl:ml-0 ml-4 xl:mr-0 mr-2" onClick={addRecord}>
                 Add Record
@@ -750,9 +984,51 @@ return (
                 Clear History
               </button>
             </div>
+          ):(
+            <>
+          <div className="relative flex justify-center w-50">
+            <button className={`flex justify-center rounded-sm px-1 font-prompt text-ellSecondary text-md md:text-lg bg-ellBlack h-8 cursor-pointer ${showTagBox && "pointer-events-none"}`}
+              onClick={() => setShowTagBox(prev => !prev)}>
+              {selectedTag}
+            </button>
+            {/* TagBox */}
+            {showTagBox &&
+              <div className="absolute top-full mt-2 left-2 md:left-1/2 -translate-x-1/2 w-25 md:w-30 bg-ellBlack p-2 flex flex-col gap-1 rounded-xl border-2 border-ellPrimary z-50"
+                ref={filterTagBoxRef}>
+                <div className="absolute -top-2.5 left-15 md:left-11.75 w-4 h-4 bg-ellBlack rotate-45 border-s-2 border-t-2 border-s-ellPrimary border-t-ellPrimary"></div>
+                {tagOptions.map((tag, index) => (
+                  <label key={index} className="flex items-center gap-1 cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={selectedTag === tag}
+                      onChange={() => handleTagSelect(tag, 'tag')}
+                      className="appearance-none w-3 h-3 rounded-full border-2 border-ellSecondary checked:bg-ellSecondary checked:border-transparent cursor-pointer"
+                    />
+                    <span className="font-prompt text-ellSecondary text-xs"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleTagSelect(tag, 'tag');
+                      }}>
+                      {tag}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            }
+          </div>
+          </>
           )}
-        </div>          
+          
+        </div>    
+          {selectedTag != "ผู้เช่าปัจจุบัน" &&          
+            <button className="w-xs h-8 bg-ellRed rounded-sm  hover:bg-red-700 font-prompt font-medium text-[#F7F7F7] text-sm cursor-pointer mt-4 sm:mt-0 "
+              onClick={() => setShowAlertDeleteHistorySpecificTenant(true)}>
+              Clear History of this Tenant
+            </button>
+          }      
         {/* Controls */}
+          {selectedTag == "ผู้เช่าปัจจุบัน" &&
         <table className="md:w-37.5 w-full md:mt-0 mt-4 ">
           <thead>
             <tr>
@@ -780,6 +1056,7 @@ return (
             )}
           </tbody>
         </table>
+          }
       </div>
       
       {/* Desktop/Tablet View (Headers on Top) - Hidden on Mobile */}

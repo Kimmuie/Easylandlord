@@ -72,7 +72,8 @@ const RentalDetail = () => {
   const [selectedAreaB, setSelectedAreaB] = useState('');
   const [selectedDetails, setSelectedDetails] = useState('');
   const [daysSinceLastCheck, setDaysSinceLastCheck] = useState(0);
-  const [uploadQueue, setUploadQueue] = useState([]);
+  const [uploadQueue, setUploadQueue] = useState([]);;
+  const [savePrevious, setSavePrevious] = useState(false);
   const tagOptions = ['ไม่ได้ระบุแท็ก', 'บ้านเช่า', 'โกดัง', 'ตึกเเถว', 'ที่ดิน', 'คอนโด'];
   const frequencyOptions = ['วัน', 'อาทิตย์', 'เดือน', 'ปี'];
   const areaOptions = ['ตร.ม', 'ตร.วา', 'ไร่'];
@@ -158,26 +159,32 @@ const RentalDetail = () => {
     setShowAlertDeleteTenant(false);
     
     try {
-      setHaveTenant(false);
-      setNameTenant("");
-      setNumberTenant("");
-      setFileName("");
-      setFileLink("");
-      setDueDate("");
-      setSentDelete("all");
-      await updateRentalField({ 
-        tenant: false, 
-        status: "available", 
-        dueDate: "", 
-        tenantName: "", 
-        tenantNumber: "" 
-      });
+      setSavePrevious(true);
+      setTimeout(async () => {
+        setHaveTenant(false);
+        setNameTenant("");
+        setNumberTenant("");
+        setFileName("");
+        setFileLink("");
+        setDueDate("");
+        setSentDelete("all");
+
+        await updateRentalField({ 
+          tenant: false, 
+          status: "available", 
+          dueDate: "", 
+          tenantName: "", 
+          tenantNumber: "" 
+        });
+      }, 1000);
       console.log("Tenant removed successfully");
 
-      await fetchRentalDetail();
+      await fetchRentalDetail()
+      setTimeout(() => setSavePrevious(false), 100);;
     } catch (error) {
       console.error("Error removing tenant:", error);
       setHaveTenant(true);
+      setSavePrevious(false);
     }
   };
 
@@ -636,7 +643,7 @@ const handleShare = async () => {
           onConfirm={handleDeleteTenant}
           onCancel={() => setShowAlertDeleteTenant(false)}
           Header="You're about to remove tenant"
-          Description="The data has already been imported to the Finance page, but your financial data and tenant data in this rental will be deleted."          
+          Description="The data has already been imported to the Finance page and is now visible in Financial History, but the information within Financial History cannot be modified."          
         />
       )}
       {showAlertBackEdit && (
@@ -1316,6 +1323,7 @@ const handleShare = async () => {
               isEditing={isEditing} 
               setIsEditing={setIsEditing}
               setDeleteAll={sentDelete}
+              savePrevious={savePrevious}
              />
           </div>
         )}
